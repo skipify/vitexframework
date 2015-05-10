@@ -1,0 +1,23 @@
+{
+    "name": "skipify/vitex",
+    "version":"0.3.0",
+    "description": "A Tiny Framework.",
+    "keywords": ["framework", "vitex"],
+    "license": "MIT",
+    "homepage": "http://ifanybug.com",
+    "support": {
+        "issues": "https://github.com/skipify/vitexframework/issues",
+        "source": "https://github.com/skipify/vitexframework"
+    },
+    "authors": [
+        {
+            "name": "skipify",
+            "email": "skipify@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.0",
+        "ext-mcrypt": "*",
+        "ext-mbstring": "*"
+    }
+}
