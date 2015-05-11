@@ -90,7 +90,7 @@ class Init
         if (file_exists($indexfile)) {
             return false;
         }
-        $code = 'PD9waHAKcmVxdWlyZSAnLi4vdmVuZG9yL2F1dG9sb2FkLnBocCc7CiR2aXRleCA9IFxWaXRleFxWaXRleDo6Z2V0SW5zdGFuY2UoKTsKCmNvbnN0IFdFQlJPT1QgPSBfX0RJUl9fOwovL+mFjee9rui3r+eUseaWh+S7tuWcsOWdgAovL+mFjee9ruaooeadv+i3r+W+hAovL+mFjee9ruWIm+W7uueahOW6lOeUqGFwcO+8jOaKiuivpeebruW9leWinuWKoOWIsOiHquWKqOWKoOi9veeahOWQjeWNleS4rQokdml0ZXgtPmluaXQoJ3thcHB9JywgZGlybmFtZShfX0RJUl9fKSk7Cgokdml0ZXgtPnByZVVzZShuZXcgXFZpdGV4XE1pZGRsZXdhcmVcU2Vzc2lvbigpKTsKCiR2aXRleC0+YWxsKCcvJywgZnVuY3Rpb24gKCkgewogICAgZWNobyAnPGgxPldlbGNvbWUgVml0ZXghITwvaDE+JzsKfSk7Cgokdml0ZXgtPmdyb3VwKCcvd2VsY29tZScsICdJbmRleCcpOwokdml0ZXgtPmdldCgnL3VzZXInLCdVc2VyJyk7IC8v6LCD55SoQ29udHJvbGxlcuS4rVVzZXLnsbvnmoRnZXTmlrnms5UKCiR2aXRleC0+cnVuKCk7';
+        $code = 'PD9waHAKcmVxdWlyZSAnLi4vdmVuZG9yL2F1dG9sb2FkLnBocCc7CiR2aXRleCA9IFxWaXRleFxWaXRleDo6Z2V0SW5zdGFuY2UoKTsKCmNvbnN0IFdFQlJPT1QgPSBfX0RJUl9fOwovL+mFjee9rui3r+eUseaWh+S7tuWcsOWdgAovL+mFjee9ruaooeadv+i3r+W+hAovL+mFjee9ruWIm+W7uueahOW6lOeUqGFwcO+8jOaKiuivpeebruW9leWinuWKoOWIsOiHquWKqOWKoOi9veeahOWQjeWNleS4rQokdml0ZXgtPmluaXQoJ3thcHB9JywgZGlybmFtZShfX0RJUl9fKSk7Cgokdml0ZXgtPnVzaW5nKG5ldyBcVml0ZXhcTWlkZGxld2FyZVxTZXNzaW9uKCkpOwoKJHZpdGV4LT5hbGwoJy8nLCBmdW5jdGlvbiAoKSB7CiAgICBlY2hvICc8aDE+V2VsY29tZSBWaXRleCEhPC9oMT4nOwp9KTsKCiR2aXRleC0+Z3JvdXAoJy93ZWxjb21lJywgJ0luZGV4Jyk7CiR2aXRleC0+Z2V0KCcvdXNlcicsJ1VzZXInKTsgLy/osIPnlKhDb250cm9sbGVy5LitVXNlcuexu+eahGdldOaWueazlQoKJHZpdGV4LT5ydW4oKTs=';
         $code = base64_decode($code);
         //创建新文件
         file_put_contents($indexfile, str_replace('{app}', $this->appname, $code));
