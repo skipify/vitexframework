@@ -1,6 +1,6 @@
 {
     "name": "skipify/vitex",
-    "version":"0.3.2",
+    "version":"0.3.3",
     "description": "A Tiny Framework.",
     "keywords": ["framework", "vitex"],
     "license": "MIT",
@@ -21,6 +21,6 @@
         "ext-mbstring": "*"
     },  
     "autoload": {
-        "psr-4": {"Vitex\\": "vitex/Vitex"}
-    }
+        "psr-4": {"Vitex\\": "Vitex"}
+    },
 }

@@ -21,12 +21,13 @@ class Init
             $dirname . '/' . $appname . '/Route',
             $dirname . '/' . $appname . '/Model',
             $dirname . '/' . $appname . '/Ext',
-            $dirname . '/' . $appname . '/Template',
+            $dirname . '/' . $appname . '/Templates',
             $dirname . '/' . $appname . '/Controller',
             $dirname . '/webroot/public',
         ];
 
     }
+
     public static function init()
     {
         $dirname = getcwd();
@@ -59,6 +60,7 @@ class Init
         $init = new Init($dirname, $appname);
         $init->create();
     }
+
     public function create()
     {
         $index = $this->index();
@@ -118,7 +120,7 @@ class Init
 
     public function tpl()
     {
-        $file = $this->dirname . '/app/Template/welcome.html';
+        $file = $this->dirname . '/app/Templates/welcome.html';
         $code = 'PGh0bWw+CjxoZWFkPgoJPHRpdGxlPldlbGNvbWU8L3RpdGxlPgo8L2hlYWQ+Cjxib2R5Pgo8aDE+V2VsY29tZTwvaDE+CjwvYm9keT4KPC9odG1sPg==';
         file_put_contents($file, base64_decode($code));
         return true;

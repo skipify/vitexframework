@@ -18,7 +18,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.3.0";
+    const VERSION = "0.3.3";
     /**
      * App instance
      */
@@ -144,8 +144,8 @@ class Vitex
     public function init($app, $dir, array $setting = [], array $middleware = [])
     {
         $_setting = [
-            'templates.path'   => $dir . '/' . $app . '/templates',
-            'router.grouppath' => $dir . '/' . $app . '/routes',
+            'templates.path'   => $dir . '/' . $app . '/Templates',
+            'router.grouppath' => $dir . '/' . $app . '/Route',
         ];
         $this->appName = $app;
         $setting       = array_merge($_setting, $setting);
@@ -332,6 +332,7 @@ class Vitex
         $this->route->router->setRegexp($name, $val);
         return $this;
     }
+
     /**
      * 路由分组
      * @param  string $pattern 分组标识 url的一部分
