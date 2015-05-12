@@ -110,15 +110,21 @@ class View
         if (!file_exists($file)) {
             throw new \Exception("模板文件--" . $file . '--不存在');
         }
-        //定义一个模板中可以用的URL构造函数
-        function url($url, $params = [])
-        {
-            return $this->vitex->url($url, $params);
-        }
         extract($data, EXTR_OVERWRITE);
         ob_start();
         include $file;
         return ob_get_clean();
+    }
+
+    /**
+     * 定义一个模板中可以用的URL构造函数
+     * @param  string $url           url段
+     * @param  array  $params        关联数组
+     * @return string 链接地址
+     */
+    public function url($url, $params = [])
+    {
+        return $this->vitex->url($url, $params);
     }
 
     /**
