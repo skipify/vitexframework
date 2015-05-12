@@ -22,6 +22,7 @@ class Router
     protected $vitex         = null;
     protected $caseSensitive = false;
     protected $regexps       = [];
+    protected $cacheBaseurl  = null;
     public function __construct()
     {
         $this->env = Env::getInstance();
@@ -60,7 +61,25 @@ class Router
         }
         return isset($this->regexps[$name]) ? $this->regexps[$name] : '[^/]+';
     }
-
+    /**
+     * 根据指定的参数生成url地址
+     * @param  string $url                    路有段，如果是个有效的Url则会直接返回
+     * @param  array  $params                 参数段，会被转为 querystring
+     * @return string 返回的链接地址
+     */
+    public function url($url, $params = [])
+    {
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+        $url = '/' . ltrim($url, '/');
+        if ($this->cacheBaseurl === null) {
+            $vitex   = \Vitex\Vitex::getInstance();
+            $baseurl = $vitex->getConfig('baseurl');
+        }
+        $qs = http_build_query($params);
+        return rtrim($baseurl, '/') . $url . ($params ? '?' . $qs : '');
+    }
     /*
     这里pattern 的命名规则为   字母 下划线 数字
 

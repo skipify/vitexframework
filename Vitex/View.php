@@ -101,7 +101,6 @@ class View
      */
     public function fetch($tplname, array $data = [], $merge = true)
     {
-        $this->template($tplname);
         if ($merge) {
             $locals        = $this->vitex->res->locals->all();
             $data          = array_merge($locals, $this->get(), $data);
@@ -110,6 +109,11 @@ class View
         $file = $this->template($tplname);
         if (!file_exists($file)) {
             throw new \Exception("模板文件--" . $file . '--不存在');
+        }
+        //定义一个模板中可以用的URL构造函数
+        function url($url, $params = [])
+        {
+            return $this->vitex->url($url, $params);
         }
         extract($data, EXTR_OVERWRITE);
         ob_start();

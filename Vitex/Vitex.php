@@ -92,8 +92,9 @@ class Vitex
         $this->env   = Core\Env::getInstance();
         $this->route = new Core\Route();
         //初始化 request response
-        $this->req = Core\Request::getInstance();
-        $this->res = Core\Response::getInstance();
+        $this->req      = Core\Request::getInstance();
+        $this->res      = Core\Response::getInstance();
+        $this->res->url = function ($url, $params = []) {return $this->url($url, $params);};
         //view视图
         $this->view = null;
         //日志
@@ -180,6 +181,16 @@ class Vitex
         }
         $this->settings = $setting;
         return $this;
+    }
+    /**
+     * 构造URL
+     * @param  string $url           url或者一个路由段
+     * @param  array  $params        关联数组转为querystring
+     * @return string 最终的url
+     */
+    public function url($url, $params = [])
+    {
+        return $this->route->router->url($url, $params);
     }
 
     /**
