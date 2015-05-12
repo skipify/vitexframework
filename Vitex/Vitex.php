@@ -170,6 +170,11 @@ class Vitex
         $setting = $this->settings;
         if (is_array($name)) {
             $setting = array_merge($setting, $name);
+        } elseif ($val === null) {
+            if (file_exists($name)) {
+                $configs = include $name;
+                $setting = array_merge($setting, $configs);
+            }
         } else {
             $setting[$name] = $val;
         }
