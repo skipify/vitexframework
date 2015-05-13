@@ -399,7 +399,7 @@ string 	$column 字段名
 返回一个name组成的数组 ['Vitex1','Vitex2']
 
 ###get()
-根据主键获取一条记录       
+获取一条记录,可以制定一个主键的值，如果不设置则需要使用where系列方法设置条件       
 **签名**  
 `get(string  $id = null) : mixed`  
 **参数**  
