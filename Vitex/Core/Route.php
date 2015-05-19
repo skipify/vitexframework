@@ -80,7 +80,7 @@ class Route
     public function getGroupPath()
     {
         if (!$this->_groupPath) {
-            $path = \Vitex\Vitex::getInstance()->getConfig('router.group_path');
+            $path = \Vitex\Vitex::getInstance()->getConfig('router.grouppath');
             $this->setGroupPath($path);
         }
         return $this->_groupPath;
