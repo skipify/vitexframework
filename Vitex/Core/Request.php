@@ -127,4 +127,18 @@ class Request implements \ArrayAccess, \Iterator
         }
         return false;
     }
+
+    /**
+     * 根据数组获取相应的内容
+     * @param  array $arr        数组值，每个值都是一个表单元素
+     * @return array 返回值
+     */
+    public function getData(array $arr)
+    {
+        $data = [];
+        foreach ($arr as $val) {
+            $data[$val] = $this->body->{$val};
+        }
+        return $data;
+    }
 }
