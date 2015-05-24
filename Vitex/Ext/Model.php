@@ -532,7 +532,7 @@ class Model
             $sql .= implode(',', $_order);
         }
         //limit
-        if ($this->_sql['limit']) {
+        if ($this->_sql['limit'] && !$iscount) {
             $sql .= ' limit ' . $this->_sql['offset'] . ',' . $this->_sql['limit'];
         }
         //重置各种条件
