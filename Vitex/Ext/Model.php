@@ -289,7 +289,7 @@ class Model
         if ($op == 'is' || $op == 'is not') {
             $val = 'null';
         }
-        $val = (string) $val;
+        $val = is_array($val) ? $val :(string) $val;
 
         $this->_sql['where'][] = [$key, $op, $val, $type];
         return $this;
