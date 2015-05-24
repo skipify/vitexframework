@@ -91,8 +91,14 @@ class Request implements \ArrayAccess, \Iterator
      */
     public function postData()
     {
+        if (strtolower($this->env->get('REQUEST_METHOD')) == 'put' || strtolower($this->env->get('REQUEST_METHOD')) == 'delete') {
+            //put方法
+            $body  = file_get_contents('php://input');
+            $bodys = [];
+            parse_str($body, $bodys);
+            $_POST = array_merge($bodys, $_POST);
+        }
         $this->body = new \Vitex\Helper\Set($_POST);
-
         return $this;
     }
 
