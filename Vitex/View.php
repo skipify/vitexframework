@@ -39,9 +39,15 @@ class View
      * @param string $key 键值
      * @param string $val 键名
      */
-    public function set($key, $val)
+    public function set($key, $val = null)
     {
-        $this->data[$key] = $val;
+        if (is_array($key)) {
+            foreach ($key as $k => $v) {
+                $this->data[$k] = $v;
+            }
+        } else {
+            $this->data[$key] = $val;
+        }
         return $this;
     }
 

@@ -182,6 +182,7 @@ class Vitex
         $this->settings = $setting;
         return $this;
     }
+
     /**
      * 构造URL
      * @param  string $url           url或者一个路由段
@@ -270,12 +271,12 @@ class Vitex
     public function render($tpl, array $data = [], $status = null)
     {
         if ($this->view === null) {
-            $view = $this->view();
+            $this->view = $this->view();
         }
         if ($status !== null) {
             $this->res->status($status)->send();
         }
-        $view->display($tpl, $data);
+        $this->view->display($tpl, $data);
     }
 
     /**
