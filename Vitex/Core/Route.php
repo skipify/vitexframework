@@ -96,10 +96,13 @@ class Route
         if (!$this->_routerGroup) {
             return false;
         }
+        //提取第一段为分组信息
+        $urls = explode('/', $url);
+        $gstr = array_shift($urls);
+
         $this->vitex = \Vitex\Vitex::getInstance();
         foreach ($this->_routerGroup as $p => $g) {
-            $len = strlen($p);
-            if (substr($url, 0, $len) != $p) {
+            if ($p != $gstr) {
                 continue;
             }
             $this->groupurl = $p;
