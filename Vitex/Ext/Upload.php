@@ -22,9 +22,9 @@ class Upload extends \Vitex\Middleware
      */
     public $setting = [
         'ext'       => '*', //多个请使用 |分割
-        'rename'    => function($field,$v){return $this->rename($field,$v);}, //如果上传多张图片请使用改方法动态生成新名称
         'fieldname' => '',
-        'dest'      => ''
+        'rename'    => null,
+        'dest'      => '',
     ];
     /**
      * 错误信息列表
@@ -42,7 +42,7 @@ class Upload extends \Vitex\Middleware
      */
     public function __construct($setting = [])
     {
-        $this->setting = array_merge($this->setting,$setting);
+        $this->setting = array_merge($this->setting, $setting);
     }
 
     /**
@@ -61,7 +61,8 @@ class Upload extends \Vitex\Middleware
      * 设置存储路径
      * @param string $path 路径，绝对路径
      */
-    public function setDest($path) {
+    public function setDest($path)
+    {
         $this->setting['dest'] = $path;
         return $this;
     }
@@ -92,12 +93,12 @@ class Upload extends \Vitex\Middleware
         if (strpos($this->setting['ext'], '*') !== false) {
             return $files;
         }
-        $exts = explode('|',$this->setting['ext']);
+        $exts = explode('|', $this->setting['ext']);
 
         foreach ($files as $field => &$file) {
             $name = $file['name'];
             if (is_array($name)) {
-                foreach ($name as $k=>$v) {
+                foreach ($name as $k => $v) {
                     $ext = $this->getExt($v);
                     if (!in_array($ext, $exts)) {
                         unset($file['name'][$k]);
@@ -105,14 +106,14 @@ class Upload extends \Vitex\Middleware
                         unset($file['tmp_name'][$k]);
                         unset($file['error'][$k]);
                         unset($file['size'][$k]);
-                        $this->setError('500', $field.'字段中的'.$v.'文件不在允许的扩展名之内');
+                        $this->setError('500', $field . '字段中的' . $v . '文件不在允许的扩展名之内');
                     }
                 }
             } else {
                 $ext = $this->getExt($name);
                 if (!in_array($ext, $exts)) {
                     unset($files[$field]);
-                    $this->setError('500', $field.'字段中的'.$name.'文件不在允许的扩展名之内');
+                    $this->setError('500', $field . '字段中的' . $name . '文件不在允许的扩展名之内');
                 }
             }
         }
@@ -120,12 +121,12 @@ class Upload extends \Vitex\Middleware
     }
     /**
      * 根据文件名获取扩展名
-     * @param  string $filename 文件名
-     * @return string          扩展名
+     * @param  string $filename   文件名
+     * @return string 扩展名
      */
     private function getExt($filename)
     {
-        $fs = explode('.',$fieldname);
+        $fs = explode('.', $filename);
         return array_pop($fs);
     }
 
@@ -141,19 +142,19 @@ class Upload extends \Vitex\Middleware
         }
         $ret = [];
         //转移文件
-        foreach($files as $field => $file) {
+        foreach ($files as $field => $file) {
             $name = $file['name'];
             if (is_array($name)) {
-                foreach ($name as $k=>$v) {
+                foreach ($name as $k => $v) {
                     if ($file['error'][$k] != 0) {
-                        $this->setError($file['error'][$k],'上传文件发生错误');
+                        $this->setError($file['error'][$k], '上传文件发生错误');
                         continue;
                     }
-                    $newname = $this->setting['rename']($field, $v);
-                    $path    = rtrim($this->setting['dest'],'/').'/'.$newname;
+                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v) : $this->rename($field, $v);
+                    $path    = rtrim($this->setting['dest'], '/') . '/' . $newname;
                     $ismove  = move_uploaded_file($file['tmp_name'][$k], $path);
                     if (!$ismove) {
-                        $this->setError('501', $v.'文件无法转移到指定的目录'.$path);
+                        $this->setError('501', $v . '文件无法转移到指定的目录' . $path);
                     } else {
                         $ret[] = [
                             'filedname'    => $field,
@@ -162,21 +163,21 @@ class Upload extends \Vitex\Middleware
                             'mimetype'     => $file['type'][$k],
                             'path'         => $path,
                             'ext'          => $this->getExt($v),
-                            'size'         => $file['size'][$k]
+                            'size'         => $file['size'][$k],
                         ];
                     }
                 }
             } else {
                 if ($file['error'] != 0) {
-                    $this->setError($file['error'],'上传文件发生错误');
+                    $this->setError($file['error'], '上传文件发生错误');
                     continue;
                 }
-                $newname = $this->setting['rename']($field, $name);
+                $newname = $this->setting['rename'] ? $this->setting['rename']($field, $name) : $this->rename($field, $name);
                 //转移文件
-                $path    = rtrim($this->setting['dest'],'/').'/'.$newname;
-                $ismove  = move_uploaded_file($file['tmp_name'], $path);
+                $path   = rtrim($this->setting['dest'], '/') . '/' . $newname;
+                $ismove = move_uploaded_file($file['tmp_name'], $path);
                 if (!$ismove) {
-                    $this->setError('501', $name.'文件无法转移到指定的目录'.$path);
+                    $this->setError('501', $name . '文件无法转移到指定的目录' . $path);
                 } else {
                     $ret[] = [
                         'filedname'    => $field,
@@ -185,7 +186,7 @@ class Upload extends \Vitex\Middleware
                         'mimetype'     => $file['type'],
                         'path'         => $path,
                         'ext'          => $this->getExt($name),
-                        'size'         => $file['size']
+                        'size'         => $file['size'],
                     ];
                 }
             }
@@ -204,7 +205,8 @@ class Upload extends \Vitex\Middleware
         } else {
             $vitex = \Vitex\Vitex::getInstance();
         }
-        $vitex->req->upload = $this->return;
+        $this->moveFile();
+        $vitex->req->upload      = $this->return;
         $vitex->req->uploadError = $this->getError();
         $this->runNext();
         return $this->return;
@@ -212,14 +214,14 @@ class Upload extends \Vitex\Middleware
 
     /**
      * 设置错误信息
-     * @param  string $code 错误代码
-     * @param  String $msg  错误信息
+     * @param string $code 错误代码
+     * @param String $msg  错误信息
      */
-    private function setError($code,$msg)
+    private function setError($code, $msg)
     {
         $this->errorInfo[] = array(
             'code' => $code,
-            'msg'  => $msg
+            'msg'  => $msg,
         );
     }
     /**

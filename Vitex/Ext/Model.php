@@ -242,23 +242,36 @@ class Model
 
     /**
      * 转义格式化字段名 主要用 `包括
+     * table.field
+     * table.*
+     * table.field as _field
+     * table.field _field
      * @param  string $column           字段名
      * @return string 新的字段名
      */
     private function formatColumn($column)
     {
+        $column = trim($column);
         if (strpos($column, '.') !== false) {
-            if (strpos($column, '*') !== false) {
-                $column = '`' . str_replace('.', '`.', $column);
-            } else {
-                $column = '`' . str_replace('.', '`.`', $column) . '`';
-            }
+            list($table, $column) = explode('.', $column);
+            $table                = '`' . $table . '`.';
         } else {
-            if ($column != '*') {
-                $column = '`' . $column . '`';
-            }
+            $table = '';
         }
-        return $column;
+        if ($column == '*') {
+            return $table . $column;
+        }
+        if (strpos($column, ' ') === false) {
+            return $table . '`' . $column . '`';
+        }
+        $column  = preg_replace('/[ ]+/', ' ', $column);
+        $columns = explode(' ', $column);
+        if (count($columns) == 3) {
+            list($column, $as, $alias) = $columns;
+        } else {
+            list($column, $alias) = $columns;
+        }
+        return $table . '`' . $column . '` as `' . $alias . '`';
     }
 
     /**
@@ -289,7 +302,7 @@ class Model
         if ($op == 'is' || $op == 'is not') {
             $val = 'null';
         }
-        $val = is_array($val) ? $val :(string) $val;
+        $val = is_array($val) ? $val : (string) $val;
 
         $this->_sql['where'][] = [$key, $op, $val, $type];
         return $this;

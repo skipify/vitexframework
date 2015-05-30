@@ -92,3 +92,22 @@ string 	$key 	键值
 `getData(array $arr)`
 
 $arr 包含表单名的一个数组
+
+### extend()
+
+用于扩展Request类使用,可以使用该方法扩展Request实例的属性和方法
+
+`extend(mixed $pro,$data=null)`  
+
+`$req->extend('name','extend name')`  
+`$req->extend(['name'=>'extend name'])`  
+
+`$req->extend('show',function($obj){ echo $obj->name;})`   
+`$req->show()`//即可调用上述方法
+
+`$req->extend('showInfo',function($obj,$name){ echo $name;})`  
+`$req->showInfo('123')` // out:123   
+
+**注意** 扩展方法时,方法的第一个参数总是 $req 的实例,此参数会在执行时默认添加,不需要手动添加此参数.
+
+*PHP没有办法直接动态扩展实例的方法,因此此处相当于变相实现了扩展*

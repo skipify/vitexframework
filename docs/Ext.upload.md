@@ -23,11 +23,12 @@ Upload类是一个专门用于上传的工具，此类是一个继承自\Vitex\M
 ## 配置 
 
     ext：* //允许上传的扩展名，多个请使用 |分割 如 jpg|png   
-    rename： function(){return $this->rename();}, 
+    rename： null, 
     		 //如果上传多张图片请使用改方法动态生成新名称   
     		 // 可以指定一个匿名函数来生成新的文件名    
     		 `function($field,$filename){ return 'newname';}`  
     		 //第一个是上传的表单名，第二个为文件名   
+             //默认调用系统的名字生成方法
     fieldname： '', 上传接受的字段名，如前台表单字段名为file, 不指定会读取所有的$_FILES   
     dest     ： '' 指定上传文件要保存的目录地址
 
@@ -53,7 +54,7 @@ Upload类是一个专门用于上传的工具，此类是一个继承自\Vitex\M
 中间件形式的调用会把调用结果赋值给Request对象的 upload属性 
 
 ### 普通类
-`$ret = $req->call();`
+`$ret = $upload->call();`
 
 ## API  
 

@@ -17,6 +17,7 @@ namespace Vitex\Core;
 class Response
 {
     private static $_instance = null;
+    private $methods          = [];
 
     protected static $status_tip = array(
         //信息 1xx
@@ -304,5 +305,43 @@ class Response
     {
         $vitex = \Vitex\Vitex::getInstance();
         $vitex->render($tpl, $data, $status);
+    }
+    /**
+     * 扩展方法,扩展的如果是类方法必须至少包含一个参数,第一个参数总是当前这个类的实例
+     * 例如 function($obj){$obj->extend('a','1');}//第一个参数即为当前类的实例
+     *
+     * @param  mixed       $pro    扩展的属性名或者方法名,或者一个关联数组
+     * @param  string/null $data   属性值或者一个callable的方法
+     * @return object      $this
+     */
+    public function extend($pro, $data = null)
+    {
+        if (is_array($pro)) {
+            foreach ($pro as $k => $v) {
+                $this->extend($k, $v);
+            }
+            return $this;
+        }
+        if (is_callable($data)) {
+            $this->methods[$pro] = $data;
+        } else {
+            $this->{$pro} = $data;
+        }
+        return $this;
+    }
+
+    /**
+     * 执行调用扩展的方法
+     * @param  string $method 扩展的方法名
+     * @param  mixed  $args   参数名
+     * @return object $this
+     */
+    public function __call($method, $args)
+    {
+        if (!isset($this->methods[$method])) {
+            throw new \Exception('Not Method ' . $method . ' Found In Response!');
+        }
+        array_unshift($args, $this);
+        return call_user_func_array($this->methods[$method], $args);
     }
 }
