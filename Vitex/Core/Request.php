@@ -165,7 +165,7 @@ class Request implements \ArrayAccess, \Iterator
             return $this;
         }
         if (is_callable($data)) {
-            $this->methods[$pro] = $data;
+            $this->methods[$pro] = Closure::bind($data, $this, 'Request');
         } else {
             $this->{$pro} = $data;
         }
@@ -183,7 +183,6 @@ class Request implements \ArrayAccess, \Iterator
         if (!isset($this->methods[$method])) {
             throw new \Exception('Not Method ' . $method . ' Found In Request!');
         }
-        array_unshift($args, $this);
         return call_user_func_array($this->methods[$method], $args);
     }
 }

@@ -91,6 +91,7 @@ mixed 	$column 可以是字符串，多个字段用,分开，也可以是数组�
 `$model->select("*")`  
 `$this->select('id,name')`  
 `$this->select(['name','id'])`  
+`$this->select("user.name as uname")`
 
 ###whereRaw()
 字符串形式的查询语句,使用该方法一定要了解你在做什么，此方法设置的条件总是会在where设置的条件之后，

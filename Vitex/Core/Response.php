@@ -323,7 +323,7 @@ class Response
             return $this;
         }
         if (is_callable($data)) {
-            $this->methods[$pro] = $data;
+            $this->methods[$pro] = Closure::bind($data, $this, 'Response');
         } else {
             $this->{$pro} = $data;
         }

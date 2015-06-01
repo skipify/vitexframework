@@ -125,12 +125,10 @@ integer 	$status 	状态，系统默认的状态码是200
 `$res->extend('name','extend name')`  
 `$res->extend(['name'=>'extend name'])`  
 
-`$res->extend('show',function($obj){ echo $obj->name;})`   
+`$res->extend('show',function(){ echo $this->name;})`   
 `$res->show()`//即可调用上述方法
 
-`$res->extend('showInfo',function($obj,$name){ echo $name;})`  
+`$res->extend('showInfo',function($name){ echo $name;})`  
 `$res->showInfo('123')` // out:123   
 
-**注意** 扩展方法时,方法的第一个参数总是 $res 的实例,此参数会在执行时默认添加,不需要手动添加此参数.
-
-*PHP没有办法直接动态扩展实例的方法,因此此处相当于变相实现了扩展*
+*创建的匿名函数会被自动绑定到当前的实例中，所以在匿名函数中可以直接使用$this*
