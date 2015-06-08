@@ -23,7 +23,7 @@ class Pdo extends \Vitex\Middleware
     public function __construct($setting, $username = '', $password = '')
     {
         if (!$setting) {
-            throw new Error('数据库链接信息不能为空');
+            throw new \Exception('数据库链接信息不能为空');
         }
         if (is_resource($setting)) {
             $this->pdo = $setting;
