@@ -631,7 +631,9 @@ class Model
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
         $sth = $this->pdo->prepare($sql);
-        return $sth->execute($arr);
+        $ret = $sth->execute($arr);
+        $this->resetCon();
+        return $ret;
     }
 
     /**
@@ -717,7 +719,9 @@ class Model
             throw new Error('删除全部数据请使用truncate方法');
         }
         $sql .= $where;
-        return $this->DB->execute($sql);
+        $ret = $this->DB->execute($sql);
+        $this->resetCon();
+        return $ret;
     }
 
     /**
@@ -742,7 +746,9 @@ class Model
         $column = $this->formatColumn($column);
         $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " + " . $amount . ") ";
         $sql .= $this->buildWhere();
-        return $this->DB->execute($sql);
+        $ret = $this->DB->execute($sql);
+        $this->resetCon();
+        return $ret;
     }
 
     /**
@@ -756,7 +762,10 @@ class Model
         $column = $this->formatColumn($column);
         $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " - " . $amount . ") ";
         $sql .= $this->buildWhere();
-        return $this->DB->execute($sql);
+        $ret = $this->DB->execute($sql);
+
+        $this->resetCon();
+        return $ret;
     }
 
     /**
