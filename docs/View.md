@@ -4,6 +4,18 @@
 当调用Vitex对象实例的 view方法后（`$vitex->view()`），可以使用 `$vitex->view` 来访问到当前类的实例.  
 当然你也可以直接使用 `new \Vitex\View()`来实例化当前类。  
 
+##setStyle()
+设置模板风格，可以设置一个风格文件夹，比如 default
+
+**签名**   
+`setStyle(string $style)`    
+**参数**
+string $style 参数    
+
+**示例**   
+
+`$vitex->view->setStyle('default')`
+
 
 ##set()
 给模板传递变量,单个或者多个数据设置。  

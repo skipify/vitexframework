@@ -14,8 +14,7 @@ namespace Vitex;
 /**
  * 用于模板展示的View类
  */
-class View
-{
+class View {
 
     protected $data;
     /**
@@ -26,12 +25,17 @@ class View
     private $templatepath;
     public $vitex;
     public $tplext;
-    public function __construct()
-    {
+    public $style = '';
+    public function __construct() {
         $this->data   = new Helper\Set();
         $this->vitex  = Vitex::getInstance();
         $this->tplext = $this->vitex->getConfig('templates.ext');
         $this->setTplPath($this->vitex->getConfig('templates.path'));
+    }
+
+    public function setStyle($style) {
+        $this->style = rtrim($style, '/') . '/';
+        return $this;
     }
 
     /**
@@ -39,8 +43,7 @@ class View
      * @param string $key 键值
      * @param string $val 键名
      */
-    public function set($key, $val = null)
-    {
+    public function set($key, $val = null) {
         if (is_array($key)) {
             foreach ($key as $k => $v) {
                 $this->data[$k] = $v;
@@ -56,8 +59,7 @@ class View
      * @param  string $key              键值
      * @return mixed  要返回的值
      */
-    public function get($key = null)
-    {
+    public function get($key = null) {
         if ($key === null) {
             return $this->data->all();
         }
@@ -69,8 +71,7 @@ class View
      * @param  string $tpl     模板路径名字
      * @return string $path;
      */
-    public function getTplPath()
-    {
+    public function getTplPath() {
         return $this->templatepath;
     }
 
@@ -79,8 +80,7 @@ class View
      * @param  string $tpl     模板路径名字
      * @return object $this;
      */
-    public function setTplPath($tplpath)
-    {
+    public function setTplPath($tplpath) {
         $this->templatepath = rtrim($tplpath, DIRECTORY_SEPARATOR);
         return $this;
     }
@@ -90,8 +90,7 @@ class View
      * @param  string $tpl     模板路径名字
      * @return object $this;
      */
-    public function template($tpl)
-    {
+    public function template($tpl) {
         $extlen = strlen($this->tplext);
         if (substr($tpl, -$extlen) !== $this->tplext) {
             $tpl .= $this->tplext;
@@ -105,8 +104,7 @@ class View
      * @param  array  $data                数据
      * @return string 解析后的数据
      */
-    public function fetch($tplname, array $data = [], $merge = true)
-    {
+    public function fetch($tplname, array $data = [], $merge = true) {
         if ($merge) {
             $locals        = $this->vitex->res->locals->all();
             $data          = array_merge($locals, $this->get(), $data);
@@ -128,8 +126,7 @@ class View
      * @param  array  $params        关联数组
      * @return string 链接地址
      */
-    public function url($url, $params = [])
-    {
+    public function url($url, $params = []) {
         return $this->vitex->url($url, $params);
     }
 
@@ -140,9 +137,9 @@ class View
      * @param  boolean $merge   是否要重新合并数据
      * @return void
      */
-    public function render($tplname, array $data = [], $merge = false)
-    {
-        $data = array_merge($this->tpldata, $data);
+    public function render($tplname, array $data = [], $merge = false) {
+        $data    = array_merge($this->tpldata, $data);
+        $tplname = $this->style . $tplname;
         echo $this->fetch($tplname, $data, $merge);
     }
 
@@ -152,8 +149,7 @@ class View
      * @param  array  $data    数据
      * @return void
      */
-    public function display($tplname, array $data = [])
-    {
+    public function display($tplname, array $data = []) {
         echo $this->fetch($tplname, $data);
     }
 
