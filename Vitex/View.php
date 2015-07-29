@@ -110,6 +110,8 @@ class View {
             $data          = array_merge($locals, $this->get(), $data);
             $this->tpldata = $data;
         }
+        $tplname = $this->style . $tplname;
+
         $file = $this->template($tplname);
         if (!file_exists($file)) {
             throw new \Exception("模板文件--" . $file . '--不存在');
@@ -139,7 +141,6 @@ class View {
      */
     public function render($tplname, array $data = [], $merge = false) {
         $data    = array_merge($this->tpldata, $data);
-        $tplname = $this->style . $tplname;
         echo $this->fetch($tplname, $data, $merge);
     }
 
