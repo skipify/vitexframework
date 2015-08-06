@@ -15,7 +15,7 @@
 
 	
 	<?php
-	require 'Vitex/Vitex.php';
+	require '../Vitex/Vitex.php';
 	$vitex = \Vitex\Vitex::getInstance();
 
 	$vitex->all('/', function ($req) {
@@ -73,7 +73,7 @@ Vitex定位于中小型项目，主要是API开发。
   ——vendor  
   ——composer.json  
 
-webroot为HTTP访问的根目录，域名应该绑定在该目录  
+** webroot为HTTP访问的根目录，域名应该绑定在该目录 **  
 
 也就是vitex推荐的目录布局是在网站访问目录仅仅包含 index.php入口文件（可以多个）
 
