@@ -669,12 +669,12 @@ class Model
         $sql    = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
         $sth    = $this->pdo->prepare($sql);
         $lastid = null;
-        !$this->_begintransaction && $this->pdo->beginTransaction();
+        !$this->_begintransaction && count($arr) > 1 && $this->pdo->beginTransaction();
         foreach ($arr as $val) {
             $sth->execute($val);
             $lastid = $this->pdo->lastInsertId();
         }
-        !$this->_begintransaction && $this->pdo->commit();
+        !$this->_begintransaction && count($arr) > 1 && $this->pdo->commit();
         return $lastid;
     }
     /**
@@ -683,6 +683,9 @@ class Model
      */
     public function begin()
     {
+        if ($this->_begintransaction) {
+            throw new \Exception("已经开启了一个事务，请勿重新开启");
+        }
         $this->pdo->beginTransaction();
         $this->_begintransaction = true;
         return $this;
