@@ -15,7 +15,8 @@ namespace Vitex\Ext;
  * 一个简单的Active record
  * knex.js
  */
-class Model {
+class Model
+{
     /**
      * 保存各种条件的数组.
      * @var array
@@ -82,7 +83,8 @@ class Model {
     private $pdo, $DB;
     private $setfromtable = false;
 
-    public function __construct($table = '') {
+    public function __construct($table = '')
+    {
         $this->vitex = \Vitex\Vitex::getInstance();
         try {
             $this->DB  = $this->vitex->pdo;
@@ -101,7 +103,8 @@ class Model {
      * 定义一个新的模型数据
      * @param array $arr 模型数据
      */
-    public function def($arr = []) {
+    public function def($arr = [])
+    {
         $this->_post = $arr;
         return $this;
     }
@@ -110,22 +113,26 @@ class Model {
      * 处理映射字段
      * @param string $key 键值
      */
-    public function __get($key) {
+    public function __get($key)
+    {
         return isset($this->_post[$key]) ? $this->_post[$key] : null;
     }
 
-    public function __set($key, $val) {
+    public function __set($key, $val)
+    {
         if ($this->isfind) {
             $this->_setpost[$key] = $val;
         }
         $this->_post[$key] = $val;
     }
 
-    public function __isset($key) {
+    public function __isset($key)
+    {
         return isset($this->_post[$key]);
     }
 
-    public function __unset($key) {
+    public function __unset($key)
+    {
         if ($this->isfind) {
             try {
                 unset($this->_setpost[$key]);
@@ -140,7 +147,8 @@ class Model {
      * @param  array  $args                      数组
      * @return mixed  执行结果或者本身
      */
-    public function __call($method, $args) {
+    public function __call($method, $args)
+    {
         $join = ['innerJoin' => 'inner join', 'leftJoin' => 'left join', 'leftOuterJoin' => 'left outer join', 'rightJoin' => 'right join', 'rightOuterJoin' => 'right outer join', 'outerJoin' => 'outer join', 'fullOuterJoin' => 'full outer join', 'crossJoin' => 'cross join'];
         //一堆join操作
         if (isset($join[$method])) {
@@ -178,7 +186,8 @@ class Model {
      * @param  string $prefix 前缀
      * @return object $this
      */
-    public function setPrefix($prefix) {
+    public function setPrefix($prefix)
+    {
         $this->prefix = $prefix;
         return $this;
     }
@@ -187,7 +196,8 @@ class Model {
      * 返回当前对象的实例，一般用于子查询实例化model
      * @return object $this
      */
-    public static function sub() {
+    public static function sub()
+    {
         return new self;
     }
 
@@ -196,7 +206,8 @@ class Model {
      * @param  string $sql           sql语句
      * @return mixed  执行结果
      */
-    public function query($sql) {
+    public function query($sql)
+    {
         $sql = str_replace('@#_', $this->prefix, $sql);
         return $this->DB->query($sql);
     }
@@ -204,7 +215,8 @@ class Model {
     /**
      * 返回子查询构造的字符串
      */
-    public function __tostring() {
+    public function __tostring()
+    {
         return $this->buildSql();
     }
 
@@ -213,7 +225,8 @@ class Model {
      * @param  mixed  $column 可以是字符串，多个字段用,分开，也可以是数组每个元素为一个字段，也可以是*
      * @return object $this
      */
-    public function select($column = '*') {
+    public function select($column = '*')
+    {
         if ($column == '*') {
             $this->_sql['select'][] = $column;
             return $this;
@@ -236,7 +249,8 @@ class Model {
      * @param  string $column           字段名
      * @return string 新的字段名
      */
-    private function formatColumn($column) {
+    private function formatColumn($column)
+    {
         $column = trim($column);
         if (strpos($column, '.') !== false) {
             list($table, $column) = explode('.', $column);
@@ -267,7 +281,8 @@ class Model {
      * @param  string/array/callable $val    值
      * @return object                $this
      */
-    private function _where($method, $key, $op = '', $val = '') {
+    private function _where($method, $key, $op = '', $val = '')
+    {
         $where = ['where' => '', 'whereIn' => 'in', 'whereNotIn' => 'not in', 'whereNull' => 'is', 'whereNotNull' => 'is not', 'whereExists' => 'exists', 'whereNotExists' => 'not exists', 'whereBetween' => 'between', 'whereNotBetween' => 'not between', 'orWhere' => '', 'orWhereIn' => 'in', 'orWhereNotIn' => 'not in', 'orWhereNull' => 'is', 'orWhereNotNull' => 'is not', 'orWhereExists' => 'exists', 'orWhereNotExists' => 'not exists', 'orWhereBetween' => 'between', 'orWhereNotBetween' => 'not between'];
 
         if (!isset($where[$method])) {
@@ -298,7 +313,8 @@ class Model {
      * @param  string $val    查询语句
      * @return obj    $this
      */
-    public function whereRaw($val) {
+    public function whereRaw($val)
+    {
         $this->_sql['whereraw'][] = $val;
         return $this;
     }
@@ -311,7 +327,8 @@ class Model {
      * @param  string         $type   类型 and/or
      * @return object         $this
      */
-    public function having($key, $op, $val, $type = "AND") {
+    public function having($key, $op, $val, $type = "AND")
+    {
         $key                    = $this->formatColumn($key);
         $this->_sql['having'][] = [$key, $op, $val, $type];
         return $this;
@@ -322,7 +339,8 @@ class Model {
      * @param  string $table  表名
      * @return object $this
      */
-    public function from($table) {
+    public function from($table)
+    {
         $table              = (string) $table;
         $this->_sql['from'] = $table;
         return $this;
@@ -332,7 +350,8 @@ class Model {
      * 获取当前要查询的表名
      * @return string name
      */
-    public function getTable() {
+    public function getTable()
+    {
         if ($this->_sql['from']) {
             $table = $this->_sql['from'];
         } else {
@@ -344,7 +363,8 @@ class Model {
     }
 
     //提取出表名中的别名
-    private function formatTable($table) {
+    private function formatTable($table)
+    {
         $alias = '';
         if (strpos($table, ' ') !== false) {
             list($table, $alias) = explode(' ', $table);
@@ -359,7 +379,8 @@ class Model {
      * @param  integer $offset 偏移值 默认0
      * @return object  $this
      */
-    public function limit($limit, $offset = 0) {
+    public function limit($limit, $offset = 0)
+    {
         $this->_sql['limit'] = $limit;
         $this->offset($offset);
         return $this;
@@ -370,7 +391,8 @@ class Model {
      * @param  integer $offset 偏移数值
      * @return object  $this
      */
-    public function offset($offset) {
+    public function offset($offset)
+    {
         $this->_sql['offset'] = $offset;
         return $this;
     }
@@ -381,7 +403,8 @@ class Model {
      * @param  string $way    排序方式
      * @return object $this
      */
-    public function orderBy($column, $way = "DESC") {
+    public function orderBy($column, $way = "DESC")
+    {
         $column                = $this->formatColumn($column);
         $this->_sql['order'][] = [$column, $way];
         return $this;
@@ -392,7 +415,8 @@ class Model {
      * @param  string $column 要分组的字段
      * @return object $this
      */
-    public function groupBy($column) {
+    public function groupBy($column)
+    {
         $column                = $this->formatColumn($column);
         $this->_sql['group'][] = $column;
         return $this;
@@ -403,7 +427,8 @@ class Model {
      * @param  string/array $column 字段名
      * @return object       $this
      */
-    public function distinct($column) {
+    public function distinct($column)
+    {
         if (!is_array($column)) {
             $column = explode(',', $column);
         }
@@ -421,7 +446,8 @@ class Model {
      * @param  string $col2   第二个字段
      * @return object $this
      */
-    private function join($type, $table, $col, $op, $col2 = '') {
+    private function join($type, $table, $col, $op, $col2 = '')
+    {
         $col  = $this->formatColumn($col);
         $col2 = $this->formatColumn($col2);
 
@@ -434,7 +460,8 @@ class Model {
      * @param  string/callable $str    union字符串或者一个可以tostring的对象
      * @return object          $this
      */
-    public function union($str) {
+    public function union($str)
+    {
         $str                   = (string) $str;
         $this->_sql['union'][] = $str;
         return $this;
@@ -446,7 +473,8 @@ class Model {
      * @param  string       $val    值
      * @return object       $this
      */
-    public function set($key, $val = null) {
+    public function set($key, $val = null)
+    {
         if (is_array($key)) {
             $this->_setpost = array_merge($this->_setpost, $key);
         } else {
@@ -459,7 +487,8 @@ class Model {
      * 构建sql语句
      * @return string
      */
-    private function buildSql($iscount = false) {
+    private function buildSql($iscount = false)
+    {
         if (!$this->getTable()) {
             throw new Error('您还没有指定要查询的表名');
         }
@@ -529,7 +558,8 @@ class Model {
      * 重新构建where条件 join/where
      * @return string 构建好的where条件
      */
-    private function buildWhere() {
+    private function buildWhere()
+    {
         $sql = ' ';
         //join
         if ($this->_sql['join']) {
@@ -590,7 +620,8 @@ class Model {
      * @param  array $arr           要修改的数据 关联数组
      * @return mixed 执行结果
      */
-    public function update(array $arr) {
+    public function update(array $arr)
+    {
         //修改
         $sql  = "update " . $this->getTable() . " set ";
         $sets = [];
@@ -599,7 +630,8 @@ class Model {
         }
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
-        $ret = $this->DB->query($sql, $arr);
+        $sth = $this->pdo->prepare($sql);
+        $ret = $sth->execute($arr);
         $this->resetCon();
         return $ret;
     }
@@ -610,7 +642,8 @@ class Model {
      * @param  array $arr                               关联数组或者二维数组
      * @return mixed 成功则返回最后插入的ID
      */
-    public function insert($arr = []) {
+    public function insert($arr = [])
+    {
         $keys = [];
         if (count($arr) === 0) {
             return false;
@@ -642,14 +675,32 @@ class Model {
         $this->pdo->commit();
         return $lastid;
     }
-
+    /**
+     * 事务开始启动事务
+     * @return object $this
+     */
+    public function begin()
+    {
+        $this->pdo->beginTransaction();
+        return $this;
+    }
+    /**
+     * 提交事务
+     * @return object $this
+     */
+    public function commit()
+    {
+        $this->pdo->commit();
+        return $this;
+    }
     /**
      * ORM似的保存
      * 保存当前模型，如果存在主键则尝试修改，如果不存在主键则尝试新建
      * @param  string $id            主键的值
      * @return mixed  执行结果
      */
-    public function save($id = '') {
+    public function save($id = '')
+    {
         $pkval = $id ?: $this->pkval;
         //有修改的数据
         if ($this->_setpost && $pkval) {
@@ -671,7 +722,8 @@ class Model {
      * 删除数据
      * @return boolea 删除的数据结果
      */
-    public function delete() {
+    public function delete()
+    {
         $sql   = "delete from " . $this->getTable() . " ";
         $where = $this->buildWhere();
         //条件判断
@@ -693,7 +745,8 @@ class Model {
      * 清空当前指定的表
      * @return object $this
      */
-    public function truncate() {
+    public function truncate()
+    {
         $table = $this->getTable();
         $sql   = "truncate table " . $table;
         return $this->DB->execute($sql);
@@ -705,7 +758,8 @@ class Model {
      * @param  integer $amount              自增的数制默认为1
      * @return bool    执行sql的结果
      */
-    public function increment($column, $amount = 1) {
+    public function increment($column, $amount = 1)
+    {
         $column = $this->formatColumn($column);
         $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " + " . $amount . ") ";
         $sql .= $this->buildWhere();
@@ -720,7 +774,8 @@ class Model {
      * @param  integer $amount              自增的数制默认为1
      * @return bool    执行sql的结果
      */
-    public function decrement($column, $amount = 1) {
+    public function decrement($column, $amount = 1)
+    {
         $column = $this->formatColumn($column);
         $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " - " . $amount . ") ";
         $sql .= $this->buildWhere();
@@ -735,7 +790,8 @@ class Model {
      * @param  string $column  字段名
      * @return int    数量
      */
-    public function count($column = '*') {
+    public function count($column = '*')
+    {
         $sql  = $this->buildSql($column);
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['num']) ? $info['num'] : 0;
@@ -746,7 +802,8 @@ class Model {
      * @param  string $column        字段名
      * @return array  返回数组
      */
-    public function pluck($column) {
+    public function pluck($column)
+    {
         $infos = $this->getAll();
         $info  = array_map(function ($val) use ($column) {
             return $val[$column];
@@ -759,7 +816,8 @@ class Model {
      * @param  string $id         ID
      * @return mixed  返回值
      */
-    public function get($id = null) {
+    public function get($id = null)
+    {
         if ($id !== null) {
             $this->where($this->pk, '=', $id);
             $this->pkval = $id;
@@ -772,7 +830,8 @@ class Model {
      * 根据查询条件返回数组
      * @return array
      */
-    public function getAll() {
+    public function getAll()
+    {
         return $this->_getAll();
     }
 
@@ -782,7 +841,8 @@ class Model {
      * @param  integer $num  每页的信息条数 默认10条
      * @return array   $info 返回值，第一个元素是包含的信息，第二个元素是总的行数
      */
-    public function page($page = 1, $num = 10) {
+    public function page($page = 1, $num = 10)
+    {
         $start = ($page - 1) * $num;
         $this->limit($num, $start);
         $bak        = $this->_sql;
@@ -792,7 +852,8 @@ class Model {
         return [$infos, $total];
     }
 
-    private function _get() {
+    private function _get()
+    {
         $sql          = $this->limit(1)->buildSql();
         $info         = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->_post  = $info;
@@ -800,7 +861,8 @@ class Model {
         return $info;
     }
 
-    private function _getAll() {
+    private function _getAll()
+    {
         $sql = $this->buildSql();
         $sth = $this->DB->query($sql);
         return $this->DB->fetchAll(\PDO::FETCH_ASSOC);
@@ -810,7 +872,8 @@ class Model {
      * 重置各种查询条件
      * @return void
      */
-    private function resetCon() {
+    private function resetCon()
+    {
         $this->_sql = [
             'where'    => [],
             'whereraw' => [],
