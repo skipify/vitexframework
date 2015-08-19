@@ -45,6 +45,8 @@ class Model
      * @var array
      */
     private $_setpost; //新修改的数据保存
+    /*是否已经开启了一个事务*/
+    private $_begintransaction = false;
     /**
      * 当前是否执行了查询主键的操作
      * @var boolean
@@ -667,12 +669,12 @@ class Model
         $sql    = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
         $sth    = $this->pdo->prepare($sql);
         $lastid = null;
-        $this->pdo->beginTransaction();
+        !$this->_begintransaction && $this->pdo->beginTransaction();
         foreach ($arr as $val) {
             $sth->execute($val);
             $lastid = $this->pdo->lastInsertId();
         }
-        $this->pdo->commit();
+        !$this->_begintransaction && $this->pdo->commit();
         return $lastid;
     }
     /**
@@ -682,6 +684,7 @@ class Model
     public function begin()
     {
         $this->pdo->beginTransaction();
+        $this->_begintransaction = true;
         return $this;
     }
     /**
@@ -691,6 +694,7 @@ class Model
     public function commit()
     {
         $this->pdo->commit();
+        $this->_begintransaction = false;
         return $this;
     }
     /**
