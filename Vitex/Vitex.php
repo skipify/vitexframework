@@ -55,7 +55,7 @@ class Vitex
         'cookies.secure'        => false,
         'cookies.httponly'      => false,
         'cookies.secret_key'    => 'Vitex is a micro restfull framework',
-        'charset'               => 'utf-8'
+        'charset'               => 'utf-8',
     );
     /**
      * 两个内置的hooks执行点
@@ -288,7 +288,7 @@ class Vitex
     {
         $class = get_class($call);
         if (in_array($class, $this->preMiddlewareArr)) {
-            throw new ErrorException($class . ' Pre-Middleware has loaded');
+            throw new \Exception($class . ' Pre-Middleware has loaded');
         }
         $this->preMiddlewareArr[] = $class;
         if ($this->preMiddleware) {
@@ -480,7 +480,7 @@ class Vitex
     public function run()
     {
         //输出指定编码以及格式
-        $this->res->setHeader("Content-Type","text/html,charset=".$this->getConfig("charset"))->sendHeader();
+        $this->res->setHeader("Content-Type", "text/html,charset=" . $this->getConfig("charset"))->sendHeader();
         set_error_handler(array($this, 'handler'));
         if ($this->getConfig('debug')) {
             $this->log->setWriter(new \Vitex\Helper\LogWriter());
