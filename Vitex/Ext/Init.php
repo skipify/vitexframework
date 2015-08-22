@@ -17,14 +17,7 @@ class Init
         $dirname       = rtrim($dirname, '/');
         $this->appname = $appname;
         $this->dirname = $dirname;
-        $this->dirs    = [
-            $dirname . '/' . $appname . '/Route',
-            $dirname . '/' . $appname . '/Model',
-            $dirname . '/' . $appname . '/Ext',
-            $dirname . '/' . $appname . '/Templates',
-            $dirname . '/' . $appname . '/Controller',
-            $dirname . '/webroot/public',
-        ];
+        $this->inname  = "index.php";
 
     }
 
@@ -42,7 +35,7 @@ class Init
         echo '请输入生成代码的路径，即webroot文件夹所在路径(' . $dirname . '):';
         $_dirname = fread(STDIN, 200);
         if (trim($_dirname)) {
-            $dirname = $_dirname;
+            $dirname = trim($_dirname);
         }
         echo $dirname . PHP_EOL;
 
@@ -50,9 +43,19 @@ class Init
         $appname  = 'app';
         $_appname = fread(STDIN, 200);
         if (trim($_appname)) {
-            $appname = $_appname;
+            $appname       = trim($_appname);
+            $this->appname = $appname;
         }
         echo $appname . PHP_EOL;
+
+        echo '请输入应用的入口PHP文件名(index.php)：';
+        $inname  = 'index.php';
+        $_inname = fread(STDIN, 200);
+        if (trim($_appname)) {
+            $inname       = trim($_inname);
+            $this->inname = $inname;
+        }
+        echo $inname . PHP_EOL;
 
         echo '按回车确认';
         fread(STDIN, 1);
@@ -63,6 +66,15 @@ class Init
 
     public function create()
     {
+        $this->dirs = [
+            $dirname . '/' . $this->appname . '/Route',
+            $dirname . '/' . $this->appname . '/Model',
+            $dirname . '/' . $this->appname . '/Ext',
+            $dirname . '/' . $this->appname . '/Templates',
+            $dirname . '/' . $this->appname . '/Controller',
+            $dirname . '/webroot/public',
+        ];
+
         $index = $this->index();
         if (!$index) {
             echo '您的目录已经存在项目，请确认!!!';
@@ -86,7 +98,7 @@ class Init
      */
     private function index()
     {
-        $indexfile = $this->dirname . '/webroot/index.php';
+        $indexfile = $this->dirname . '/webroot/' . $this->inname;
         @mkdir($this->dirname . '/webroot/');
 
         if (file_exists($indexfile)) {
