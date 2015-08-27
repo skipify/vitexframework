@@ -18,6 +18,7 @@ class Response
 {
     private static $_instance = null;
     private $methods          = [];
+    private $_cookie;
 
     protected static $status_tip = array(
         //信息 1xx
@@ -264,8 +265,11 @@ class Response
      */
     public function setCookie($key, $name)
     {
-        $cookie = new \Vitex\Middleware\Cookie();
-        $cookie->setCookie($key, $name);
+        if (!$this->_cookie) {
+            $this->_cookie = new \Vitex\Middleware\Cookie();
+            $this->_cookie->setVitex(\Vitex\Vitex::getInstance());
+        }
+        $this->_cookie->setCookie($key, $name);
         return $this;
     }
 
@@ -276,8 +280,11 @@ class Response
      */
     public function clearCookie($key)
     {
-        $cookie = new \Vitex\Middleware\Cookie();
-        $cookie->clearCookie($key);
+        if (!$this->_cookie) {
+            $this->_cookie = new \Vitex\Middleware\Cookie();
+            $this->_cookie->setVitex(\Vitex\Vitex::getInstance());
+        }
+        $this->_cookie->clearCookie($key);
         return $this;
     }
 
