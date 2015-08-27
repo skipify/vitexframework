@@ -264,7 +264,7 @@ class Response
      */
     public function setCookie($key, $name)
     {
-        $cookie = new \Vitex\Helper\Cookie();
+        $cookie = new \Vitex\Middleware\Cookie();
         $cookie->setCookie($key, $name);
         return $this;
     }
@@ -276,7 +276,7 @@ class Response
      */
     public function clearCookie($key)
     {
-        $cookie = new \Vitex\Helper\Cookie();
+        $cookie = new \Vitex\Middleware\Cookie();
         $cookie->clearCookie($key);
         return $this;
     }
