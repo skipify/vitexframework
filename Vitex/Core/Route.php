@@ -103,6 +103,7 @@ class Route
         $this->vitex = \Vitex\Vitex::getInstance();
         foreach ($this->_routerGroup as $p => $g) {
             if ($p != $gstr) {
+                //当绑定分组为 / 时此处有bug
                 continue;
             }
             $this->groupurl = $p;

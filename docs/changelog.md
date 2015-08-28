@@ -1,3 +1,11 @@
+0.5.0
+
+1. 修改了model扩展 where 方法，可以更简单传递多个条件
+2. 修改了model扩展increment/decrement方法，可以更简单修改多个字段
+3. 修改了cookie中间件，使得 $this->req->cookies 成为了一个 set类型的数据
+4. ​session中间件增加了 get/set方法，可以直接获取和设置值
+5. ​
+
 0.3.0
 
 1. 路由注册，添加正则路由匹配的设置

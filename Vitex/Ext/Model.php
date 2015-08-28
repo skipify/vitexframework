@@ -290,6 +290,13 @@ class Model
         if (!isset($where[$method])) {
             throw new Error('找不到您要执行的方法' . $method);
         }
+        //兼容 where 直接传递一个关联数组的情况
+        if (($method == 'where' || $method == 'orWhere') && is_array($key)) {
+            foreach ($key as $k => $v) {
+                $this->_where($method, $k, '=', $v);
+            }
+            return $this;
+        }
         if (strpos($method, 'xists') === false) {
             $key = $this->formatColumn($key);
         }
@@ -761,14 +768,32 @@ class Model
 
     /**
      * 自增一个字段
-     * @param  string  $column              字段名
-     * @param  integer $amount              自增的数制默认为1
-     * @return bool    执行sql的结果
+     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @return bool  执行sql的结果
      */
     public function increment($column, $amount = 1)
     {
-        $column = $this->formatColumn($column);
-        $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " + " . $amount . ") ";
+        if (is_array($column)) {
+            foreach ($column as &$val) {
+                $this->formatColumn($val);
+            }
+            if (is_array($amount) && count($amount) != count($column)) {
+                throw new \Exception("传递的字段与自增值无法对应，请查看数量");
+            }
+        } else {
+            $column = [$this->formatColumn($column)];
+        }
+
+        $sql = "update " . $this->getTable() . " set ";
+        foreach ($column as $key => $val) {
+            if (is_array($amount)) {
+                $num = $amount[$key];
+            } else {
+                $num = $amount;
+            }
+            $sql .= $val . " = (" . $val . " + " . $num . ") ";
+        }
         $sql .= $this->buildWhere();
         $ret = $this->DB->execute($sql);
         $this->resetCon();
@@ -777,14 +802,32 @@ class Model
 
     /**
      * 自减一个字段
-     * @param  string  $column              字段名
-     * @param  integer $amount              自增的数制默认为1
-     * @return bool    执行sql的结果
+     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @return bool  执行sql的结果
      */
     public function decrement($column, $amount = 1)
     {
-        $column = $this->formatColumn($column);
-        $sql    = "update " . $this->getTable() . " set " . $column . " = (" . $column . " - " . $amount . ") ";
+        if (is_array($column)) {
+            foreach ($column as &$val) {
+                $this->formatColumn($val);
+            }
+            if (is_array($amount) && count($amount) != count($column)) {
+                throw new \Exception("传递的字段与自增值无法对应，请查看数量");
+            }
+        } else {
+            $column = [$this->formatColumn($column)];
+        }
+
+        $sql = "update " . $this->getTable() . " set ";
+        foreach ($column as $key => $val) {
+            if (is_array($amount)) {
+                $num = $amount[$key];
+            } else {
+                $num = $amount;
+            }
+            $sql .= $val . " = (" . $val . " - " . $num . ") ";
+        }
         $sql .= $this->buildWhere();
         $ret = $this->DB->execute($sql);
 

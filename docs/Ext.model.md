@@ -176,7 +176,7 @@ string 	$val 	查询条件语句
 
 `$this->where('age','>',26)->whereRaw("and `name`='Vitex'")`  
 
->**注意** 下面 where系列的方法 默认都是以`and` 连接不同的条件，orWhere系列的方法默认都是用 `or`连接不同的条件。  
+> **注意** 下面 where系列的方法 默认都是以`and` 连接不同的条件，orWhere系列的方法默认都是用 `or`连接不同的条件。  
 
 ### where /orWhere
 
@@ -184,11 +184,11 @@ string 	$val 	查询条件语句
 
 **签名**   
 
-`where(string  $key,string $op,string $val) : \Vitex\Ext\object`   
+`where(mixed $key,string $op,string $val) : \Vitex\Ext\object`   
 
 **参数**   
 
-string $key 键值，字段名   
+string $key 键值，字段名  或者一个包含键和值的关联数组 
 
 string $op 操作符 如  = > < >= <= 等   
 
@@ -197,6 +197,8 @@ string $val 值
 **示例**   
 
 `$this->where('id','=',1)`  
+
+`$this->where(["id"=>1,"name"=>"vitex"])` => `$this->where('id','=',1)->where('name','=','vitex')`
 
 ### whereIn /orWhereIn
 
@@ -656,13 +658,13 @@ mixed $id  主键的值，保存时的条件，新增加的数据不需要指定
 
 **签名**  
 
-`increment(string  $column, integer  $amount = 1) : boolean`  
+`increment(mixed $column, mixed $amount = 1) : boolean`  
 
 **参数**  
 
-string 	$column 字段名  
+mixed 	$column 字段名,可以传递一个字段或者使用数组传递多个字段  
 
-integer $amount  自增的数制默认为1   
+mixed    $amount  自增的数制默认为1 ，当$column为数组的时候则 1. 此字段可以选择传递非数组值，表示 所有字段自增相同的值；2.可以传递一个与$column相同长度的数组，表示不同字段传递不同值一一对应
 
 **示例**  
 
@@ -670,25 +672,35 @@ integer $amount  自增的数制默认为1
 
 `$this->from('table')->increment('click',3)`  
 
+`$this->increment(["total","money"],3)`
+
+`$this->increment(["total","money"],[3,5])`
+
 ### decrement()
 
 自减一个字段的值       
 
 **签名**  
 
-`decrement(string  $column, integer  $amount = 1) : boolean`   
+`decrement(mixed $column, mixed  $amount = 1) : boolean`   
 
 **参数**  
 
-string 	$column 	字段名   
+string 	$column 	字段名   ,可以传递一个字段或者使用数组传递多个字段  
 
-integer $amount 自增的数制默认为1   
+integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. 此字段可以选择传递非数组值，表示 所有字段自减相同的值；2.可以传递一个与$column相同长度的数组，表示不同字段传递不同值一一对应 
 
 **示例**  
 
 `$this->decrement('pv',1)`  
 
 `$this->from('table')->decrement('click',3)` 
+
+`$this->decrement(["total","money"],3)`
+
+`$this->decrement(["total","money"],[3,5])`
+
+
 
 ### count()
 
@@ -742,7 +754,7 @@ string 	$id ID主键值
 
 `$this->get(1)` // select * from user where id=1   
 
->getBy.. 是一个系列方法，如果您的数据表中包含指定的字段那么就可以直接使用该方法获取指定字段的内容  
+> getBy.. 是一个系列方法，如果您的数据表中包含指定的字段那么就可以直接使用该方法获取指定字段的内容  
 
 ### getBy..
 
@@ -768,7 +780,7 @@ string 	$id ID主键值
 
 `$this->where('age','>','18')->getAll()` select * from user where age>18   
 
->getAllBy.. 是一个系列方法，如果您的数据表中包含指定的字段那么就可以直接使用该方法获取指定字段的内容  
+> getAllBy.. 是一个系列方法，如果您的数据表中包含指定的字段那么就可以直接使用该方法获取指定字段的内容  
 
 ### getAllBy..
 

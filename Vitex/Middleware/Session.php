@@ -33,7 +33,33 @@ class Session extends \Vitex\Middleware implements \ArrayAccess, \Iterator, \Cou
         $this->vitex->req['session'] = $this;
         $this->runNext();
     }
-
+    /**
+     * 设置session的值
+     * @param mixed $key session键名，如果为数组时则为包含键值的一个关联数组
+     * @param mixed $val session值，如果第一个参数是数组的时候此参数不需要指定
+     */
+    public function set($key, $val = null)
+    {
+        if (is_array($key)) {
+            $_SESSION = array_merge($_SESSION, $key);
+        } else {
+            $this->offsetSet($key, $val);
+        }
+        return $this;
+    }
+    /**
+     * 获取指定键名的session值，如果不指定则返回整个session
+     * @param  mixed $key           键名
+     * @return mixed 返回的值
+     */
+    public function get($key = null)
+    {
+        if ($key) {
+            return $this->offsetGet($key);
+        } else {
+            return $_SESSION;
+        }
+    }
     public function offsetExists($val)
     {
         return isset($_SESSION[$val]);

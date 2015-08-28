@@ -109,7 +109,7 @@ class Cookie extends \Vitex\Middleware
     {
         $cookie = $this->getCookie();
 
-        $this->vitex->req['cookies'] = (object) $cookie;
+        $this->vitex->req['cookies'] = new \Vitex\Helper\Set($cookie);
 
         $this->runNext();
     }
