@@ -792,7 +792,41 @@ string 	$id ID主键值
 
 `$this->getAllByAge(10)` // select * from table where age = 10   
 
+### max
 
+统计类方法，查询指定字段额最大值
+
+**示例**
+
+`$this->max("age")` //查询最大年龄
+
+
+
+### min
+
+统计类方法，查询指定字段的最小值
+
+**示例**
+
+`$this->min("age")` // 查询最小年龄值
+
+`$this->where("grade","=","1")->min("age")`
+
+### avg
+
+统计类方法，查询指定字段的平均值
+
+**示例**
+
+`$this->avg("age")` //平均年龄
+
+### sum
+
+统计类方法，查询指定字段的和值
+
+**示例**
+
+`$this->sum("age")` //年龄的和值
 
 ### page()
 

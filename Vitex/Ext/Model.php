@@ -884,7 +884,52 @@ class Model
     {
         return $this->_getAll();
     }
+    //统计查询
 
+    private function _maxMinSumAvg($method, $field)
+    {
+        $field                = $this->formatColumn($field);
+        $this->_sql['select'] = [$method . "(" . $field . ") as info"];
+        $sql                  = $this->limit(1)->buildSql();
+        $info                 = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        return isset($info['info']) ? $info['info'] : 0;
+    }
+    /**
+     * 查询指定字段的最大值
+     * @param  string $field            字段名
+     * @return number 返回最大值
+     */
+    public function max($field)
+    {
+        return $this->_maxMinSumAvg('max', $field);
+    }
+    /**
+     * 查询指定字段的最小值
+     * @param  string $field            字段名
+     * @return number 返回最小值
+     */
+    public function min($field)
+    {
+        return $this->_maxMinSumAvg('min', $field);
+    }
+    /**
+     * 查询指定字段的平均值
+     * @param  string $field            字段名
+     * @return number 返回平均值
+     */
+    public function avg($field)
+    {
+        return $this->_maxMinSumAvg('avg', $field);
+    }
+    /**
+     * 查询指定字段的和值
+     * @param  string $field         字段名
+     * @return number 返回和值
+     */
+    public function sum($field)
+    {
+        return $this->_maxMinSumAvg('sum', $field);
+    }
     /**
      * 直接按照分页查询相关的信息，包括总页数以及当前分页的内容
      * @param  integer page  当前要查询的页码
