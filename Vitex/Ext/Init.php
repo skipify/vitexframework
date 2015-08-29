@@ -12,13 +12,13 @@
 
 class Init
 {
-    public function __construct($dirname = '.', $appname = 'app')
+    public function __construct($dirname = '.', $appname = 'app', $inname = 'index.php')
     {
         $dirname       = rtrim($dirname, '/');
         $this->appname = $appname;
         $this->dirname = $dirname;
-        $this->inname  = "index.php";
-
+        $this->inname  = $inname;
+        $this->dirname = $dirname;
     }
 
     public static function init()
@@ -43,8 +43,7 @@ class Init
         $appname  = 'app';
         $_appname = fread(STDIN, 200);
         if (trim($_appname)) {
-            $appname       = trim($_appname);
-            $this->appname = $appname;
+            $appname = trim($_appname);
         }
         echo $appname . PHP_EOL;
 
@@ -52,27 +51,26 @@ class Init
         $inname  = 'index.php';
         $_inname = fread(STDIN, 200);
         if (trim($_appname)) {
-            $inname       = trim($_inname);
-            $this->inname = $inname;
+            $inname = trim($_inname);
         }
         echo $inname . PHP_EOL;
 
         echo '按回车确认';
         fread(STDIN, 1);
 
-        $init = new Init($dirname, $appname);
+        $init = new Init($dirname, $appname, $inname);
         $init->create();
     }
 
     public function create()
     {
         $this->dirs = [
-            $dirname . '/' . $this->appname . '/Route',
-            $dirname . '/' . $this->appname . '/Model',
-            $dirname . '/' . $this->appname . '/Ext',
-            $dirname . '/' . $this->appname . '/Templates',
-            $dirname . '/' . $this->appname . '/Controller',
-            $dirname . '/webroot/public',
+            $this->dirname . '/' . $this->appname . '/Route',
+            $this->dirname . '/' . $this->appname . '/Model',
+            $this->dirname . '/' . $this->appname . '/Ext',
+            $this->dirname . '/' . $this->appname . '/Templates',
+            $this->dirname . '/' . $this->appname . '/Controller',
+            $this->dirname . '/webroot/public',
         ];
 
         $index = $this->index();
@@ -115,16 +113,16 @@ class Init
     //模型示例
     public function model()
     {
-        $file = $this->dirname . '/app/Model/Index.php';
-        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2UgQXBwXE1vZGVsOwoKY2xhc3MgSW5kZXggZXh0ZW5kcyBcVml0ZXhcRXh0XE1vZGVsCnsKICAgIHB1YmxpYyBmdW5jdGlvbiBfX2NvbnN0cnVjdCgpCiAgICB7CiAgICAgICAgcGFyZW50OjpfX2NvbnN0cnVjdCgpOwogICAgICAgIC8v6buY6K6k55qE6KGo5ZCN5piv57G75ZCNIOacrOS+i+S4uiBpbmRleCjlsI/lhpkpCiAgICAgICAgLy/pu5jorqTnmoTkuLvplK7kuLogaWQKICAgICAgICAvL+WPr+S7peWcqOi/memHjOmHjeaWsOiuvue9ruS4u+mUruWSjOihqOWQjQogICAgICAgICR0aGlzLT5wayAgICA9ICdpZCc7CiAgICAgICAgJHRoaXMtPnRhYmxlID0gJ3VzZXInOwogICAgfQp9Cg==';
-        file_put_contents($file, base64_decode($code));
+        $file = $this->dirname . '/' . $this->appname . '/Model/Index.php';
+        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2Uge2FwcH1cTW9kZWw7CgpjbGFzcyBJbmRleCBleHRlbmRzIFxWaXRleFxFeHRcTW9kZWwKewogICAgcHVibGljIGZ1bmN0aW9uIF9fY29uc3RydWN0KCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgLy/pu5jorqTnmoTooajlkI3mmK/nsbvlkI0g5pys5L6L5Li6IGluZGV4KOWwj+WGmSkKICAgICAgICAvL+m7mOiupOeahOS4u+mUruS4uiBpZAogICAgICAgIC8v5Y+v5Lul5Zyo6L+Z6YeM6YeN5paw6K6+572u5Li76ZSu5ZKM6KGo5ZCNCiAgICAgICAgJHRoaXMtPnBrICAgID0gJ2lkJzsKICAgICAgICAkdGhpcy0+dGFibGUgPSAndXNlcic7CiAgICB9Cn0=';
+        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
         return true;
     }
 
     //路由
     public function route()
     {
-        $file = $this->dirname . '/app/Route/Index.php';
+        $file = $this->dirname . '/' . $this->appname . '/Route/Index.php';
         $code = 'PD9waHAKCiR2aXRleC0+Z2V0KCcvanNvbicsIGZ1bmN0aW9uICgkcmVxLCAkcmVzKSB7CiAgICAgICAgICAkcmVzLT5qc29uKFsnbmFtZScgPT4gJ3ZpdGV4J10pOwogICAgICB9KQogICAgICAtPmdldCgnLycsIGZ1bmN0aW9uICgkcmVxLCAkcmVzKSB7CiAgICAgICAgICAkcmVzLT5yZW5kZXIoJ3dlbGNvbWUnKTsKICAgICAgfSk7Cg==';
         file_put_contents($file, base64_decode($code));
         return true;
@@ -132,7 +130,7 @@ class Init
 
     public function tpl()
     {
-        $file = $this->dirname . '/app/Templates/welcome.html';
+        $file = $this->dirname . '/' . $this->appname . '/Templates/welcome.html';
         $code = 'PGh0bWw+CjxoZWFkPgoJPHRpdGxlPldlbGNvbWU8L3RpdGxlPgo8L2hlYWQ+Cjxib2R5Pgo8aDE+V2VsY29tZTwvaDE+CjwvYm9keT4KPC9odG1sPg==';
         file_put_contents($file, base64_decode($code));
         return true;
@@ -140,12 +138,12 @@ class Init
 
     public function controller()
     {
-        $file = $this->dirname . '/app/Controller/Controller.php';
-        $code = 'PD9waHAKbmFtZXNwYWNlIEFwcFxDb250cm9sbGVyOwoKdXNlIFxWaXRleFxDb250cm9sbGVyIGFzIFZjb250cm9sbGVyOwoKY2xhc3MgQ29udHJvbGxlciBleHRlbmRzIFZjb250cm9sbGVyCnsKCn0K';
-        file_put_contents($file, base64_decode($code));
-        $file = $this->dirname . '/app/Controller/User.php';
-        $code = 'PD9waHAKbmFtZXNwYWNlIEFwcFxDb250cm9sbGVyOwoKY2xhc3MgVXNlciBleHRlbmRzIENvbnRyb2xsZXIKewogICAgcHVibGljIGZ1bmN0aW9uIGdldCgpCiAgICB7CiAgICAgICAgZWNobyAndXNlcic7CiAgICB9Cn0K';
-        file_put_contents($file, base64_decode($code));
+        $file = $this->dirname . '/' . $this->appname . '/Controller/Controller.php';
+        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7Cgp1c2UgXFZpdGV4XENvbnRyb2xsZXIgYXMgVmNvbnRyb2xsZXI7CgpjbGFzcyBDb250cm9sbGVyIGV4dGVuZHMgVmNvbnRyb2xsZXIKewoKfQ==';
+        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
+        $file = $this->dirname . '/' . $this->appname . '/Controller/User.php';
+        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7CgpjbGFzcyBVc2VyIGV4dGVuZHMgQ29udHJvbGxlcgp7CiAgICBwdWJsaWMgZnVuY3Rpb24gZ2V0KCkKICAgIHsKICAgICAgICBlY2hvICd1c2VyJzsKICAgIH0KfQ==';
+        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
     }
 
 }
