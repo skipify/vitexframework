@@ -35,9 +35,9 @@ class Request implements \ArrayAccess, \Iterator
         $this->env = Env::getInstance();
         //初始化数据
         $this->queryData()
-             ->postData()
-             ->fileData()
-             ->parseReq();
+            ->postData()
+            ->fileData()
+            ->parseReq();
         $this->isAjax = $this->isAjax();
         $this->isXhr  = $this->isAjax;
     }
@@ -117,10 +117,28 @@ class Request implements \ArrayAccess, \Iterator
      * 获取server变量的信息
      * @param string $key 键值
      */
-    public function get($key)
+    public function getEnv($key)
     {
         $key = strtoupper($key);
         return $this->env->get($key);
+    }
+    /**
+     * 获取单个请求值，获取的顺序为  params > query > body
+     * @param  string $key        要获取的键值
+     * @param  string $def        当此值获取不存在时的返回值
+     * @return mixed  返回值
+     */
+    public function get($key, $def = "")
+    {
+        $val = null;
+        if ($val = $this->params->{$key}) {
+            return $val;
+        } elseif (isset($_GET[$key])) {
+            return $_GET[$key];
+        } elseif (isset($_POST[$key])) {
+            return $_POST[$key];
+        }
+        return $def;
     }
 
     /**
