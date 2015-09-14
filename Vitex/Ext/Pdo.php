@@ -28,11 +28,19 @@ class Pdo extends \Vitex\Middleware
         if (is_resource($setting)) {
             $this->pdo = $setting;
         } else if (is_array($setting)) {
-            $username  = $username ?: (isset($setting['username']) ? $setting['username'] : '');
-            $password  = $password ?: (isset($setting['password']) ? $setting['password'] : '');
-            $this->pdo = new \Pdo($this->getDsn($setting), $username, $password);
+            $username = $username ?: (isset($setting['username']) ? $setting['username'] : '');
+            $password = $password ?: (isset($setting['password']) ? $setting['password'] : '');
+            try {
+                $this->pdo = new \Pdo($this->getDsn($setting), $username, $password);
+            } catch (\PDOException $e) {
+                $this->errorInfo($sql, $e->getMessage());
+            }
         } else {
-            $this->pdo = new \Pdo($setting, $username, $password);
+            try {
+                $this->pdo = new \Pdo($setting, $username, $password);
+            } catch (\PDOException $e) {
+                $this->errorInfo($sql, $e->getMessage());
+            }
         }
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
     }

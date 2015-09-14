@@ -855,3 +855,54 @@ integer 	$num   每页条数，默认为10
 `$this->where('age','>',10)->page()` // select * from user where age > 1 limit 0,10   
 
 `list($lists,$total) = $this->page(10,10)` // select * from user limit 90,10
+
+## 执行原生SQL语句
+
+### fetch
+
+执行一个指定的sql语句，一般为select型的查询语句，此方法返回一条查询的信息。
+
+**签名**
+
+`fetch(string $sql,int $type=\PDO::FETCH_ASSOC):array`
+
+第一个参数为查询的sql语句，第二个参数是返回的数据类型，详情查看pdo文档
+
+**示例**
+
+``` 
+$this->fetch("select sum(money) as money from order where uid=1");
+```
+
+
+
+### fetchAll
+
+执行一个指定的sql语句，一般为select型的查询语句，此方法返回一组查询的信息。
+
+**签名**
+
+`fetchAll(string $sql,int $type=\PDO::FETCH_ASSOC):array`
+
+第一个参数为查询的sql语句，第二个参数是返回的数据类型，详情查看pdo文档
+
+**示例**
+
+``` 
+$this->fetchAll("select sum(money) as money from order group by uid");
+```
+
+### execute
+
+执行一条没有返回值的非查询语句，如update delete等
+
+**签名**
+
+`execute(string $sql):int`
+
+**示例**
+
+``` 
+$this->execute("delete from order where id=1");
+```
+

@@ -227,7 +227,7 @@ class Model
      * @param  mixed  $column 可以是字符串，多个字段用,分开，也可以是数组每个元素为一个字段，也可以是*
      * @return object $this
      */
-    public function select($column = '*')
+    final public function select($column = '*')
     {
         if ($column == '*') {
             $this->_sql['select'][] = $column;
@@ -348,7 +348,7 @@ class Model
      * @param  string $table  表名
      * @return object $this
      */
-    public function from($table)
+    final public function from($table)
     {
         $table              = (string) $table;
         $this->_sql['from'] = $table;
@@ -388,7 +388,7 @@ class Model
      * @param  integer $offset 偏移值 默认0
      * @return object  $this
      */
-    public function limit($limit, $offset = 0)
+    final public function limit($limit, $offset = 0)
     {
         $this->_sql['limit'] = $limit;
         $this->offset($offset);
@@ -400,7 +400,7 @@ class Model
      * @param  integer $offset 偏移数值
      * @return object  $this
      */
-    public function offset($offset)
+    final public function offset($offset)
     {
         $this->_sql['offset'] = $offset;
         return $this;
@@ -412,7 +412,7 @@ class Model
      * @param  string $way    排序方式
      * @return object $this
      */
-    public function orderBy($column, $way = "DESC")
+    final public function orderBy($column, $way = "DESC")
     {
         $column                = $this->formatColumn($column);
         $this->_sql['order'][] = [$column, $way];
@@ -424,7 +424,7 @@ class Model
      * @param  string $column 要分组的字段
      * @return object $this
      */
-    public function groupBy($column)
+    final public function groupBy($column)
     {
         $column                = $this->formatColumn($column);
         $this->_sql['group'][] = $column;
@@ -436,7 +436,7 @@ class Model
      * @param  string/array $column 字段名
      * @return object       $this
      */
-    public function distinct($column)
+    final public function distinct($column)
     {
         if (!is_array($column)) {
             $column = explode(',', $column);
@@ -469,7 +469,7 @@ class Model
      * @param  string/callable $str    union字符串或者一个可以tostring的对象
      * @return object          $this
      */
-    public function union($str)
+    final public function union($str)
     {
         $str                   = (string) $str;
         $this->_sql['union'][] = $str;
@@ -629,7 +629,7 @@ class Model
      * @param  array $arr           要修改的数据 关联数组
      * @return mixed 执行结果
      */
-    public function update(array $arr)
+    final public function update(array $arr)
     {
         //修改
         $sql  = "update " . $this->getTable() . " set ";
@@ -651,7 +651,7 @@ class Model
      * @param  array $arr                               关联数组或者二维数组
      * @return mixed 成功则返回最后插入的ID
      */
-    public function insert($arr = [])
+    final public function insert($arr = [])
     {
         $keys = [];
         if (count($arr) === 0) {
@@ -688,7 +688,7 @@ class Model
      * 事务开始启动事务
      * @return object $this
      */
-    public function begin()
+    final public function begin()
     {
         if ($this->_begintransaction) {
             throw new \Exception("已经开启了一个事务，请勿重新开启");
@@ -701,7 +701,7 @@ class Model
      * 提交事务
      * @return object $this
      */
-    public function commit()
+    final public function commit()
     {
         $this->pdo->commit();
         $this->_begintransaction = false;
@@ -713,7 +713,7 @@ class Model
      * @param  string $id            主键的值
      * @return mixed  执行结果
      */
-    public function save($id = '')
+    final public function save($id = '')
     {
         $pkval = $id ?: $this->pkval;
         //有修改的数据
@@ -736,7 +736,7 @@ class Model
      * 删除数据
      * @return boolea 删除的数据结果
      */
-    public function delete()
+    final public function delete()
     {
         $sql   = "delete from " . $this->getTable() . " ";
         $where = $this->buildWhere();
@@ -759,7 +759,7 @@ class Model
      * 清空当前指定的表
      * @return object $this
      */
-    public function truncate()
+    final public function truncate()
     {
         $table = $this->getTable();
         $sql   = "truncate table " . $table;
@@ -772,7 +772,33 @@ class Model
      * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
      * @return bool  执行sql的结果
      */
-    public function increment($column, $amount = 1)
+    final public function increment($column, $amount = 1)
+    {
+        return $this->stepField($column, $amount);
+    }
+
+    /**
+     * 自减一个字段
+     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @return bool  执行sql的结果
+     */
+    final public function decrement($column, $amount = 1)
+    {
+        if (is_array($amount)) {
+            $amount = array_map(function ($item) {return (0 - $item);}, $amount);
+        } else {
+            $amount = 0 - $amount;
+        }
+        return $this->stepField($column, $amount);
+    }
+    /**
+     * 自减/增一个字段
+     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @return bool  执行sql的结果
+     */
+    private function stepField($column, $amount)
     {
         if (is_array($column)) {
             foreach ($column as &$val) {
@@ -793,40 +819,6 @@ class Model
                 $num = $amount;
             }
             $sql .= $val . " = (" . $val . " + " . $num . ") ";
-        }
-        $sql .= $this->buildWhere();
-        $ret = $this->DB->execute($sql);
-        $this->resetCon();
-        return $ret;
-    }
-
-    /**
-     * 自减一个字段
-     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
-     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
-     * @return bool  执行sql的结果
-     */
-    public function decrement($column, $amount = 1)
-    {
-        if (is_array($column)) {
-            foreach ($column as &$val) {
-                $this->formatColumn($val);
-            }
-            if (is_array($amount) && count($amount) != count($column)) {
-                throw new \Exception("传递的字段与自增值无法对应，请查看数量");
-            }
-        } else {
-            $column = [$this->formatColumn($column)];
-        }
-
-        $sql = "update " . $this->getTable() . " set ";
-        foreach ($column as $key => $val) {
-            if (is_array($amount)) {
-                $num = $amount[$key];
-            } else {
-                $num = $amount;
-            }
-            $sql .= $val . " = (" . $val . " - " . $num . ") ";
         }
         $sql .= $this->buildWhere();
         $ret = $this->DB->execute($sql);
@@ -852,7 +844,7 @@ class Model
      * @param  string $column        字段名
      * @return array  返回数组
      */
-    public function pluck($column)
+    final public function pluck($column)
     {
         $infos = $this->getAll();
         $info  = array_map(function ($val) use ($column) {
@@ -866,7 +858,7 @@ class Model
      * @param  string $id         ID
      * @return mixed  返回值
      */
-    public function get($id = null)
+    final public function get($id = null)
     {
         if ($id !== null) {
             $this->where($this->pk, '=', $id);
@@ -880,7 +872,7 @@ class Model
      * 根据查询条件返回数组
      * @return array
      */
-    public function getAll()
+    final public function getAll()
     {
         return $this->_getAll();
     }
@@ -899,7 +891,7 @@ class Model
      * @param  string $field            字段名
      * @return number 返回最大值
      */
-    public function max($field)
+    final public function max($field)
     {
         return $this->_maxMinSumAvg('max', $field);
     }
@@ -908,7 +900,7 @@ class Model
      * @param  string $field            字段名
      * @return number 返回最小值
      */
-    public function min($field)
+    final public function min($field)
     {
         return $this->_maxMinSumAvg('min', $field);
     }
@@ -917,7 +909,7 @@ class Model
      * @param  string $field            字段名
      * @return number 返回平均值
      */
-    public function avg($field)
+    final public function avg($field)
     {
         return $this->_maxMinSumAvg('avg', $field);
     }
@@ -926,7 +918,7 @@ class Model
      * @param  string $field         字段名
      * @return number 返回和值
      */
-    public function sum($field)
+    final public function sum($field)
     {
         return $this->_maxMinSumAvg('sum', $field);
     }
@@ -936,7 +928,7 @@ class Model
      * @param  integer $num  每页的信息条数 默认10条
      * @return array   $info 返回值，第一个元素是包含的信息，第二个元素是总的行数
      */
-    public function page($page = 1, $num = 10)
+    final public function page($page = 1, $num = 10)
     {
         $start = ($page - 1) * $num;
         $this->limit($num, $start);
@@ -945,6 +937,37 @@ class Model
         $this->_sql = $bak;
         $total      = $this->count();
         return [$infos, $total];
+    }
+    /**
+     * 执行指定的select类型sql
+     * @param  string $sql                       sql语句
+     * @param  int    $type                      返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
+     * @return array  返回值，多维数组
+     */
+    final public function fetchAll($sql, $type = \PDO::FETCH_ASSOC)
+    {
+        $sth = $this->DB->query($sql);
+        return $this->DB->fetchAll($type);
+    }
+    /**
+     * 执行指定的select类型sql
+     * @param  string $sql                       sql语句
+     * @param  int    $type                      返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
+     * @return array  返回值，一维数组
+     */
+    final public function fetch($sql, $type = \PDO::FETCH_ASSOC)
+    {
+        $info = $this->DB->query($sql)->fetch($type);
+        return $info;
+    }
+    /**
+     * 执行一个没有返回值的sql语句
+     * @param  string $sql                 sql语句
+     * @return int    执行是否成功
+     */
+    final public function execute($sql)
+    {
+        return $this->DB->execute($sql);
     }
 
     private function _get()
