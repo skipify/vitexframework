@@ -7,6 +7,7 @@
   - [快速入门](Quickstart.md)
 - 第二部分
   - [配置](Vitex.md)
+  - [多应用设置](Multiapp.md)
   - [路由](Router.md)
   - [Request](Request.md)
   - [Response](Response.md)

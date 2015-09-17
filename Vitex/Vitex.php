@@ -75,6 +75,11 @@ class Vitex
      * 预处理中间件记录器
      */
     protected $preMiddlewareArr = [];
+    /**
+     * 多应用映射管理
+     * @var array
+     */
+    private $multiApps = ['default' => []];
 
     /**
      * @param $setting
@@ -160,6 +165,118 @@ class Vitex
                 $this->using($mw);
             }
         }
+    }
+    /**
+     * 多级应用处理
+     * @return object $this
+     */
+    public function multiInit()
+    {
+        //domain > url
+        $host = $this->env->get('HTTP_HOST');
+        $apps = [];
+        if (isset($this->multiApps[$host])) {
+            $apps = $this->multiApps[$host];
+        }
+        $defapps = isset($this->multiApps['default']) ? $this->multiApps['default'] : [];
+        if (!$apps && !$defapps) {
+            throw new \Exception("无法找到设置的初始化映射规则");
+        }
+        $app = null;
+        if ($apps) {
+            $_apps = $this->getAppConfig($apps);
+            if ($_apps) {
+                list($app, $dir, $setting, $middleware) = $_apps;
+            }
+        } else {
+            $_apps = $this->getAppConfig($defapps);
+            if ($_apps) {
+                list($app, $dir, $setting, $middleware) = $_apps;
+            }
+        }
+        //开始处理新的路由
+        if ($app === null) {
+            if ($this->getConfig('debug')) {
+                throw new \Exception('无法找到请求的处理方法');
+            } else {
+                $this->route->notFound();
+            }
+        }
+        $this->init($app, $dir, $setting, $middleware);
+        //注册其他应用的自动加载
+        foreach ($this->multiApps as $apps) {
+            if (!$apps) {
+                continue;
+            }
+            foreach ($apps as $_app) {
+                list($appname, $_dir) = $_app;
+                if ($app != $appname) {
+                    $namespace = ucfirst($appname);
+                    $this->loader->addNamespace('\\' . $namespace, $_dir . '/' . $appname . '/');
+                }
+            }
+        }
+        return $app;
+    }
+    /**
+     * 获取分组配置信息
+     * @param  配置数组 $apps           [description]
+     * @return [type]       [description]
+     */
+    private function getAppConfig($apps)
+    {
+        $pathinfo  = trim($this->env->getPathinfo(), '/');
+        $pathinfos = explode('/', $pathinfo);
+        $group     = isset($pathinfos[0]) ? $pathinfos[0] : '';
+        $_apps     = null;
+        if (isset($apps[$group])) {
+            $_apps = $apps[$group];
+            array_shift($pathinfos);
+            $this->env->setPathinfo(implode('/', $pathinfos));
+        } elseif (isset($apps['vitex.default'])) {
+            $_apps = $apps['vitex.default'];
+        }
+        return $_apps;
+    }
+
+    /**
+     * 多应用时的映射方式，当您一个大型的项目需要多个应用配合时需要使用此种方式更好的组织代码
+     * 例如一个后台管理项目分为 前台以及管理员的后台，此时可以创建两个应用，单独负责自己的事宜
+     * 域名的映射规则高于目录的级别
+     * [
+     *     'symbol' => [appname,dirname,setting,middleware] //后两个参数可以省略
+     * ]
+     * @param  array  $map    一个映射的方式
+     * @param  string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
+     * @return object vitex object
+     */
+    public function setAppMap(array $map, $domain = "default")
+    {
+        $domain = str_replace(['http://', '/'], '', $domain);
+        $_map   = [];
+        //过滤数据,格式化配置参数
+        foreach ($map as $key => $val) {
+            $paramLen = count($val);
+            if ($paramLen < 2) {
+                throw new \Exception($key . '映射的应用配置参数不正确');
+            }
+            if ($paramLen == 2) {
+                $val[] = [];
+                $val[] = [];
+            } elseif ($paramLen == 3) {
+                $val[] = [];
+            }
+            if ($key === 0) {
+                $skey = 'vitex.default';
+            } else {
+                $skey = trim($key, '/');
+            }
+
+            $_map[$skey] = $val;
+        }
+        $oldMap                   = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
+        $this->multiApps[$domain] = array_merge($oldMap, $_map);
+        return $this;
     }
 
     /**

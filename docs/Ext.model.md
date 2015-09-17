@@ -4,15 +4,13 @@
 
 使用此类之前必须要加载 PDO类库，设置好数据库链接等。   
 
-	$vitex->using(new \Vitex\Ext\Pdo([
-
+``` 
+$vitex->using(new \Vitex\Ext\Pdo([
 	'host'     => 'localhost',
-
 	'database' => 'test',
-
 	'charset'  => 'utf8',
-
-	], 'root', 'root'));  
+], 'root', 'root'));  
+```
 
 第一个参数 可以是一个数组，包含了 host、database、charset信息，也可以是一个 PDO DSN的链接字符串，还可以是一个PDO的链接对象（此时无需指定后2个参数）。
 
@@ -20,9 +18,7 @@
 
 第三个参数为密码   
 
-	$vitex->using(new \Vitex\Ext\Pdo(’mysql:dbname=test;host=localhost;charset=utf8‘, 'root', 'root'));
-
-
+`$vitex->using(new \Vitex\Ext\Pdo(’mysql:dbname=test;host=localhost;charset=utf8‘, 'root', 'root'));`
 
 Model是一个简单的ORM，非常轻量级的数据库操作类。
 
@@ -40,33 +36,19 @@ user 表存在三个字段  id  name age;
 
 如上声明了一个继承自Model的user类，默认情况下会按把类名（小写）当做表名来查询数据，默认的主键为`id`，如上例子：
 
-	
-
-	$user = new User();  
-
-	//简单查询   
-
-	$user->get(1); // select * from user where id = 1  
-
-	
-
-	//  根据上一个查询结果直接修改值  	
-
-	$user->name = "Vitex";
-
-	$user->save(); // update user set name = 'Vitex' where id = 1;  // 会自动调用 get方法设置的主键ID进行修改
-
-	// 按照条件查找指定字段内容  
-
-	$user->select('id')->where('age','>',18)->getAll(); // select id from user where age > 18  
-
-	
-
-	//子查询  
-
-	$user->whereIn('age',Model::sub()->from('user')->select(age)->where('id', '>', 10))->getAll();  
-
-	select * from user where age in (select age from user where id > 10)  
+``` 
+$user = new User();  
+//简单查询   
+$user->get(1); // select * from user where id = 1  
+//  根据上一个查询结果直接修改值  	
+$user->name = "Vitex";
+$user->save(); // update user set name = 'Vitex' where id = 1;  // 会自动调用 get方法设置的主键ID进行修改
+// 按照条件查找指定字段内容  
+$user->select('id')->where('age','>',18)->getAll(); // select id from user where age > 18  
+//子查询  
+$user->whereIn('age',Model::sub()->from('user')->select(age)->where('id', '>', 10))->getAll();  
+select * from user where age in (select age from user where id > 10)  
+```
 
 [更多示例](Ext.Model.Example.html)    
 
@@ -148,13 +130,12 @@ mixed 	$column 可以是字符串，多个字段用,分开，也可以是数组�
 
 **示例**  
 
-`$model->select("*")`  
-
-`$this->select('id,name')`  
-
-`$this->select(['name','id'])`  
-
-`$this->select("user.name as uname")`
+``` 
+$model->select("*")  
+$this->select('id,name')  
+$this->select(['name','id'])  
+$this->select("user.name as uname")
+```
 
 ### whereRaw()
 
@@ -172,9 +153,10 @@ string 	$val 	查询条件语句
 
 **示例**  
 
-`$this->whereRaw("`name`='Vitex'")`
-
-`$this->where('age','>',26)->whereRaw("and `name`='Vitex'")`  
+``` 
+$this->whereRaw("name='Vitex'")
+$this->where('age','>',26)->whereRaw("and name='Vitex'")
+```
 
 > **注意** 下面 where系列的方法 默认都是以`and` 连接不同的条件，orWhere系列的方法默认都是用 `or`连接不同的条件。  
 
@@ -196,9 +178,12 @@ string $val 值
 
 **示例**   
 
-`$this->where('id','=',1)`  
+``` 
+$this->where('id','=',1)
+$this->where(["id"=>1,"name"=>"vitex"]) => $this->where('id','=',1)->where('name','=','vitex')
+```
 
-`$this->where(["id"=>1,"name"=>"vitex"])` => `$this->where('id','=',1)->where('name','=','vitex')`
+
 
 ### whereIn /orWhereIn
 
@@ -216,15 +201,13 @@ string/array/object $val 值
 
 **示例**   
 
-`$this->whereIn("name","a,b,c")` where name in ('a','b','c')  
-
-`$this->whereIn("name",['a','b',c])` // 同上  
-
-`$this->whereIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) `  
-
+``` 
+$this->whereIn("name","a,b,c") where name in ('a','b','c')  
+$this->whereIn("name",['a','b',c]) // 同上  
+$this->whereIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) `
 where id in (select id from user)
-
-//如果是子查询的whereIn，请确保子查询的代码中不会包含 `,`,如果包含 `,`可能会导致错误   
+//如果是子查询的whereIn，请确保子查询的代码中不会包含 ,,如果包含 ,可能会导致错误   
+```
 
 ### whereNotIn / orWhereNotIn
 
@@ -242,15 +225,14 @@ string/array/object $val 值
 
 **示例**   
 
-`$this->whereNotIn("name","a,b,c")` where name not in ('a','b','c')  
-
-`$this->whereNotIn("name",['a','b',c])` // 同上  
-
-`$this->whereNotIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) `  
-
+``` 
+$this->whereNotIn("name","a,b,c") where name not in ('a','b','c')  
+$this->whereNotIn("name",['a','b',c]) // 同上  
+$this->whereNotIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) 
 where id not in (select id from user)
+```
 
-//如果是子查询的whereNotIn，请确保子查询的代码中不会包含 `,`,如果包含 `,`可能会导致错误   
+> 如果是子查询的whereNotIn，请确保子查询的代码中不会包含 `,`,如果包含 `,`可能会导致错误   
 
 ### whereNull  / orWhereNull
 
@@ -300,11 +282,11 @@ string $key 子查询
 
 **示例**   
 
-`$this->whereExists(\Vitex\Ext\Model::sub()->from("user")->select('id,name')) `   
-
+``` 
+$this->whereExists(\Vitex\Ext\Model::sub()->from("user")->select('id,name')) 
 //where exists (select id,name from user)   
-
-`$this->whereExists('select id,name from user') `     
+$this->whereExists('select id,name from user')     
+```
 
 ### whereNotExists / orWhereNotExists
 
@@ -905,4 +887,3 @@ $this->fetchAll("select sum(money) as money from order group by uid");
 ``` 
 $this->execute("delete from order where id=1");
 ```
-
