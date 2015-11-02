@@ -33,13 +33,15 @@ class Pdo extends \Vitex\Middleware
             try {
                 $this->pdo = new \Pdo($this->getDsn($setting), $username, $password);
             } catch (\PDOException $e) {
-                $this->errorInfo($sql, $e->getMessage());
+                echo '无法连接到数据库';
+                exit;
             }
         } else {
             try {
                 $this->pdo = new \Pdo($setting, $username, $password);
             } catch (\PDOException $e) {
-                $this->errorInfo($sql, $e->getMessage());
+                echo '无法连接到数据库';
+                exit;
             }
         }
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);

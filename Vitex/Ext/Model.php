@@ -22,18 +22,19 @@ class Model
      * @var array
      */
     private $_sql = [
-        'where'    => [],
-        'whereraw' => [],
-        'select'   => [],
-        'distinct' => [],
-        'from'     => '',
-        'limit'    => '',
-        'offset'   => 0,
-        'group'    => [],
-        'having'   => [],
-        'union'    => [],
-        'join'     => [],
-        'order'    => [],
+        'where'     => [],
+        'whereraw'  => [],
+        'findinset' => [],
+        'select'    => [],
+        'distinct'  => [],
+        'from'      => '',
+        'limit'     => '',
+        'offset'    => 0,
+        'group'     => [],
+        'having'    => [],
+        'union'     => [],
+        'join'      => [],
+        'order'     => [],
     ];
     /**
      * 保存数据集合的数组
@@ -100,7 +101,18 @@ class Model
         $class       = explode('\\', get_class($this));
         $this->table = strtolower(end($class));
     }
-
+    /**
+     * 切换Model层使用的数据库连接
+     * @param  array $setting           数据库链接信息
+     * @return obj   \Vitex\Ext\Model
+     */
+    public function changeDatabase(array $setting)
+    {
+        $pdoCon    = new Pdo($setting);
+        $this->DB  = $pdoCon;
+        $this->pdo = $this->DB->pdo;
+        return $this;
+    }
     /**
      * 定义一个新的模型数据
      * @param array $arr 模型数据
@@ -327,7 +339,23 @@ class Model
         $this->_sql['whereraw'][] = $val;
         return $this;
     }
-
+    /**
+     * set数据查询
+     * @param  string $column 字段名
+     * @param  mixed  $val    查询值
+     * @param  $type  类型  默认and
+     * @return obj    $this
+     */
+    public function findInSet($column, $val, $type = 'and')
+    {
+        $column                    = $this->formatColumn($column);
+        $this->_sql['findinset'][] = [$column, $val, $type];
+        return $this;
+    }
+    public function orFindInSet($column, $val)
+    {
+        return $this->findInSet($column, $val, 'or');
+    }
     /**
      * Having分组操作条件
      * @param  string         $key    键值
@@ -583,7 +611,9 @@ class Model
         //where
         if ($this->_sql['where'] || $this->_sql['whereraw']) {
             $sql .= 'where ';
+            $haswhere = false;
             foreach ($this->_sql['where'] as $k => list($column, $op, $val, $type)) {
+                $haswhere = true;
                 if ($k !== 0) {
                     $sql .= $type . ' ';
                 }
@@ -615,6 +645,14 @@ class Model
                         }
                         $sql .= $column . ' ' . $op . ' ' . $val . ' ';
                 }
+            }
+            //find_in_set值
+            foreach ($this->_sql['findinset'] as $k => list($column, $val, $type)) {
+                if ($haswhere) {
+                    $sql .= $type . ' ';
+                    $haswhere = true;
+                }
+                $sql .= " find_in_set('$val',$column) ";
             }
             //where raw
             foreach ($this->_sql['whereraw'] as $raw) {
@@ -993,19 +1031,20 @@ class Model
     private function resetCon()
     {
         $this->_sql = [
-            'where'    => [],
-            'whereraw' => [],
-            'select'   => [],
-            'distinct' => [],
-            'from'     => '',
-            'limit'    => '',
-            'offset'   => 0,
-            'group'    => [],
-            'having'   => [],
-            'union'    => [],
-            'on'       => [],
-            'join'     => [],
-            'order'    => [],
+            'where'     => [],
+            'whereraw'  => [],
+            'findinset' => [],
+            'select'    => [],
+            'distinct'  => [],
+            'from'      => '',
+            'limit'     => '',
+            'offset'    => 0,
+            'group'     => [],
+            'having'    => [],
+            'union'     => [],
+            'on'        => [],
+            'join'      => [],
+            'order'     => [],
         ];
     }
 }

@@ -25,6 +25,19 @@ $vitex->init('app', dirname(__DIR__));
 此时我需要使用一个域名访问，当访问不同的目录时自动调取相应的应用来处理路由
 
 ``` 
+初始化多应用的格式：
+$vitex->setAppMap();//设置映射规则
+$appname = $vitex->multiInit();//启动应用初始化
+
+等价于
+$appname = $vitex->setAppMap()->multiInit();
+
+这里$appname是初始化的应用名称
+```
+
+
+
+``` 
 require '../vendor/autoload.php';
 $vitex = \Vitex\Vitex::getInstance();
 const WEBROOT = __DIR__;
@@ -34,6 +47,7 @@ $vitex->setAppMap([
   "app" => ["app",dirname(__DIR__)],
   "manage"=>["admin",dirname(__DIR__)]
 ]);
+$vitex->multiInit();
 //如上，配置俩应用的配置(配置项后面讲)，当访问  /manage/login 时会自动调取 admin应用的路由，当访问/app/api时会调用app应用的路由，当访问/api时也会调用 app应用的路由
 ```
 
@@ -61,6 +75,9 @@ $vitex->setAppMap([
 ],"www.test.com")->setAppMap([
   ["admin",dirname(__DIR__)]
 ],"admin.test.com");
+
+
+$appname = $vitex->multiInit(); //启动多应用初始化,此值会返回当前初始化的应用名称
 ```
 
 如上可以看到另一个点，如果不指定配置文件的键名则为一个默认路由，当无法找到匹配的时候都会路由到默认项。
@@ -95,4 +112,3 @@ RewriteCond %{HTTP_HOST} ^test.cn [NC]
 RewriteRule ^(.*)$ /app2.php/$1 [QSA,PT,L]
 
 ```
-

@@ -24,13 +24,15 @@ Model是一个简单的ORM，非常轻量级的数据库操作类。
 
 ## 使用
 
-	use \Vitex\Ext\Model;
+``` 
+use \Vitex\Ext\Model;
 
-	class User extends Model
+class User extends Model
 
-	{
+{
 
-	}
+}
+```
 
 user 表存在三个字段  id  name age;   
 
@@ -85,6 +87,44 @@ string 	$prefix 前缀
 **示例**  
 
 `$model->setPrefix('cms_')`  
+
+### changeDatabase
+
+切换数据库链接，用于程序中动态改变链接其他的数据库，应用的范围是该模型层
+
+**签名**
+
+``` 
+changeDatabase(array $setting):object
+```
+
+**参数**
+
+array $setting 数据库配置，参考 PDO类
+
+``` 
+    "host"     => '数据库服务器',
+    "port"     => "3306",
+    'database' => '数据库名',
+    "username" => "用户名",
+    "password" => "密码",
+    "charset"  => 'utf8',
+```
+
+**示例**
+
+``` 
+$this->changeDatabase([
+    "host"     => '数据库服务器',
+    "port"     => "3306",
+    'database' => '数据库名',
+    "username" => "用户名",
+    "password" => "密码",
+    "charset"  => 'utf8',
+])
+```
+
+
 
 ### sub()
 
@@ -343,6 +383,30 @@ array $val 值,一个包含两个元素的数组， not between ele1 and ele2
 **示例**   
 
 `$this->whereNotBetween('age',[10,20])` not between 10 and 20   
+
+### findInSet() / orFindInSet()
+
+使用find_in_set方法查找一个字段中是否包含某个值
+
+**签名**
+
+``` 
+findInSet(string $column,mixed $val) : \Vitex\Ext\Model
+```
+
+**参数**
+
+string $column 字段名
+
+mixed $val 值
+
+**示例**
+
+``` 
+$this->findInSet('pos','a') //pos字段(a,b,c)中包含一个a元素
+```
+
+
 
 
 

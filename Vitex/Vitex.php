@@ -18,7 +18,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.3.3";
+    const VERSION = "0.7.1";
     /**
      * App instance
      */
@@ -597,7 +597,7 @@ class Vitex
     public function run()
     {
         //输出指定编码以及格式
-        $this->res->setHeader("Content-Type", "text/html,charset=" . $this->getConfig("charset"))->sendHeader();
+        $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
         set_error_handler(array($this, 'handler'));
         if ($this->getConfig('debug')) {
             $this->log->setWriter(new \Vitex\Helper\LogWriter());
