@@ -108,7 +108,8 @@ class Model
      */
     public function changeDatabase(array $setting)
     {
-        $pdoCon    = new Pdo($setting);
+        $pdoCon = new Pdo($setting);
+        $pdoCon->setVitex($this->vitex);
         $this->DB  = $pdoCon;
         $this->pdo = $this->DB->pdo;
         return $this;
