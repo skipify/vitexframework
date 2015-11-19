@@ -38,7 +38,6 @@ class Upload extends \Vitex\Middleware
     fieldname
     ext
 
-
      */
     public function __construct($setting = [])
     {
@@ -51,10 +50,9 @@ class Upload extends \Vitex\Middleware
      * @param  string $filename         前台传递的文件原始名字
      * @return string 新的文件名
      */
-    public function rename($fieldname, $filename)
+    public function rename($fieldname, $filename, $ext)
     {
-        $segs     = explode('.', $filename);
-        $filename = md5(time() . $fieldname) . '.' . array_pop($segs);
+        $filename = md5(time() . $filename . rand(1, 999)) . '.' . $ext;
         return $filename;
     }
     /**
@@ -150,7 +148,7 @@ class Upload extends \Vitex\Middleware
                         $this->setError($file['error'][$k], '上传文件发生错误');
                         continue;
                     }
-                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v) : $this->rename($field, $v);
+                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v, $this->getExt($v)) : $this->rename($field, $v);
                     $path    = rtrim($this->setting['dest'], '/') . '/' . $newname;
                     $ismove  = move_uploaded_file($file['tmp_name'][$k], $path);
                     if (!$ismove) {

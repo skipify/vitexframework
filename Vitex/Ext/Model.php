@@ -267,6 +267,10 @@ class Model
     private function formatColumn($column)
     {
         $column = trim($column);
+        /*调用系统函数时不处理*/
+        if (strpos($column, '(') !== false) {
+            return $column;
+        }
         if (strpos($column, '.') !== false) {
             list($table, $column) = explode('.', $column);
             $table                = '`' . $table . '`.';
