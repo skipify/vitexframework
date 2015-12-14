@@ -11,10 +11,14 @@
  */
 namespace Vitex\Middleware;
 
+use Vitex\Helper\Set;
+use Vitex\Helper\Utils;
+use Vitex\Middleware;
+
 /**
  * cookie中间件，用于把Cookie信息附加到req对象中
  */
-class Cookie extends \Vitex\Middleware
+class Cookie extends Middleware
 {
     private $encrypt = false;
 
@@ -47,15 +51,13 @@ class Cookie extends \Vitex\Middleware
         $domain   = is_null($domain) ? $this->vitex->getConfig('cookies.domain') : $domain;
         $secure   = is_null($secure) ? $this->vitex->getConfig('cookies.secure') : $secure;
         $httpOnly = is_null($httpOnly) ? $this->vitex->getConfig('cookies.httponly') : $httpOnly;
-
         if (!is_numeric($expires)) {
             $expires = strtotime($expires);
         }
-
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
         $encrypt    = $this->vitex->getConfig('cookies.encrypt');
         if ($encrypt) {
-            list($data, $key) = \Vitex\Helper\Utils::encrypt($value, $key);
+            list($data, $key) = Utils::encrypt($value, $secret_key);
             $value            = $key . '|' . base64_encode($data);
         }
         setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
@@ -75,7 +77,7 @@ class Cookie extends \Vitex\Middleware
             foreach ($cookie as &$c) {
                 list($key, $data) = explode('|', $c);
                 $data             = base64_decode($data);
-                $c                = \Vitex\Helper\Utils::decrypt($data, $secret_key, $key);
+                $c                = Utils::decrypt($data, $secret_key, $key);
             }
         }
         if ($name === null) {
@@ -103,13 +105,12 @@ class Cookie extends \Vitex\Middleware
 
     /**
      * 调用中间件
-     * @return
      */
     public function call()
     {
         $cookie = $this->getCookie();
 
-        $this->vitex->req['cookies'] = new \Vitex\Helper\Set($cookie);
+        $this->vitex->req['cookies'] = new Set($cookie);
 
         $this->runNext();
     }

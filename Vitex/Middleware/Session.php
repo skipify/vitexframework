@@ -12,10 +12,12 @@
 
 namespace Vitex\Middleware;
 
+use Vitex\Middleware;
+
 /**
  * 把相关的Session信息附加到 req对象中
  */
-class Session extends \Vitex\Middleware implements \ArrayAccess, \Iterator, \Countable
+class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 {
     use \Vitex\helper\SetMethod;
     public function __construct($sid = '')
@@ -33,10 +35,12 @@ class Session extends \Vitex\Middleware implements \ArrayAccess, \Iterator, \Cou
         $this->vitex->req['session'] = $this;
         $this->runNext();
     }
+
     /**
      * 设置session的值
      * @param mixed $key session键名，如果为数组时则为包含键值的一个关联数组
      * @param mixed $val session值，如果第一个参数是数组的时候此参数不需要指定
+     * @return $this
      */
     public function set($key, $val = null)
     {

@@ -12,8 +12,13 @@
 
 namespace Vitex;
 
+use Vitex\Core\Loader;
+use Vitex\Helper\LogWriter;
+use Vitex\Middleware;
+use Vitex\View;
+
 if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-    throw new Exception("I am at least PHP version 5.5.0");
+    throw new Core\Exception("I am at least PHP version 5.5.0");
 }
 
 class Vitex
@@ -69,6 +74,7 @@ class Vitex
     protected $debuginfo = [];
     /**
      * 预处理中间件
+     * @var Middleware
      */
     protected $preMiddleware;
     /**
@@ -82,13 +88,13 @@ class Vitex
     private $multiApps = ['default' => []];
 
     /**
-     * @param $setting
+     * @internal param $setting
      */
     private function __construct()
     {
         //注册加载 加载器
         require __DIR__ . DIRECTORY_SEPARATOR . 'Core' . DIRECTORY_SEPARATOR . "Loader.php";
-        $this->loader = new \Vitex\Core\Loader();
+        $this->loader = new Loader();
         $this->loader->addNamespace("\Vitex", __DIR__);
         $this->loader->register();
 
@@ -113,10 +119,10 @@ class Vitex
     /**
      * 捕获处理异常
      *
-     * @param  int    $errno   错误代码
-     * @param  string $errstr  错误提示
+     * @param  int $errno 错误代码
+     * @param  string $errstr 错误提示
      * @param  string $errfile 错误文件
-     * @param  int    $errline 错误行
+     * @param int|string $errline 错误行
      * @return bool
      */
     public function handler($errno, $errstr = '', $errfile = '', $errline = '')
@@ -141,11 +147,12 @@ class Vitex
 
     /**
      * 初始化一个应用,包括设置各种路径添加加载命名空间等
-     * @param  string $app        应用的名称
-     * @param  string $dir        应用的路径
-     * @param  string $setting    批量设置配置
-     * @param  string $Middleware 预置中间件
+     * @param  string $app 应用的名称
+     * @param  string $dir 应用的路径
+     * @param array|string $setting 批量设置配置
+     * @param array $middleware
      * @return object $this
+     * @internal param string $Middleware 预置中间件
      */
 
     public function init($app, $dir, array $setting = [], array $middleware = [])
@@ -161,14 +168,16 @@ class Vitex
         $this->loader->addNamespace('\\' . $namespace, $dir . '/' . $app . '/');
         //初始化预加载的中间件
         foreach ($middleware as $mw) {
-            if ($mw instanceof \Vitex\Middleware) {
+            if ($mw instanceof Middleware) {
                 $this->using($mw);
             }
         }
     }
+
     /**
      * 多级应用处理
      * @return object $this
+     * @throws Core\Exception
      */
     public function multiInit()
     {
@@ -180,9 +189,9 @@ class Vitex
         }
         $defapps = isset($this->multiApps['default']) ? $this->multiApps['default'] : [];
         if (!$apps && !$defapps) {
-            throw new \Exception("无法找到设置的初始化映射规则");
+            throw new Core\Exception("无法找到设置的初始化映射规则");
         }
-        $app = null;
+        $app = null;$dir=null;$setting=[];$middleware=null;
         if ($apps) {
             $_apps = $this->getAppConfig($apps);
             if ($_apps) {
@@ -197,7 +206,7 @@ class Vitex
         //开始处理新的路由
         if ($app === null) {
             if ($this->getConfig('debug')) {
-                throw new \Exception('无法找到请求的处理方法');
+                throw new Core\Exception('无法找到请求的处理方法');
             } else {
                 $this->route->notFound();
             }
@@ -220,8 +229,8 @@ class Vitex
     }
     /**
      * 获取分组配置信息
-     * @param  配置数组 $apps           [description]
-     * @return [type]       [description]
+     * @param  array $apps          配置数组
+     * @return array       配置
      */
     private function getAppConfig($apps)
     {
@@ -246,9 +255,10 @@ class Vitex
      * [
      *     'symbol' => [appname,dirname,setting,middleware] //后两个参数可以省略
      * ]
-     * @param  array  $map    一个映射的方式
+     * @param  array $map 一个映射的方式
      * @param  string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
      * @return object vitex object
+     * @throws Core\Exception
      */
     public function setAppMap(array $map, $domain = "default")
     {
@@ -258,7 +268,7 @@ class Vitex
         foreach ($map as $key => $val) {
             $paramLen = count($val);
             if ($paramLen < 2) {
-                throw new \Exception($key . '映射的应用配置参数不正确');
+                throw new Core\Exception($key . '映射的应用配置参数不正确');
             }
             if ($paramLen == 2) {
                 $val[] = [];
@@ -281,8 +291,9 @@ class Vitex
 
     /**
      * 设置配置文件
-     * @param string/array $name 键值/数组配置
-     * @param string/null  $val  值
+     * @param string /array $name 键值/数组配置
+     * @param string /null  $val  值
+     * @return $this
      */
     public function setConfig($name, $val = null)
     {
@@ -373,10 +384,10 @@ class Vitex
      */
     public function view()
     {
-        if ($this->view !== null && ($this->view instanceof \Vitex\View)) {
+        if ($this->view !== null && ($this->view instanceof View)) {
             return $this->view;
         }
-        $this->view = new \Vitex\View();
+        $this->view = new View();
         return $this->view;
     }
 
@@ -392,20 +403,22 @@ class Vitex
             $this->view = $this->view();
         }
         if ($status !== null) {
-            $this->res->status($status)->send();
+            $this->res->setStatus($status)->send();
         }
         $this->view->display($tpl, $data);
     }
 
     /**
      * 预处理中间件
+     * @param Middleware $call
      * @return string
+     * @throws Core\Exception
      */
-    private function preUse(\Vitex\Middleware $call)
+    private function preUse(Middleware $call)
     {
         $class = get_class($call);
         if (in_array($class, $this->preMiddlewareArr)) {
-            throw new \Exception($class . ' Pre-Middleware has loaded');
+            throw new Core\Exception($class . ' Pre-Middleware has loaded');
         }
         $this->preMiddlewareArr[] = $class;
         if ($this->preMiddleware) {
@@ -420,11 +433,11 @@ class Vitex
      * 注册中间件，所有的中间件都是通过using调用
      * @param  string/array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
      * @param  callable/null         $call    执行的方法
-     * @return obj                   $this
+     * @return object                   $this
      */
     public function using($pattern, $call = null)
     {
-        if ($call == null && ($pattern instanceof \Vitex\Middleware)) {
+        if ($call == null && ($pattern instanceof Middleware)) {
             return $this->preUse($pattern);
         }
         return $this->invoke($pattern, $call);
@@ -433,7 +446,7 @@ class Vitex
     /**
      * 注册路由请求
      * @param string $method 请求方法
-     * @param string $args   请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
+     * @param array $args   请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
      */
     public function setRoute($method, $args)
     {
@@ -459,8 +472,9 @@ class Vitex
      * $this->get('/:user@username',function(){})
      * 可以匹配 /asdtc  但是不可以匹配 /asd
      *
-     * @param string/array $name 名称
+     * @param string /array $name 名称
      * @param [mixed       $val  正则值
+     * @return $this
      */
     public function setRouteRegexp($name, $val = null)
     {
@@ -485,7 +499,7 @@ class Vitex
      * 中间件方法其实是一个特殊的请求
      * @param  string/array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
      * @param  callable     $call    执行的方法
-     * @return obj          $this
+     * @return object          $this
      */
     private function invoke($pattern, callable $call)
     {
@@ -592,7 +606,6 @@ class Vitex
 
     /**
      * 启动程序
-     * @return
      */
     public function run()
     {
@@ -600,7 +613,7 @@ class Vitex
         $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
         set_error_handler(array($this, 'handler'));
         if ($this->getConfig('debug')) {
-            $this->log->setWriter(new \Vitex\Helper\LogWriter());
+            $this->log->setWriter(new LogWriter());
         }
 
         //预处理中间件

@@ -11,6 +11,8 @@
  */
 namespace Vitex\Core;
 
+use Vitex\Vitex;
+
 /**
  * 系统路由的方法，用于根据URL来定位到要访问的方法
  */
@@ -19,11 +21,21 @@ class Route
 
     private $themethod = "GET";
     public $router;
+    /**
+     * @var Router
+     */
     protected $_router; //路由callable
     private $_notfound;
     protected $_routerGroup = [];
     protected $_groupPath   = '';
     protected $groupurl     = '';
+    /**
+     * @var Vitex
+     */
+    private $vitex;
+    /**
+     * @var Env
+     */
     protected $env;
 
     public function __construct()
@@ -33,7 +45,7 @@ class Route
         $this->router    = new Router;
         $this->_notfound = function () {
             echo '<h1>404 Not Found</h1>';
-            $vitex = \Vitex\Vitex::getInstance();
+            $vitex = Vitex::getInstance();
             if ($vitex->getConfig('debug')) {
                 //输出调试信息
                 $url      = $this->env->getPathinfo();
@@ -53,7 +65,8 @@ class Route
     /**
      * 路由分组
      * @param string $pattern 分组标识
-     * @param string $class   分组文件名或者一个包含注册路由的callable
+     * @param string $class 分组文件名或者一个包含注册路由的callable
+     * @return $this
      */
     public function group($pattern, $class)
     {
@@ -65,7 +78,7 @@ class Route
     /**
      * 设置 分组的默认路径
      * @param  string     $path                            路径
-     * @return obj/string 路由对象或者分组路径
+     * @return object/string 路由对象或者分组路径
      */
     public function setGroupPath($path)
     {
@@ -80,7 +93,7 @@ class Route
     public function getGroupPath()
     {
         if (!$this->_groupPath) {
-            $path = \Vitex\Vitex::getInstance()->getConfig('router.grouppath');
+            $path = Vitex::getInstance()->getConfig('router.grouppath');
             $this->setGroupPath($path);
         }
         return $this->_groupPath;
@@ -100,7 +113,7 @@ class Route
         $urls = explode('/', $url);
         $gstr = array_shift($urls);
 
-        $this->vitex = \Vitex\Vitex::getInstance();
+        $this->vitex = Vitex::getInstance();
         foreach ($this->_routerGroup as $p => $g) {
             if ($p != $gstr) {
                 //当绑定分组为 / 时此处有bug
@@ -116,6 +129,7 @@ class Route
     /**
      * 解析分组的内容
      * @param mixed $g 可执行的方法或者一个文件
+     * @throws Exception
      */
     private function parseGroupMethod($g)
     {
@@ -127,9 +141,12 @@ class Route
             if (substr($g, -4) != '.php') {
                 $g .= '.php';
             }
-            $vitex = $this->vitex;
             //绝对路径
             $isload = false;
+            /**
+             * 此变量用于设定的路由文件中使用
+             */
+            $vitex = Vitex::getInstance();
             if (strpos($g, '/') !== false && file_exists($g)) {
                 require $g;
                 $isload = true;
@@ -142,16 +159,17 @@ class Route
             }
             //加载分组信息出错
             if (!$isload) {
-                throw new \Exception('加载分组文件 ' . $g . ' 出错，无法找到文件');
+                throw new Exception('加载分组文件 ' . $g . ' 出错，无法找到文件');
             }
         }
     }
 
     /**
      * 注册路由信息
-     * @param string $method   路由匹配方法
-     * @param string $pattern  路由匹配
-     * @param mixed  $callable 执行的方法
+     * @param string $method 路由匹配方法
+     * @param string $pattern 路由匹配
+     * @param mixed $callable 执行的方法
+     * @return $this
      */
     public function register($method, $pattern, $callable)
     {
@@ -163,11 +181,12 @@ class Route
     /**
      * 404页面
      * @param callable $call 404执行的方法
+     * @return $this
      */
     public function notFound(callable $call = null)
     {
         if ($call === null) {
-            $vitex = \Vitex\Vitex::getInstance();
+            $vitex = Vitex::getInstance();
             call_user_func($this->_notfound, $vitex->req, $vitex->res, $next);
         } else {
             $this->_notfound = $call;
@@ -177,7 +196,7 @@ class Route
 
     /**
      * 执行下一个匹配的URL规则
-     * @return function [description]
+     * @return callable [description]
      */
     public function next()
     {
@@ -185,9 +204,8 @@ class Route
             $this->_router = $this->router->getRouter();
         }
 
-        $vitex = \Vitex\Vitex::getInstance();
+        $vitex = Vitex::getInstance();
         $call  = $this->_router->current();
-        $self  = $this;
         if (is_callable($call)) {
             call_user_func($call, $vitex->req, $vitex->res, function () {$this->nextRouter();});
         } else {

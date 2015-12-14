@@ -1,6 +1,7 @@
 <?php
 namespace Vitex\Ext;
 
+
 class Pagination
 {
     /**
@@ -45,18 +46,20 @@ class Pagination
         foreach ($setting as $key => $val) {
             $this->{$key} = $val;
         }
-
         if (!$this->url) {
-            throw new \Exception('请指定分页的URL');
+            throw new Vitex\Core\Exception('请指定分页的URL');
         }
         if ($this->totalpage === null && $this->totalrows === null) {
-            throw new \Exception('总页数totalpage或者信息总条数totalrows至少要设置一个');
+            throw new Vitex\Core\Exception('总页数totalpage或者信息总条数totalrows至少要设置一个');
         }
         $this->totalpage = $this->totalpage ?: ceil($this->totalrows / $this->perpage);
     }
+
     /**
      * 获取分页代码
+     * @param string $wrap
      * @return string 返回的分页html
+     * @internal param $
      */
     public function get($wrap = "")
     {

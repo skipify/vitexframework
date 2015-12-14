@@ -12,6 +12,9 @@
 
 namespace Vitex\Core;
 
+use Vitex\Helper\Set;
+use Vitex\Vitex;
+
 /**
  * 路由记录器类，用于记录各种路由中间件的对应关系，并且完成URl和方法的匹配
  */
@@ -36,8 +39,9 @@ class Router
 
     /**
      * 设置预支的正则表达式
-     * @param mixed  $name   名称/或者关联数组
+     * @param mixed $name 名称/或者关联数组
      * @param string $regexp 正则
+     * @return $this
      */
     public function setRegexp($name, $regexp = null)
     {
@@ -73,12 +77,13 @@ class Router
             return $url;
         }
         $url = '/' . ltrim($url, '/');
+        $baseUrl = "";
         if ($this->cacheBaseurl === null) {
-            $vitex   = \Vitex\Vitex::getInstance();
-            $baseurl = $vitex->getConfig('baseurl');
+            $vitex   = Vitex::getInstance();
+            $baseUrl = $vitex->getConfig('baseurl');
         }
         $qs = http_build_query($params);
-        return rtrim($baseurl, '/') . $url . ($params ? '?' . $qs : '');
+        return rtrim($baseUrl, '/') . $url . ($params ? '?' . $qs : '');
     }
     /*
     这里pattern 的命名规则为   字母 下划线 数字
@@ -86,7 +91,7 @@ class Router
      */
     /**
      * 判断当前字符是否复合参数的命名规则
-     * @param  char      $letter 字符
+     * @param  String      $letter 字符
      * @return boolean
      */
     public function isValid($letter)
@@ -141,15 +146,16 @@ class Router
 
     /**
      * 注册映射一个请求参数
-     * @param string $method  请求方法
+     * @param string $method 请求方法
      * @param string $pattern 匹配参数
-     * @param mixed  $call    执行的方法
+     * @param mixed $call 执行的方法
+     * @return $this
      */
 
     public function map($method, $pattern, $call)
     {
         if ($this->vitex === null) {
-            $this->vitex         = \Vitex\Vitex::getInstance();
+            $this->vitex         = Vitex::getInstance();
             $this->caseSensitive = $this->vitex->getConfig('router.case_sensitive');
         }
 
@@ -180,7 +186,7 @@ class Router
 
     /**
      * 获取匹配的路由结果
-     * @return [type] [description]
+     * @return \Generator [description]
      */
     public function getRouter()
     {
@@ -201,16 +207,18 @@ class Router
         return $this->_patterns;
     }
 
+
     /**
      * 匹配URL方法
-     * @return yield
+     * @param $method
+     * @param $url
+     * @return \Generator
      */
     private function match($method, $url)
     {
         $patterns  = $this->_patterns;
         $matches   = array();
-        $params    = array();
-        $vitex     = \Vitex\Vitex::getInstance();
+        $vitex     = Vitex::getInstance();
         $req       = $vitex->req;
         $req->path = $url;
         $url       = trim($url, '/');
@@ -260,13 +268,13 @@ class Router
         //完全限定命名空间
         if ($class[0] != '\\') {
             //当前应用
-            $vitex = \Vitex\Vitex::getInstance();
+            $vitex = Vitex::getInstance();
             $app   = $vitex->appName;
             $class = '\\' . ucfirst($app) . '\\Controller\\' . $class;
         }
         $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {
-            \Vitex\Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
+            Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return false;
         }
         return function () use ($obj, $method) {return $obj->{$method}();};
@@ -274,8 +282,9 @@ class Router
 
     /**
      * 匹配URL匹配信息
-     * @param  array    $params 匹配的URL段
+     * @param array $matches
      * @return object
+     * @internal param array $params 匹配的URL段
      */
     public function _parseParams(array $matches)
     {
@@ -290,7 +299,7 @@ class Router
                 $params[$k] = $v;
             }
         }
-        return new \Vitex\Helper\Set($params);
+        return new Set($params);
     }
 
 }

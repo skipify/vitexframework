@@ -11,16 +11,20 @@
  */
 namespace Vitex\Core;
 
+use Vitex\helper\Set;
+use Vitex\Middleware\Cookie;
+use Vitex\Vitex;
+
 /**
  * 用于发送请求的管理类，主要用于输出数据
  */
 class Response
 {
     private static $_instance = null;
-    private $methods          = [];
+    private $methods = [];
     private $_cookie;
 
-    protected static $status_tip = array(
+    protected  $status_tip = array(
         //信息 1xx
         100 => '100 Continue',
         101 => '101 Switching Protocols',
@@ -72,17 +76,24 @@ class Response
         505 => '505 HTTP Version Not Supported',
     );
 
-    public $status   = 200;
+    public $status = 200;
     private $headers = [];
+    /**
+     * @var Set
+     */
     public $locals; //当前变量值，用于保存一次请求的变量 set的实例
+
+    /**
+     * Response constructor.
+     */
     private function __construct()
     {
-        $this->locals = new \Vitex\helper\Set();
+        $this->locals = new Set();
     }
 
     /**
      * 获取实例的单例
-     * @return [type] [description]
+     * @return null|Response [type] [description]
      */
     public static function getInstance()
     {
@@ -94,14 +105,14 @@ class Response
 
     /**
      * 设置模板中的数据可以设置单个也可以设置多个
-     * @param  string $key    键值
-     * @param  string $val    内容
+     * @param  string $key 键值
+     * @param  string $val 内容
      * @return object $this
      */
     public function set($key, $val = null)
     {
         if (is_array($key)) {
-            $this->locals = array_merge($this->locals, $key);
+            $this->locals = array_merge($this->locals->all(), $key);
         } else {
             $this->locals[$key] = $val;
         }
@@ -110,8 +121,8 @@ class Response
 
     /**
      * 输出json格式的内容
-     * @param  mixed    $arr 要输出的内容
-     * @param  boolean  $out 是否输出 默认为true 设置为false的时候返回编码好的数据
+     * @param  mixed $arr 要输出的内容
+     * @param  boolean $out 是否输出 默认为true 设置为false的时候返回编码好的数据
      * @return string
      */
     public function json($arr, $out = true)
@@ -119,38 +130,39 @@ class Response
         $res = json_encode($arr, JSON_UNESCAPED_UNICODE);
         if ($out) {
             echo $res;
-        } else {
-            return $res;
+            return "";
         }
+        return $res;
     }
 
     /**
      * 输出jsonp格式的内容
-     * @param  mixed    $arr      要输出的内容
-     * @param  mixed    $callback 回调函数名，不指定则自动根据配置获取
-     * @param  boolean  $out      是否输出 默认为true 设置为false的时候返回编码好的数据
+     * @param  mixed $arr 要输出的内容
+     * @param  mixed $callback 回调函数名，不指定则自动根据配置获取
+     * @param  boolean $out 是否输出 默认为true 设置为false的时候返回编码好的数据
      * @return string
      */
     public function jsonp($arr, $callback = '', $out = true)
     {
         if (!$callback) {
-            $vitex    = \Vitex\Vitex::getInstance();
-            $key      = $vitex->getConfig('callback');
+            $vitex = Vitex::getInstance();
+            $key = $vitex->getConfig('callback');
             $callback = $vitex->req->query[$key];
         }
         $res = json_encode($arr, JSON_UNESCAPED_UNICODE);
         $res = $callback . '(' . $res . ');';
         if ($out) {
             echo $res;
-        } else {
-            return $res;
+            return "";
         }
+        return $res;
     }
 
     /**
      * 设置请求头信息
      * @param string $key 键值
-     * @param strng  $val 键名
+     * @param string $val 键名
+     * @return $this
      */
     public function setHeader($key, $val)
     {
@@ -160,7 +172,7 @@ class Response
 
     /**
      * 获取请求头信息
-     * @param  string         $key 键值
+     * @param  string $key 键值
      * @return array/string
      */
     public function getHeader($key = null)
@@ -168,7 +180,7 @@ class Response
         if ($key === null) {
             return $this->headers;
         }
-        return isset($this->headers[$key]) ? $this->header[$key] : '';
+        return isset($this->headers[$key]) ? $this->headers[$key] : '';
     }
 
     /**
@@ -187,6 +199,7 @@ class Response
     /**
      * 发送header加发送一段内容
      * @param mixed $str 发送一段内容,如果内容是数组则会调用json发送
+     * @return $this
      */
     public function send($str = null)
     {
@@ -204,12 +217,12 @@ class Response
 
     /**
      * 设置状态码
-     * @param  mixed   $status 状态码
-     * @return array
+     * @param  mixed $status 状态码
+     * @return object
      */
     public function setStatus($status = null)
     {
-        $this->status = (int) $status;
+        $this->status = (int)$status;
         return $this;
     }
 
@@ -224,9 +237,10 @@ class Response
 
     /**
      * 下载文件，输出附件
-     * @param string  $file   文件地址或者一段文字数据，当为文字数据时 isdata必须设置为true
-     * @param string  $name   下载的文件名
+     * @param string $file 文件地址或者一段文字数据，当为文字数据时 isdata必须设置为true
+     * @param string $name 下载的文件名
      * @param boolean $isdata 下载的是文件还是一段字符数据 默认是false 为文件
+     * @return null
      */
     public function file($file, $name = '', $isdata = false)
     {
@@ -236,7 +250,7 @@ class Response
         if (!$isdata) {
             $filesize = filesize($file);
             if ($name == '') {
-                $pos  = strrpos($file, DIRECTORY_SEPARATOR) ? strrpos($file, DIRECTORY_SEPARATOR) : strrpos($file, '/');
+                $pos = strrpos($file, DIRECTORY_SEPARATOR) ? strrpos($file, DIRECTORY_SEPARATOR) : strrpos($file, '/');
                 $name = substr($file, $pos + 1);
             }
             if (!$name) {
@@ -256,33 +270,36 @@ class Response
         } else {
             readfile($file);
         }
+        return true;
     }
 
     /**
      * 设置cookie
-     * @param string $key  cookie键名
+     * @param string $key cookie键名
      * @param string $name cookie值
+     * @param string $expires 过期时间
+     * @return $this
      */
-    public function setCookie($key, $name)
+    public function setCookie($key, $name, $expires = '')
     {
         if (!$this->_cookie) {
-            $this->_cookie = new \Vitex\Middleware\Cookie();
-            $this->_cookie->setVitex(\Vitex\Vitex::getInstance());
+            $this->_cookie = new Cookie();
+            $this->_cookie->setVitex(Vitex::getInstance());
         }
-        $this->_cookie->setCookie($key, $name);
+        $this->_cookie->setCookie($key, $name, $expires);
         return $this;
     }
 
     /**
      * 清空所有cookie或者指定的cookie
-     * @param  string $key    cookie名
+     * @param  string $key cookie名
      * @return object $this
      */
-    public function clearCookie($key)
+    public function clearCookie($key = null)
     {
         if (!$this->_cookie) {
-            $this->_cookie = new \Vitex\Middleware\Cookie();
-            $this->_cookie->setVitex(\Vitex\Vitex::getInstance());
+            $this->_cookie = new Cookie();
+            $this->_cookie->setVitex(Vitex::getInstance());
         }
         $this->_cookie->clearCookie($key);
         return $this;
@@ -290,7 +307,7 @@ class Response
 
     /**
      * 跳转
-     * @param string  $url    跳转的地址
+     * @param string $url 跳转的地址
      * @param integer $status 跳转状态码
      */
     public function redirect($url, $status = 302)
@@ -304,21 +321,22 @@ class Response
 
     /**
      * 直接输出模板信息
-     * @param string $tpl    模板地址
-     * @param array  $data   传递给模板的数据
-     * @param int    $status 状态
+     * @param string $tpl 模板地址
+     * @param array $data 传递给模板的数据
+     * @param int $status 状态
      */
     public function render($tpl, array $data = [], $status = null)
     {
-        $vitex = \Vitex\Vitex::getInstance();
+        $vitex = Vitex::getInstance();
         $vitex->render($tpl, $data, $status);
     }
+
     /**
      * 扩展方法,扩展的如果是类方法必须至少包含一个参数,第一个参数总是当前这个类的实例
      * 例如 function($obj){$obj->extend('a','1');}//第一个参数即为当前类的实例
      *
-     * @param  mixed       $pro    扩展的属性名或者方法名,或者一个关联数组
-     * @param  string/null $data   属性值或者一个callable的方法
+     * @param  mixed $pro 扩展的属性名或者方法名,或者一个关联数组
+     * @param  string /null $data   属性值或者一个callable的方法
      * @return object      $this
      */
     public function extend($pro, $data = null)
@@ -330,7 +348,7 @@ class Response
             return $this;
         }
         if (is_callable($data)) {
-            $this->methods[$pro] = Closure::bind($data, $this, 'Response');
+            $this->methods[$pro] = \Closure::bind($data, $this, 'Response');
         } else {
             $this->{$pro} = $data;
         }
@@ -340,13 +358,14 @@ class Response
     /**
      * 执行调用扩展的方法
      * @param  string $method 扩展的方法名
-     * @param  mixed  $args   参数名
+     * @param  mixed $args 参数名
      * @return object $this
+     * @throws Exception
      */
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new \Exception('Not Method ' . $method . ' Found In Response!');
+            throw new Exception('Not Method ' . $method . ' Found In Response!');
         }
         array_unshift($args, $this);
         return call_user_func_array($this->methods[$method], $args);

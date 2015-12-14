@@ -25,7 +25,7 @@ class Utils
      * @param  array  $setting                      配置文件，配置加密的模式和加密的方法
      * @return array  加密的数据和向量值
      */
-    public function encrypt($data, $key, $iv = null, array $setting = [])
+    public static function encrypt($data, $key, $iv = null, array $setting = [])
     {
         $default = ['algorithm' => MCRYPT_RIJNDAEL_256, 'mode' => MCRYPT_MODE_CBC];
         $setting = array_merge($default, $setting);
@@ -58,7 +58,7 @@ class Utils
      * @param  array  $setting          配置
      * @return string 加密的数据
      */
-    public function decrypt($endata, $key, $iv, array $setting = [])
+    public static function decrypt($endata, $key, $iv, array $setting = [])
     {
         $default = ['algorithm' => MCRYPT_RIJNDAEL_256, 'mode' => MCRYPT_MODE_CBC];
         $setting = array_merge($default, $setting);

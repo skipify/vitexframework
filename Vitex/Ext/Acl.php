@@ -11,19 +11,22 @@
  */
 namespace Vitex\Ext;
 
+use Vitex\Core\Router;
+
 class Acl
 {
     private $rules = [];
     private $group = [];
     public function __construct()
     {
-        $this->route = new \Vitex\Core\Router();
+        $this->route = new Router();
     }
 
     /**
      * 添加匹配规则
-     * @param string/array $pattern 规则多个请传数组
-     * @param string       $method  请求方法默认为all
+     * @param string /array $pattern 规则多个请传数组
+     * @param string $method 请求方法默认为all
+     * @return $this
      */
     public function addRule($pattern, $method = 'all')
     {
@@ -134,7 +137,7 @@ class Acl
      * 注意分组的权限也会被加入到当前对象的权限中去
      *
      * @param  string    $alias  规则名
-     * @param  规则群 $rules  array
+     * @param  array $rules  array
      * @return object    $this
      */
     public function addGroup($alias, $rules, $method = "all")

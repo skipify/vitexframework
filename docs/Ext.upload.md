@@ -77,7 +77,7 @@ array 一个二维数组，每个元素为一张图片
 
 ### 普通类
 
-`$ret = $upload->setVitex($this)->call();` // setVitex方法是中间件中自动调用的方法，如果是把upload当做是普通方法使用则需要明确的去设定该值，设置vital对象给他。
+`$ret = $upload->call();` 
 
 ## API
 

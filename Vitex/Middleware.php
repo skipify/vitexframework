@@ -17,8 +17,13 @@ namespace Vitex;
  */
 abstract class Middleware
 {
-
+    /**
+     * @var Vitex
+     */
     protected $vitex; //应用
+    /**
+     * @var Middleware
+     */
     protected $nextMw; //下一个预处理中间件
     public function __construct()
     {
@@ -37,6 +42,7 @@ abstract class Middleware
     /**
      * 设置当前应用
      * @param object $vitex Vitex类的一个实例
+     * @return $this
      */
     public function setVitex($vitex)
     {

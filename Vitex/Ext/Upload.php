@@ -11,10 +11,13 @@
  */
 namespace Vitex\Ext;
 
+use Vitex\Middleware;
+use Vitex\Vitex;
+
 /**
  * 文件上传的中间件，既可以当做中间件使用有可以当做单独的应用程序
  */
-class Upload extends \Vitex\Middleware
+class Upload extends Middleware
 {
     /**
      * 默认的配置文件
@@ -37,7 +40,6 @@ class Upload extends \Vitex\Middleware
     rename
     fieldname
     ext
-
      */
     public function __construct($setting = [])
     {
@@ -46,18 +48,21 @@ class Upload extends \Vitex\Middleware
 
     /**
      * 用于对上传的文件重命名
-     * @param  string $fieldname        前台传递的表单名
+     * @param  string $fieldName        前台传递的表单名
      * @param  string $filename         前台传递的文件原始名字
+     * @param string $ext 扩展名
      * @return string 新的文件名
      */
-    public function rename($fieldname, $filename, $ext)
+    public function rename($fieldName, $filename, $ext)
     {
-        $filename = md5(time() . $filename . rand(1, 999)) . '.' . $ext;
+        $filename = md5(time() .$fieldName. $filename . rand(1, 999)) . '.' . $ext;
         return $filename;
     }
+
     /**
      * 设置存储路径
      * @param string $path 路径，绝对路径
+     * @return $this
      */
     public function setDest($path)
     {
@@ -84,7 +89,7 @@ class Upload extends \Vitex\Middleware
 
     /**
      * 根据扩展名过滤上传的文件,该方法会生成一个错误列表
-     * @return arrat 过滤后的文件
+     * @return array 过滤后的文件
      */
     private function filterFile($files)
     {
@@ -125,7 +130,7 @@ class Upload extends \Vitex\Middleware
     private function getExt($filename)
     {
         $fs = explode('.', $filename);
-        return array_pop($fs);
+        return strtolower(array_pop($fs));
     }
 
     //转移上传的文件
@@ -201,7 +206,7 @@ class Upload extends \Vitex\Middleware
         if ($this->vitex) {
             $vitex = $this->vitex;
         } else {
-            $vitex = \Vitex\Vitex::getInstance();
+            $vitex = Vitex::getInstance();
         }
         $this->moveFile();
         $vitex->req->upload      = $this->return;

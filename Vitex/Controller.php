@@ -11,8 +11,11 @@
  */
 namespace Vitex;
 
-class Controller
+class Controller extends Vitex
 {
+    /**
+     * @var Vitex
+     */
     public $vitex;
     public $req;
     public $res;
@@ -20,47 +23,16 @@ class Controller
     public function __construct()
     {
         $this->vitex = Vitex::getInstance();
-        $this->req   = $this->vitex->req;
-        $this->res   = $this->vitex->res;
-    }
-
-    /**
-     * 找不到定义的方法会自动去Vitex对象中查找
-     * @param  string $method                    方法名
-     * @param  array  $args                      参数
-     * @return mixed  取决于调用的方法
-     */
-    public function __call($method, $args)
-    {
-        if (method_exists($this->vitex, $method)) {
-            return call_user_func_array(array($this->vitex, $method), $args);
-        } else {
-            throw new \Exception('No Method ' . $method . ' Found!!');
-        }
-    }
-
-    /**
-     * 当设置不存在的属性时会把属性设置到Vitex对象中
-     * @param string $name 属性名称
-     * @param mixed  $val  属性值
-     */
-    public function __set($name, $val)
-    {
-        if ($name) {
-            $this->vitex->{$name} = $val;
-        }
-    }
-
-    /**
-     * 当调用不存在的属性时会自动去Vitex查找
-     * @param  string $name          键值属性名
-     * @return mixed  属性的值
-     */
-    public function __get($name)
-    {
-        if (!$name) {
-            return null;
-        }
-        return $this->vitex->{$name};
+        //init app
+        $this->route = $this->vitex->route;
+        //初始化各种变量
+        $this->env = $this->vitex->env;
+        //初始化 request response
+        $this->req = $this->vitex->req;
+        $this->res = $this->vitex->res;
+        //view视图
+        $this->view = $this->vitex->view;
+        //日志
+        $this->log = $this->vitex->log;
     }
 }

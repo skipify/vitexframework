@@ -11,6 +11,9 @@
  */
 namespace Vitex\Core;
 
+use Vitex\Helper\Set;
+use Vitex\Helper\SetMethod;
+
 /**
  * 所有请求方法的类对象，包含所有的Query string POST DATA Cookie等
  */
@@ -27,7 +30,7 @@ class Request implements \ArrayAccess, \Iterator
      *
      */
     public $route = [];
-    use \Vitex\Helper\SetMethod;
+    use SetMethod;
     private $methods = []; //扩展的方法
 
     private function __construct()
@@ -44,7 +47,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 获取实例的单例
-     * @return [type] [description]
+     * @return null|Request [type] [description]
      */
     public static function getInstance()
     {
@@ -83,7 +86,7 @@ class Request implements \ArrayAccess, \Iterator
     public function queryData()
     {
         //todo: clear params
-        $this->query = new \Vitex\Helper\Set($_GET);
+        $this->query = new Set($_GET);
         return $this;
     }
 
@@ -99,7 +102,7 @@ class Request implements \ArrayAccess, \Iterator
             parse_str($body, $bodys);
             $_POST = array_merge($bodys, $_POST);
         }
-        $this->body = new \Vitex\Helper\Set($_POST);
+        $this->body = new Set($_POST);
         return $this;
     }
 
@@ -109,7 +112,7 @@ class Request implements \ArrayAccess, \Iterator
      */
     public function fileData()
     {
-        $this->files = new \Vitex\Helper\Set($_FILES);
+        $this->files = new Set($_FILES);
         return $this;
     }
 
@@ -193,13 +196,14 @@ class Request implements \ArrayAccess, \Iterator
     /**
      * 执行调用扩展的方法
      * @param  string $method 扩展的方法名
-     * @param  mixed  $args   参数名
+     * @param  mixed $args 参数名
      * @return object $this
+     * @throws Exception
      */
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new \Exception('Not Method ' . $method . ' Found In Request!');
+            throw new Exception('Not Method ' . $method . ' Found In Request!');
         }
         return call_user_func_array($this->methods[$method], $args);
     }

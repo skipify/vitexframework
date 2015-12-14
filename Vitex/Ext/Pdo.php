@@ -12,7 +12,9 @@
 
 namespace Vitex\Ext;
 
-class Pdo extends \Vitex\Middleware
+use Vitex\Middleware;
+
+class Pdo extends Middleware
 {
     public $engine = 'mysql';
     public $pdo    = null;
@@ -23,7 +25,7 @@ class Pdo extends \Vitex\Middleware
     public function __construct($setting, $username = '', $password = '')
     {
         if (!$setting) {
-            throw new \Exception('数据库链接信息不能为空');
+            throw new Vitex\Core\Exception('数据库链接信息不能为空');
         }
         if (is_resource($setting)) {
             $this->pdo = $setting;
@@ -99,7 +101,7 @@ class Pdo extends \Vitex\Middleware
     /**
      * 执行返数据，生成器数据
      * @param  string $mode                返回的数据模式，默认为class模式
-     * @return object 一个信息对象
+     * @return \Generator 一个信息对象
      */
     public function fetch($mode = \PDO::FETCH_CLASS)
     {
@@ -113,11 +115,12 @@ class Pdo extends \Vitex\Middleware
 
     /**
      * 返回全部的复合查询的数据
-     * @param  string $mode                         返回的数据模式，默认为class模式
-     * @return array  一个包含对象的数组
+     * @param int|string $mode 返回的数据模式，默认为class模式
+     * @return array 一个包含对象的数组
      */
     public function fetchAll($mode = \PDO::FETCH_CLASS)
     {
+        $rows = [];
         try {
             $rows = $this->sth->fetchAll($mode);
         } catch (\PDOException $e) {
@@ -131,7 +134,7 @@ class Pdo extends \Vitex\Middleware
      *
      * @author skipify
      *
-     * @return void
+     * @return int
      */
     public function lastId()
     {
@@ -154,13 +157,13 @@ class Pdo extends \Vitex\Middleware
     {
         if ($this->vitex->getConfig('debug')) {
 
-            $msg = "<p style='color:red;font-weight:bold'>$sql<p>";
+            $msg = "<p style='color:red;font-weight:bold'>".$sql."<p>";
             $msg .= "<p>" . $error . "</p>";
-            $this->error = $msg;
         } else {
-            $this->error = 'SQL:' . $sql . '  Error: ' . $error;
+            $msg = 'SQL:' . $sql . '  Error: ' . $error;
         }
-        $this->vitex->log->error($this->error);
+        $this->error = $msg;
+        $this->vitex->log->error($msg);
     }
 
     public function call()

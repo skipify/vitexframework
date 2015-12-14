@@ -24,6 +24,11 @@ class LogWriter
         }
     }
 
+    /**
+     * @param $level
+     * @param $message
+     * @return $this
+     */
     public function write($level, $message)
     {
         if (!$this->handle) {
@@ -33,5 +38,6 @@ class LogWriter
         $str = date('Y-m-d H:i:s') . ' - ' . $level . ' - ' . $message . PHP_EOL;
         fwrite($this->handle, $str);
         fclose($this->handle);
+        return $this;
     }
 }

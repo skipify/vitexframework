@@ -12,6 +12,23 @@
 
 class Init
 {
+    /**
+     * @var string
+     */
+    private $appname;
+    /**
+     * @var String
+     */
+    private $dirname;
+    /**
+     * @var String
+     */
+    private $inname;
+    /**
+     * @var array
+     */
+    private $dirs;
+
     public function __construct($dirname = '.', $appname = 'app', $inname = 'index.php')
     {
         $dirname       = rtrim($dirname, '/');

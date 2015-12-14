@@ -44,7 +44,7 @@ class Captcha
     /**
      * 生成验证码
      * @param  string $file 图片保存文件名，不指定则图片会被直接输出
-     * @return none
+     * @return null
      */
     public function get($file = "")
     {
@@ -100,7 +100,7 @@ class Captcha
     }
     /**
      * 生成验证码内容以及验证答案
-     * @return code 返回生成的验证码
+     * @return array code 返回生成的验证码
      */
     protected function generateCode()
     {
@@ -153,11 +153,13 @@ class Captcha
         $color = imagecolorallocate($image, rand(30, 120), rand(30, 120), rand(30, 120));
         imagettftext($image, $this->height * 0.6, 3, $this->width * 0.05, $this->height * 0.8, $color, $this->font, $text);
     }
+
     /**
      * 在图片上画线
-     * @param  object  $img           图片对象
-     * @param  integer $num           画线数量
-     * @return object  图片对象
+     * @param $image
+     * @param  integer $num 画线数量
+     * @return object 图片对象
+     * @internal param object $img 图片对象
      */
     protected function gdLine($image, $num = 4)
     {

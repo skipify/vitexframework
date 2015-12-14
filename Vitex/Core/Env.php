@@ -66,7 +66,7 @@ class Env implements \ArrayAccess
     public function get($key = null)
     {
         if ($key === null) {
-            return $this->$_env;
+            return $this->_env;
         }
         return isset($this->_env[$key]) ? $this->_env[$key] : '';
     }
@@ -96,10 +96,11 @@ class Env implements \ArrayAccess
         $this->set("REQUEST_METHOD", $method);
         return $this;
     }
-
+    
     /**
      * 一个兼容的pathinfo获取方法
      * 如果包含分组，这里要重写pathinfo的信息
+     * @return array|null|string
      */
     public function getPathinfo()
     {
@@ -118,7 +119,11 @@ class Env implements \ArrayAccess
         return $pathinfo;
     }
 
-    //设置重写后的pathinfo信息
+    /**
+     * 设置重写后的pathinfo信息
+     * @param $pathinfo
+     * @return $this
+     */
     public function setPathinfo($pathinfo)
     {
         $this->_pathinfo = $pathinfo;

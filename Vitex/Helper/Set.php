@@ -22,8 +22,7 @@ class Set implements \ArrayAccess, \Iterator, \Countable
 {
     /**
      * 初始化数组
-     * @param  array    $data 数组
-     * @return object
+     * @param  array $data 数组
      */
     public function __construct(array $data = [])
     {
@@ -32,7 +31,7 @@ class Set implements \ArrayAccess, \Iterator, \Countable
 
     /**
      * 导入数据
-     * @param  arrat  $data   导入数组数据
+     * @param  array  $data   导入数组数据
      * @return object $this
      */
     public function import($data)

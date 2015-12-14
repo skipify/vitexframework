@@ -11,6 +11,7 @@
  */
 
 namespace Vitex;
+use Vitex\Helper\LogWriter;
 
 /**
  * 符合PSR-3标准的日志接口
@@ -19,7 +20,7 @@ namespace Vitex;
 class Log
 {
     /**
-     * @var log级别
+     * @var String log级别
      */
     const EMERGENCY = 'emergency';
     const ALERT     = 'alert';
@@ -32,6 +33,9 @@ class Log
     //
     protected $enabled;
     protected $level  = 0;
+    /**
+     * @var array|null|LogWriter
+     */
     protected $writer = [];
     public function __construct($writer = null)
     {
@@ -41,7 +45,7 @@ class Log
 
     /**
      * 设置日志写入
-     * @param \callable $writer
+     * @param  $writer
      */
     public function setWriter($writer)
     {
@@ -63,6 +67,7 @@ class Log
     /**
      * 设置是否启用日志记录，如果不启用则自动进入黑洞
      * @param \boolean $enabled
+     * @return $this
      */
     public function setEnabled($enabled)
     {
@@ -206,12 +211,16 @@ class Log
                 }
                 $message = $this->interpolate($message, $context);
             }
+            /**
+             * @var $writer Logwriter
+             */
             foreach ($this->writer as $writer) {
                 $writer->write($level, $message);
             }
         } else {
             return false;
         }
+        return null;
     }
 
     /**
