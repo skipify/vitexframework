@@ -153,7 +153,7 @@ class Upload extends Middleware
                         $this->setError($file['error'][$k], '上传文件发生错误');
                         continue;
                     }
-                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v, $this->getExt($v)) : $this->rename($field, $v);
+                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v, $this->getExt($v)) : $this->rename($field, $v,$this->getExt($v));
                     $path    = rtrim($this->setting['dest'], '/') . '/' . $newname;
                     $ismove  = move_uploaded_file($file['tmp_name'][$k], $path);
                     if (!$ismove) {
@@ -175,7 +175,7 @@ class Upload extends Middleware
                     $this->setError($file['error'], '上传文件发生错误');
                     continue;
                 }
-                $newname = $this->setting['rename'] ? $this->setting['rename']($field, $name) : $this->rename($field, $name);
+                $newname = $this->setting['rename'] ? $this->setting['rename']($field, $name,$this->getExt($name)) : $this->rename($field, $name,$this->getExt($name));
                 //转移文件
                 $path   = rtrim($this->setting['dest'], '/') . '/' . $newname;
                 $ismove = move_uploaded_file($file['tmp_name'], $path);

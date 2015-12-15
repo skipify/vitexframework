@@ -11,7 +11,7 @@
  */
 namespace Vitex;
 
-class Controller extends Vitex
+class Controller
 {
     /**
      * @var Vitex
@@ -19,6 +19,7 @@ class Controller extends Vitex
     public $vitex;
     public $req;
     public $res;
+
     //处理一些变量
     public function __construct()
     {
@@ -34,5 +35,77 @@ class Controller extends Vitex
         $this->view = $this->vitex->view;
         //日志
         $this->log = $this->vitex->log;
+    }
+
+    /**
+     * 获取配置
+     * @param  string $name 配置名
+     * @return mixed
+     */
+    public function getConfig($name)
+    {
+        return $this->vitex->getConfig($name);
+    }
+    /**
+     * 设置配置文件
+     * @param string /array $name 键值/数组配置
+     * @param string /null  $val  值
+     * @return $this
+     */
+    public function setConfig($name, $val = null)
+    {
+        return $this->vitex->setConfig($name,$val);
+    }
+    /**
+     * 构造URL
+     * @param  string $url           url或者一个路由段
+     * @param  array  $params        关联数组转为querystring
+     * @return string 最终的url
+     */
+    public function url($url, $params = [])
+    {
+        return $this->vitex->url($url,$params);
+    }
+    /**
+     * 启用view视图
+     * @return object $view
+     */
+    public function view()
+    {
+        return $this->vitex->view();
+    }
+    /**
+     * 直接输出模板信息
+     * @param string $tpl    模板地址
+     * @param array  $data   传递给模板的数据
+     * @param int    $status 状态码，默认会输出200
+     */
+    public function render($tpl, array $data = [], $status = null)
+    {
+        $this->vitex->render($tpl,$data,$status);
+    }
+    public function __call($method, $args)
+    {
+        if (method_exists($this->vitex, $method)) {
+            return call_user_func_array(array($this->vitex, $method), $args);
+        } else {
+            throw new Core\Exception('No Method ' . $method . ' Found!!');
+        }
+    }
+
+    /**
+     * 当调用不存在的属性时会自动去Vitex查找
+     * @param  string $name 键值属性名
+     * @return mixed  属性的值
+     */
+    public function __get($name)
+    {
+        if (!$name) {
+            return null;
+        }
+        if (isset($this->vitex->{$name})) {
+            return $this->vitex->{$name};
+        }
+        return null;
     }
 }
