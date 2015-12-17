@@ -16,6 +16,8 @@ use Vitex\Vitex;
 /**
  * 一个简单的Active record
  * knex.js
+ * @method array getBy*(string $column,String $val)
+ * @method array getAllBy*(string $column,String $val)
  */
 class Model
 {
@@ -294,7 +296,7 @@ class Model
      * @param        string /array $key 条件列名
      * @param string $op 操作符 = != > like等
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function where($key, $op = '', $val = '')
     {
@@ -306,7 +308,7 @@ class Model
      * @param        string /array $key 条件列名
      * @param string $op 操作符 = != > like等
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function orWhere($key, $op = '', $val = '')
     {
@@ -317,7 +319,7 @@ class Model
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function whereIn($key, $val)
     {
@@ -328,7 +330,7 @@ class Model
      * 基本的whereNotIn查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function whereNotIn($key, $val)
     {
@@ -339,7 +341,7 @@ class Model
      * 基本的or whereIn查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function orWhereIn($key, $val)
     {
@@ -350,7 +352,7 @@ class Model
      * 基本的or whereNotIn查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function orWhereNotIn($key, $val)
     {
@@ -361,7 +363,7 @@ class Model
      * 基本的where is null查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function whereNull($key, $val)
     {
@@ -372,7 +374,7 @@ class Model
      * 基本的where is not null查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function whereNotNull($key, $val)
     {
@@ -383,7 +385,7 @@ class Model
      * 基本的or where is null查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function orWhereNull($key, $val)
     {
@@ -394,7 +396,7 @@ class Model
      * 基本的or where is not null查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return object
+     * @return $this
      */
     public function orWhereNotNull($key, $val)
     {
@@ -405,7 +407,7 @@ class Model
      * 基本的where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return object
+     * @return $this
      */
     public function whereExists($key, $val)
     {
@@ -416,7 +418,7 @@ class Model
      * 基本的where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return object
+     * @return $this
      */
     public function whereNotExists($key, $val)
     {
@@ -427,7 +429,7 @@ class Model
      * 基本的 or where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return object
+     * @return $this
      */
     public function orWhereExists($key, $val)
     {
@@ -438,7 +440,7 @@ class Model
      * 基本的 or where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return  object
+     * @return  $this
      */
     public function orWhereNotExists($key, $val)
     {
@@ -449,7 +451,7 @@ class Model
      * 基本的where between a and b查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
-     * @return object this
+     * @return $this
      */
     public function whereBetween($key, array $val)
     {
@@ -460,7 +462,7 @@ class Model
      * 基本的where not between a and b查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
-     * @return object this
+     * @return $this
      */
     public function whereNotBetween($key, array $val)
     {
@@ -471,7 +473,7 @@ class Model
      * 基本的or where between a and b查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
-     * @return  object
+     * @return  $this
      */
     public function orWhereBetween($key, array $val)
     {
@@ -482,7 +484,7 @@ class Model
      * 基本的or where not between a and b查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
-     * @return object
+     * @return $this
      */
     public function orWhereNotBetween($key, array $val)
     {

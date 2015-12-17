@@ -50,18 +50,18 @@ class Upload extends Middleware
      * 用于对上传的文件重命名
      * @param  string $fieldName        前台传递的表单名
      * @param  string $filename         前台传递的文件原始名字
-     * @param string $ext 扩展名
+     * @param  string $ext              扩展名
      * @return string 新的文件名
      */
     public function rename($fieldName, $filename, $ext)
     {
-        $filename = md5(time() .$fieldName. $filename . rand(1, 999)) . '.' . $ext;
+        $filename = md5(time() . $fieldName . $filename . rand(1, 999)) . '.' . $ext;
         return $filename;
     }
 
     /**
      * 设置存储路径
-     * @param string $path 路径，绝对路径
+     * @param  string  $path 路径，绝对路径
      * @return $this
      */
     public function setDest($path)
@@ -99,6 +99,9 @@ class Upload extends Middleware
         $exts = explode('|', $this->setting['ext']);
 
         foreach ($files as $field => &$file) {
+            if (!isset($file['name'])) {
+                continue;
+            }
             $name = $file['name'];
             if (is_array($name)) {
                 foreach ($name as $k => $v) {
@@ -146,6 +149,9 @@ class Upload extends Middleware
         $ret = [];
         //转移文件
         foreach ($files as $field => $file) {
+            if (!isset($file['name'])) {
+                continue;
+            }
             $name = $file['name'];
             if (is_array($name)) {
                 foreach ($name as $k => $v) {
@@ -153,7 +159,7 @@ class Upload extends Middleware
                         $this->setError($file['error'][$k], '上传文件发生错误');
                         continue;
                     }
-                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v, $this->getExt($v)) : $this->rename($field, $v,$this->getExt($v));
+                    $newname = $this->setting['rename'] ? $this->setting['rename']($field, $v, $this->getExt($v)) : $this->rename($field, $v, $this->getExt($v));
                     $path    = rtrim($this->setting['dest'], '/') . '/' . $newname;
                     $ismove  = move_uploaded_file($file['tmp_name'][$k], $path);
                     if (!$ismove) {
@@ -175,7 +181,7 @@ class Upload extends Middleware
                     $this->setError($file['error'], '上传文件发生错误');
                     continue;
                 }
-                $newname = $this->setting['rename'] ? $this->setting['rename']($field, $name,$this->getExt($name)) : $this->rename($field, $name,$this->getExt($name));
+                $newname = $this->setting['rename'] ? $this->setting['rename']($field, $name, $this->getExt($name)) : $this->rename($field, $name, $this->getExt($name));
                 //转移文件
                 $path   = rtrim($this->setting['dest'], '/') . '/' . $newname;
                 $ismove = move_uploaded_file($file['tmp_name'], $path);
