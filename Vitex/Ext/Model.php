@@ -11,6 +11,7 @@
  */
 namespace Vitex\Ext;
 
+use Vitex\Core\Exception;
 use Vitex\Vitex;
 
 /**
@@ -99,7 +100,7 @@ class Model
         try {
             $this->DB = $this->vitex->pdo;
             $this->pdo = $this->DB->pdo;
-        } catch (Vitex\Core\Exception $e) {
+        } catch (Exception $e) {
             throw new \Error('使用ORM之前您必须要调用一个数据库连接的类返回一个PDO的变量,或者直接加载pdo中间件');
         }
         if ($table) {
@@ -162,7 +163,7 @@ class Model
         if ($this->isfind) {
             try {
                 unset($this->_setpost[$key]);
-            } catch (Vitex\Core\Exception $e) {
+            } catch (Exception $e) {
             }
         }
         unset($this->_post[$key]);
@@ -1043,7 +1044,7 @@ class Model
     final public function begin()
     {
         if ($this->_begintransaction) {
-            throw new Vitex\Core\Exception("已经开启了一个事务，请勿重新开启");
+            throw new Exception("已经开启了一个事务，请勿重新开启");
         }
         $this->pdo->beginTransaction();
         $this->_begintransaction = true;
@@ -1165,7 +1166,7 @@ class Model
                 $this->formatColumn($val);
             }
             if (is_array($amount) && count($amount) != count($column)) {
-                throw new Vitex\Core\Exception("传递的字段与自增值无法对应，请查看数量");
+                throw new Exception("传递的字段与自增值无法对应，请查看数量");
             }
         } else {
             $column = [$this->formatColumn($column)];

@@ -10,6 +10,7 @@
  * @license MIT
  */
 namespace Vitex;
+use Vitex\Core\Exception;
 
 /**
  * 用于模板展示的View类
@@ -127,14 +128,14 @@ class View
 
         $file = $this->template($tplname);
         if (!file_exists($file)) {
-            throw new Core\Exception("模板文件--" . $file . '--不存在');
+            throw new Exception("模板文件--" . $file . '--不存在');
         }
         extract($data, EXTR_OVERWRITE);
         ob_start();
         if (file_exists($file)){
             include $file;
         } else {
-            throw new Core\Exception("模板文件：".$file."不存在");
+            throw new Exception("模板文件：".$file."不存在");
         }
         return ob_get_clean();
     }

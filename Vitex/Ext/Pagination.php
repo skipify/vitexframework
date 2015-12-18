@@ -2,6 +2,8 @@
 namespace Vitex\Ext;
 
 
+use Vitex\Core\Exception;
+
 class Pagination
 {
     /**
@@ -47,10 +49,10 @@ class Pagination
             $this->{$key} = $val;
         }
         if (!$this->url) {
-            throw new Vitex\Core\Exception('请指定分页的URL');
+            throw new Exception('请指定分页的URL');
         }
         if ($this->totalpage === null && $this->totalrows === null) {
-            throw new Vitex\Core\Exception('总页数totalpage或者信息总条数totalrows至少要设置一个');
+            throw new Exception('总页数totalpage或者信息总条数totalrows至少要设置一个');
         }
         $this->totalpage = $this->totalpage ?: ceil($this->totalrows / $this->perpage);
     }

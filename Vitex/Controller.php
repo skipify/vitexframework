@@ -11,6 +11,8 @@
  */
 namespace Vitex;
 
+use Vitex\Core\Exception;
+
 class Controller
 {
     /**
@@ -89,7 +91,7 @@ class Controller
         if (method_exists($this->vitex, $method)) {
             return call_user_func_array(array($this->vitex, $method), $args);
         } else {
-            throw new Core\Exception('No Method ' . $method . ' Found!!');
+            throw new Exception('No Method ' . $method . ' Found!!');
         }
     }
 

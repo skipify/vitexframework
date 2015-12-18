@@ -12,13 +12,14 @@
 
 namespace Vitex;
 
+use Vitex\Core\Exception;
 use Vitex\Core\Loader;
 use Vitex\Helper\LogWriter;
 use Vitex\Middleware;
 use Vitex\View;
 
 if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-    throw new Core\Exception("I am at least PHP version 5.5.0");
+    throw new Exception("I am at least PHP version 5.5.0");
 }
 
 class Vitex
@@ -152,7 +153,6 @@ class Vitex
      * @param array|string $setting 批量设置配置
      * @param array $middleware
      * @return object $this
-     * @internal param string $Middleware 预置中间件
      */
 
     public function init($app, $dir, array $setting = [], array $middleware = [])
@@ -189,7 +189,7 @@ class Vitex
         }
         $defapps = isset($this->multiApps['default']) ? $this->multiApps['default'] : [];
         if (!$apps && !$defapps) {
-            throw new Core\Exception("无法找到设置的初始化映射规则");
+            throw new Exception("无法找到设置的初始化映射规则");
         }
         $app = null;$dir=null;$setting=[];$middleware=null;
         if ($apps) {
@@ -206,7 +206,7 @@ class Vitex
         //开始处理新的路由
         if ($app === null) {
             if ($this->getConfig('debug')) {
-                throw new Core\Exception('无法找到请求的处理方法');
+                throw new Exception('无法找到请求的处理方法');
             } else {
                 $this->route->notFound();
             }
@@ -268,7 +268,7 @@ class Vitex
         foreach ($map as $key => $val) {
             $paramLen = count($val);
             if ($paramLen < 2) {
-                throw new Core\Exception($key . '映射的应用配置参数不正确');
+                throw new Exception($key . '映射的应用配置参数不正确');
             }
             if ($paramLen == 2) {
                 $val[] = [];
@@ -418,7 +418,7 @@ class Vitex
     {
         $class = get_class($call);
         if (in_array($class, $this->preMiddlewareArr)) {
-            throw new Core\Exception($class . ' Pre-Middleware has loaded');
+            throw new Exception($class . ' Pre-Middleware has loaded');
         }
         $this->preMiddlewareArr[] = $class;
         if ($this->preMiddleware) {

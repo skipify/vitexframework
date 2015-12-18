@@ -12,6 +12,7 @@
 
 namespace Vitex\Ext;
 
+use Vitex\Core\Exception;
 use Vitex\Middleware;
 
 class Pdo extends Middleware
@@ -25,7 +26,7 @@ class Pdo extends Middleware
     public function __construct($setting, $username = '', $password = '')
     {
         if (!$setting) {
-            throw new Vitex\Core\Exception('数据库链接信息不能为空');
+            throw new Exception('数据库链接信息不能为空');
         }
         if (is_resource($setting)) {
             $this->pdo = $setting;
