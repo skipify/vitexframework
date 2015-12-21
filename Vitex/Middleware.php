@@ -41,8 +41,8 @@ abstract class Middleware
 
     /**
      * 设置当前应用
-     * @param object $vitex Vitex类的一个实例
-     * @return $this
+     * @param Vitex $vitex Vitex类的一个实例
+     * @return self
      */
     public function setVitex($vitex)
     {

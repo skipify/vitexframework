@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.7.1";
+    const VERSION = "0.7.5";
     /**
      * App instance
      */
@@ -89,8 +89,18 @@ class Vitex
     private $multiApps = ['default' => []];
 
     /**
-     * @internal param $setting
+     * @var Core\Env 环境变量
      */
+    public $env;
+    /**
+     * @var Core\Request
+     */
+    public $req;
+    /**
+     * @var Core\Response
+     */
+    public $res;
+
     private function __construct()
     {
         //注册加载 加载器
@@ -102,12 +112,14 @@ class Vitex
         //init app
         $this->settings = $this->defaultSetting;
         //初始化各种变量
-        $this->env   = Core\Env::getInstance();
+        $this->env = Core\Env::getInstance();
         $this->route = new Core\Route();
         //初始化 request response
-        $this->req      = Core\Request::getInstance();
-        $this->res      = Core\Response::getInstance();
-        $this->res->url = function ($url, $params = []) {return $this->url($url, $params);};
+        $this->req = Core\Request::getInstance();
+        $this->res = Core\Response::getInstance();
+        $this->res->url = function ($url, $params = []) {
+            return $this->url($url, $params);
+        };
         //view视图
         $this->view = null;
         //日志
@@ -136,6 +148,7 @@ class Vitex
 
     /**
      *     get App Instance
+     * @return self
      */
 
     public static function getInstance()
@@ -152,7 +165,7 @@ class Vitex
      * @param  string $dir 应用的路径
      * @param array|string $setting 批量设置配置
      * @param array $middleware
-     * @return object $this
+     * @return self
      */
 
     public function init($app, $dir, array $setting = [], array $middleware = [])
@@ -162,7 +175,7 @@ class Vitex
             'router.grouppath' => $dir . '/' . $app . '/Route',
         ];
         $this->appName = $app;
-        $setting       = array_merge($_setting, $setting);
+        $setting = array_merge($_setting, $setting);
         $this->setConfig($setting);
         $namespace = ucfirst($app);
         $this->loader->addNamespace('\\' . $namespace, $dir . '/' . $app . '/');
@@ -176,7 +189,7 @@ class Vitex
 
     /**
      * 多级应用处理
-     * @return object $this
+     * @return string 当前路由到得应用名称
      * @throws Core\Exception
      */
     public function multiInit()
@@ -191,7 +204,10 @@ class Vitex
         if (!$apps && !$defapps) {
             throw new Exception("无法找到设置的初始化映射规则");
         }
-        $app = null;$dir=null;$setting=[];$middleware=null;
+        $app = null;
+        $dir = null;
+        $setting = [];
+        $middleware = null;
         if ($apps) {
             $_apps = $this->getAppConfig($apps);
             if ($_apps) {
@@ -227,17 +243,18 @@ class Vitex
         }
         return $app;
     }
+
     /**
      * 获取分组配置信息
-     * @param  array $apps          配置数组
+     * @param  array $apps 配置数组
      * @return array       配置
      */
     private function getAppConfig($apps)
     {
-        $pathinfo  = trim($this->env->getPathinfo(), '/');
+        $pathinfo = trim($this->env->getPathinfo(), '/');
         $pathinfos = explode('/', $pathinfo);
-        $group     = isset($pathinfos[0]) ? $pathinfos[0] : '';
-        $_apps     = null;
+        $group = isset($pathinfos[0]) ? $pathinfos[0] : '';
+        $_apps = null;
         if (isset($apps[$group])) {
             $_apps = $apps[$group];
             array_shift($pathinfos);
@@ -257,13 +274,13 @@ class Vitex
      * ]
      * @param  array $map 一个映射的方式
      * @param  string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
-     * @return object vitex object
+     * @return self
      * @throws Core\Exception
      */
     public function setAppMap(array $map, $domain = "default")
     {
         $domain = str_replace(['http://', '/'], '', $domain);
-        $_map   = [];
+        $_map = [];
         //过滤数据,格式化配置参数
         foreach ($map as $key => $val) {
             $paramLen = count($val);
@@ -284,16 +301,17 @@ class Vitex
 
             $_map[$skey] = $val;
         }
-        $oldMap                   = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
+        $oldMap = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
         $this->multiApps[$domain] = array_merge($oldMap, $_map);
         return $this;
     }
 
     /**
      * 设置配置文件
-     * @param string /array $name 键值/数组配置
-     * @param string /null  $val  值
-     * @return $this
+     * @param $name
+     * @param null $val
+     * @return self
+     * @throws Exception
      */
     public function setConfig($name, $val = null)
     {
@@ -304,6 +322,8 @@ class Vitex
             if (file_exists($name)) {
                 $configs = include $name;
                 $setting = array_merge($setting, $configs);
+            } else {
+                throw new Exception("不存在的配置文件:" . $name);
             }
         } else {
             $setting[$name] = $val;
@@ -314,8 +334,8 @@ class Vitex
 
     /**
      * 构造URL
-     * @param  string $url           url或者一个路由段
-     * @param  array  $params        关联数组转为querystring
+     * @param  string $url url或者一个路由段
+     * @param  array $params 关联数组转为querystring
      * @return string 最终的url
      */
     public function url($url, $params = [])
@@ -325,7 +345,7 @@ class Vitex
 
     /**
      * 获取配置
-     * @param  string  $name 配置名
+     * @param  string $name 配置名
      * @return mixed
      */
     public function getConfig($name)
@@ -336,14 +356,14 @@ class Vitex
 
     /**
      * 注册钩子函数
-     * @param  string   $name     钩子名称
-     * @param  callable $call     可执行的方法
-     * @param  integer  $priority 执行的优先级，数字越大越提前
-     * @return object   $this
+     * @param  string $name 钩子名称
+     * @param  callable $call 可执行的方法
+     * @param  integer $priority 执行的优先级，数字越大越提前
+     * @return self
      */
     public function hook($name, callable $call, $priority = 100)
     {
-        $priority             = intval($priority);
+        $priority = intval($priority);
         $this->hooks[$name][] = array($call, $priority);
         return $this;
     }
@@ -367,7 +387,7 @@ class Vitex
 
     /**
      * 获取指定钩子或者所有的hooks
-     * @param  string  $name 钩子的名字
+     * @param  string $name 钩子的名字
      * @return array
      */
     public function getHooks($name = null)
@@ -380,7 +400,7 @@ class Vitex
 
     /**
      * 启用view视图
-     * @return object $view
+     * @return View
      */
     public function view()
     {
@@ -393,9 +413,9 @@ class Vitex
 
     /**
      * 直接输出模板信息
-     * @param string $tpl    模板地址
-     * @param array  $data   传递给模板的数据
-     * @param int    $status 状态码，默认会输出200
+     * @param string $tpl 模板地址
+     * @param array $data 传递给模板的数据
+     * @param int $status 状态码，默认会输出200
      */
     public function render($tpl, array $data = [], $status = null)
     {
@@ -411,7 +431,7 @@ class Vitex
     /**
      * 预处理中间件
      * @param Middleware $call
-     * @return string
+     * @return self
      * @throws Core\Exception
      */
     private function preUse(Middleware $call)
@@ -431,9 +451,9 @@ class Vitex
 
     /**
      * 注册中间件，所有的中间件都是通过using调用
-     * @param  string/array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
-     * @param  callable/null         $call    执行的方法
-     * @return object                   $this
+     * @param  string /array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
+     * @param  callable /null         $call    执行的方法
+     * @return self
      */
     public function using($pattern, $call = null)
     {
@@ -446,11 +466,11 @@ class Vitex
     /**
      * 注册路由请求
      * @param string $method 请求方法
-     * @param array $args   请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
+     * @param array $args 请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
      */
     public function setRoute($method, $args)
     {
-        $pattern  = array_shift($args);
+        $pattern = array_shift($args);
         $callable = array_pop($args);
 
         //包含额外的参数
@@ -474,7 +494,7 @@ class Vitex
      *
      * @param string /array $name 名称
      * @param [mixed       $val  正则值
-     * @return $this
+     * @return self
      */
     public function setRouteRegexp($name, $val = null)
     {
@@ -485,8 +505,8 @@ class Vitex
     /**
      * 路由分组
      * @param  string $pattern 分组标识 url的一部分
-     * @param  string $class   分组对应的类的名字
-     * @return object $this
+     * @param  string $class 分组对应的类的名字
+     * @return self
      */
     public function group($pattern, $class)
     {
@@ -497,9 +517,9 @@ class Vitex
     /**
      * 注册中间件，所有的中间件都是通过invoke调用
      * 中间件方法其实是一个特殊的请求
-     * @param  string/array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
-     * @param  callable     $call    执行的方法
-     * @return object          $this
+     * @param  string /array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
+     * @param  callable $call 执行的方法
+     * @return self
      */
     private function invoke($pattern, callable $call)
     {
@@ -516,7 +536,7 @@ class Vitex
     /**
      * 当多于一个callable的参数时，最后一个callable当做处理请求的“请求处理器”
      * 其余的callable都会当做匹配当前URL时执行的 中间件，而且中间件的执行要早于“请求处理器”的执行
-     * @return mixed
+     * @return self
      */
     public function get()
     {
@@ -526,7 +546,7 @@ class Vitex
     }
 
     /**
-     * @return mixed
+     * @return self
      */
     public function post()
     {
@@ -536,7 +556,7 @@ class Vitex
     }
 
     /**
-     * @return mixed
+     * @return self
      */
     public function put()
     {
@@ -546,7 +566,7 @@ class Vitex
     }
 
     /**
-     * @return mixed
+     * @return self
      */
     public function delete()
     {
@@ -556,7 +576,7 @@ class Vitex
     }
 
     /**
-     * @return mixed
+     * @return self
      */
     public function options()
     {
@@ -566,7 +586,7 @@ class Vitex
     }
 
     /**
-     * @return mixed
+     * @return self
      */
     public function all()
     {
@@ -578,7 +598,7 @@ class Vitex
     /**
      * 404页面，如果不指定$call则会触发执行默认或者已经设定(如果设定过)的notfound方法
      * @param  $call
-     * @return mixed
+     * @return self
      */
     public function notFound(callable $call = null)
     {
@@ -590,10 +610,11 @@ class Vitex
      * Map方法，第一个参数必须为一个标识方法的字符串或者数组
      * $vitex->map('get,post',function(){})
      * $vitex->map(['get','post'],function(){})
+     * @return self
      */
     public function map()
     {
-        $args    = func_get_args();
+        $args = func_get_args();
         $methods = array_shift($args);
         $methods = is_array($methods) ? $methods : explode(',', $methods);
 

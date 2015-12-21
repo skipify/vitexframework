@@ -37,6 +37,10 @@ class View
         $this->setTplPath($this->vitex->getConfig('templates.path'));
     }
 
+    /**
+     * @param $style 模板样式名称
+     * @return self
+     */
     public function setStyle($style)
     {
         $this->style = rtrim($style, '/') . '/';
@@ -47,7 +51,7 @@ class View
      * 给模板传递变量
      * @param string $key 键值
      * @param string $val 键名
-     * @return $this
+     * @return self
      */
     public function set($key, $val = null)
     {
@@ -86,7 +90,7 @@ class View
     /**
      * 设置/获取当前显示的模板所在路径
      * @param $tplpath
-     * @return object $this;
+     * @return self
      * @internal param string $tpl 模板路径名字
      */
     public function setTplPath($tplpath)
@@ -98,7 +102,7 @@ class View
     /**s
      * 获取当前显示的模板所在的真实路径
      * @param  string $tpl 模板路径名字
-     * @return object $this;
+     * @return string 模板路径
      */
     public function template($tpl)
     {

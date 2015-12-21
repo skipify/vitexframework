@@ -48,7 +48,7 @@ class Env implements \ArrayAccess
 
     /**
      * 单例，获取环境变量
-     * @return object
+     * @return self
      */
     public static function getInstance()
     {
@@ -75,7 +75,7 @@ class Env implements \ArrayAccess
      * 修改环境变量
      * @param  string $key    键值
      * @param  string $val    键名
-     * @return object $this
+     * @return self
      */
     public function set($key, $val)
     {
@@ -86,7 +86,7 @@ class Env implements \ArrayAccess
     /**
      * 设置获取请求方法
      * @param  string/null   $method     请求方法
-     * @return object/string 返回值
+     * @return self 返回值
      */
     public function method($method = null)
     {
@@ -122,7 +122,7 @@ class Env implements \ArrayAccess
     /**
      * 设置重写后的pathinfo信息
      * @param $pathinfo
-     * @return $this
+     * @return self
      */
     public function setPathinfo($pathinfo)
     {

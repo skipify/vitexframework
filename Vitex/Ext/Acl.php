@@ -26,7 +26,7 @@ class Acl
      * 添加匹配规则
      * @param string /array $pattern 规则多个请传数组
      * @param string $method 请求方法默认为all
-     * @return $this
+     * @return self
      */
     public function addRule($pattern, $method = 'all')
     {
@@ -79,7 +79,7 @@ class Acl
 
     /**
      * 清空所有权限
-     * @return object $this
+     * @return self
      */
     public function clearRule()
     {
@@ -121,7 +121,7 @@ class Acl
     /**
      * 添加一个子规则对象，把目标对象规则合并到当前对象中
      * @param  \Vitex\Ext\Acl $child         子对象
-     * @return object         当前对象
+     * @return self         当前对象
      */
     public function addChild(\Vitex\Ext\Acl $child)
     {
@@ -138,7 +138,7 @@ class Acl
      *
      * @param  string    $alias  规则名
      * @param  array $rules  array
-     * @return object    $this
+     * @return self
      */
     public function addGroup($alias, $rules, $method = "all")
     {

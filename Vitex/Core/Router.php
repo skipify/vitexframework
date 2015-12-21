@@ -41,7 +41,7 @@ class Router
      * 设置预支的正则表达式
      * @param mixed $name 名称/或者关联数组
      * @param string $regexp 正则
-     * @return $this
+     * @return self
      */
     public function setRegexp($name, $regexp = null)
     {
@@ -149,7 +149,7 @@ class Router
      * @param string $method 请求方法
      * @param string $pattern 匹配参数
      * @param mixed $call 执行的方法
-     * @return $this
+     * @return self
      */
 
     public function map($method, $pattern, $call)
@@ -258,7 +258,7 @@ class Router
      * 根据路由信息实例化相应的控制器类来返回函数方法对象
      * @param  string $str                 字符串
      * @param  string $httpmethod          http请求的方法
-     * @return mixed  可执行的方法
+     * @return callable  可执行的方法
      */
     public function getCallable($str, $httpmethod)
     {

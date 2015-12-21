@@ -89,7 +89,7 @@ class Cookie extends Middleware
     /**
      * 清空所有或者指定的cookie
      * @param  string $key    键名
-     * @return object $this
+     * @return self
      */
     public function clearCookie($key = null)
     {
@@ -109,9 +109,7 @@ class Cookie extends Middleware
     public function call()
     {
         $cookie = $this->getCookie();
-
         $this->vitex->req['cookies'] = new Set($cookie);
-
         $this->runNext();
     }
 }

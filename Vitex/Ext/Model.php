@@ -113,7 +113,7 @@ class Model
     /**
      * 切换Model层使用的数据库连接
      * @param  array $setting 数据库链接信息
-     * @return object this
+     * @return self
      */
     public function changeDatabase(array $setting)
     {
@@ -127,7 +127,7 @@ class Model
     /**
      * 定义一个新的模型数据
      * @param array $arr 模型数据
-     * @return $this
+     * @return self
      */
     public function def($arr = [])
     {
@@ -198,7 +198,7 @@ class Model
     /**
      * 设置表前缀
      * @param  string $prefix 前缀
-     * @return object $this
+     * @return self
      */
     public function setPrefix($prefix)
     {
@@ -208,7 +208,7 @@ class Model
 
     /**
      * 返回当前对象的实例，一般用于子查询实例化model
-     * @return object $this
+     * @return self
      */
     public static function sub()
     {
@@ -237,7 +237,7 @@ class Model
     /**
      * 选择要查询的字段名
      * @param  mixed $column 可以是字符串，多个字段用,分开，也可以是数组每个元素为一个字段，也可以是*
-     * @return object $this
+     * @return self
      */
     final public function select($column = '*')
     {
@@ -297,7 +297,7 @@ class Model
      * @param        string /array $key 条件列名
      * @param string $op 操作符 = != > like等
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function where($key, $op = '', $val = '')
     {
@@ -309,7 +309,7 @@ class Model
      * @param        string /array $key 条件列名
      * @param string $op 操作符 = != > like等
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function orWhere($key, $op = '', $val = '')
     {
@@ -320,7 +320,7 @@ class Model
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function whereIn($key, $val)
     {
@@ -331,7 +331,7 @@ class Model
      * 基本的whereNotIn查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function whereNotIn($key, $val)
     {
@@ -342,7 +342,7 @@ class Model
      * 基本的or whereIn查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function orWhereIn($key, $val)
     {
@@ -353,7 +353,7 @@ class Model
      * 基本的or whereNotIn查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function orWhereNotIn($key, $val)
     {
@@ -364,7 +364,7 @@ class Model
      * 基本的where is null查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function whereNull($key, $val)
     {
@@ -375,7 +375,7 @@ class Model
      * 基本的where is not null查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function whereNotNull($key, $val)
     {
@@ -386,7 +386,7 @@ class Model
      * 基本的or where is null查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function orWhereNull($key, $val)
     {
@@ -397,7 +397,7 @@ class Model
      * 基本的or where is not null查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param string $val 值
-     * @return $this
+     * @return self
      */
     public function orWhereNotNull($key, $val)
     {
@@ -408,7 +408,7 @@ class Model
      * 基本的where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return $this
+     * @return self
      */
     public function whereExists($key, $val)
     {
@@ -419,7 +419,7 @@ class Model
      * 基本的where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return $this
+     * @return self
      */
     public function whereNotExists($key, $val)
     {
@@ -430,7 +430,7 @@ class Model
      * 基本的 or where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return $this
+     * @return self
      */
     public function orWhereExists($key, $val)
     {
@@ -441,7 +441,7 @@ class Model
      * 基本的 or where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param string $val 值,如说明,不要包含最外层的 ()
-     * @return  $this
+     * @return  self
      */
     public function orWhereNotExists($key, $val)
     {
@@ -452,7 +452,7 @@ class Model
      * 基本的where between a and b查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
-     * @return $this
+     * @return self
      */
     public function whereBetween($key, array $val)
     {
@@ -463,7 +463,7 @@ class Model
      * 基本的where not between a and b查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
-     * @return $this
+     * @return self
      */
     public function whereNotBetween($key, array $val)
     {
@@ -474,7 +474,7 @@ class Model
      * 基本的or where between a and b查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
-     * @return  $this
+     * @return  self
      */
     public function orWhereBetween($key, array $val)
     {
@@ -485,7 +485,7 @@ class Model
      * 基本的or where not between a and b查询条件,与前面的操作使用or连接
      * @param string $key 条件列名
      * @param array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
-     * @return $this
+     * @return self
      */
     public function orWhereNotBetween($key, array $val)
     {
@@ -539,7 +539,7 @@ class Model
     /**
      * 字符串形式的查询语句
      * @param  string $val 查询语句
-     * @return object    $this
+     * @return self
      */
     public function whereRaw($val)
     {
@@ -552,7 +552,7 @@ class Model
      * @param  string $column 字段名
      * @param  mixed  $val 查询值
      * @param  string $type 类型  默认and
-     * @return object    $this
+     * @return self
      */
     public function findInSet($column, $val, $type = 'and')
     {
@@ -561,6 +561,12 @@ class Model
         return $this;
     }
 
+    /**
+     * or set查询
+     * @param $column
+     * @param $val
+     * @return self
+     */
     public function orFindInSet($column, $val)
     {
         return $this->findInSet($column, $val, 'or');
@@ -572,7 +578,7 @@ class Model
      * @param  string $op 操作符
      * @param         array /callable $val    操作值
      * @param  string $type 类型 and/or
-     * @return object         $this
+     * @return self
      */
     public function having($key, $op, $val, $type = "AND")
     {
@@ -584,7 +590,7 @@ class Model
     /**
      * 要查询的表名
      * @param  string $table 表名
-     * @return object $this
+     * @return self
      */
     final public function from($table)
     {
@@ -624,7 +630,7 @@ class Model
      * 查询的条数
      * @param  string  $limit 要查询的条数
      * @param  integer $offset 偏移值 默认0
-     * @return object  $this
+     * @return self
      */
     final public function limit($limit, $offset = 0)
     {
@@ -636,7 +642,7 @@ class Model
     /**
      * 单独设置的偏移数制
      * @param  integer $offset 偏移数值
-     * @return object  $this
+     * @return self
      */
     final public function offset($offset)
     {
@@ -648,7 +654,7 @@ class Model
      * 排序字段以及排序方式
      * @param  string $column 字段
      * @param  string $way 排序方式
-     * @return object $this
+     * @return self
      */
     final public function orderBy($column, $way = "DESC")
     {
@@ -660,7 +666,7 @@ class Model
     /**
      * group分组操作
      * @param  string $column 要分组的字段
-     * @return object $this
+     * @return self
      */
     final public function groupBy($column)
     {
@@ -672,7 +678,7 @@ class Model
     /**
      * 去重查询
      * @param  string /array $column 字段名
-     * @return object       $this
+     * @return self
      */
     final public function distinct($column)
     {
@@ -691,7 +697,7 @@ class Model
      * @param  string $table join的表明
      * @param  string $col 第一个字段
      * @param  string $col2 第二个字段
-     * @return object $this
+     * @return self
      */
     private function join($type, $table, $col, $op, $col2 = '')
     {
@@ -706,7 +712,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function innerJoin($table, $col, $op, $col2 = '')
     {
@@ -718,7 +724,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function leftJoin($table, $col, $op, $col2 = '')
     {
@@ -730,7 +736,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function leftOuterJoin($table, $col, $op, $col2 = '')
     {
@@ -742,7 +748,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function rightJoin($table, $col, $op, $col2 = '')
     {
@@ -754,7 +760,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function rightOuterJoin($table, $col, $op, $col2 = '')
     {
@@ -766,7 +772,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function outerJoin($table, $col, $op, $col2 = '')
     {
@@ -778,7 +784,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function fullOuterJoin($table, $col, $op, $col2 = '')
     {
@@ -790,7 +796,7 @@ class Model
      * @param string $col 一个连接表的列名
      * @param string $op 操作符  = !=
      * @param string $col2 另一个连接表的列明
-     * @return object
+     * @return self
      */
     public function crossJoin($table, $col, $op, $col2 = '')
     {
@@ -800,7 +806,7 @@ class Model
     /**
      * union操作
      * @param  string /callable $str    union字符串或者一个可以tostring的对象
-     * @return object          $this
+     * @return self
      */
     final public function union($str)
     {
@@ -813,7 +819,7 @@ class Model
      * 设置数据
      * @param         string /array $key    键值
      * @param  string $val 值
-     * @return object       $this
+     * @return self
      */
     public function set($key, $val = null)
     {
@@ -1000,7 +1006,7 @@ class Model
      * 要插入数据库的数据，可以是多维数组
      * 当为二维数组的时候插入多条数据
      * @param  array $arr 关联数组或者二维数组
-     * @return mixed 成功则返回最后插入的ID
+     * @return integer 成功则返回最后插入的ID
      */
     final public function insert($arr = [])
     {
@@ -1038,8 +1044,8 @@ class Model
 
     /**
      * 事务开始启动事务
-     * @return object $this
-     * @throws Vitex\Core\Exception
+     * @return self
+     * @throws \Vitex\Core\Exception
      */
     final public function begin()
     {
@@ -1053,7 +1059,7 @@ class Model
 
     /**
      * 提交事务
-     * @return object $this
+     * @return self
      */
     final public function commit()
     {
@@ -1114,7 +1120,7 @@ class Model
 
     /**
      * 清空当前指定的表
-     * @return object $this
+     * @return boolean
      */
     final public function truncate()
     {
@@ -1157,7 +1163,7 @@ class Model
      * @param  mixed $column 字段名,可以使用一个数组传递多个字段
      * @param  mixed $amount 自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
      * @return bool 执行sql的结果
-     * @throws Vitex\Core\Exception
+     * @throws \Vitex\Core\Exception
      */
     private function stepField($column, $amount)
     {

@@ -33,6 +33,31 @@ class Request implements \ArrayAccess, \Iterator
     use SetMethod;
     private $methods = []; //扩展的方法
 
+    /**
+     * @var Set URL中的分段信息
+     */
+    public $params;
+    /**
+     * @var Set post/delete提交的信息 $_POST
+     */
+    public $body;
+    /**
+     * @var Set get方式传递的信息 $_GET
+     */
+    public $query;
+    /**
+     * @var Set 上传的文件信息 $_FILES
+     */
+    public $files;
+    /**
+     * @var Set cookie信息 $_COOKIE
+     */
+    public $cookies;
+    /**
+     * @var Set session信息 $_SESSION
+     */
+    public $session;
+
     private function __construct()
     {
         $this->env = Env::getInstance();
@@ -47,7 +72,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 获取实例的单例
-     * @return null|Request [type] [description]
+     * @return self
      */
     public static function getInstance()
     {
@@ -59,7 +84,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 解析一些常见的请求信息
-     * @return object $this
+     * @return self
      */
     public function parseReq()
     {
@@ -81,7 +106,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 解析请求query string
-     * @return object
+     * @return self
      */
     public function queryData()
     {
@@ -92,6 +117,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 解析body信息 即 post的信息
+     * @return self
      */
     public function postData()
     {
@@ -108,7 +134,7 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 上传的文件信息
-     * @return object
+     * @return self
      */
     public function fileData()
     {
@@ -175,7 +201,7 @@ class Request implements \ArrayAccess, \Iterator
      *
      * @param  mixed       $pro    扩展的属性名或者方法名,或者一个关联数组
      * @param  string/null $data   属性值或者一个callable的方法
-     * @return object      $this
+     * @return self
      */
     public function extend($pro, $data = null)
     {
@@ -197,7 +223,7 @@ class Request implements \ArrayAccess, \Iterator
      * 执行调用扩展的方法
      * @param  string $method 扩展的方法名
      * @param  mixed $args 参数名
-     * @return object $this
+     * @return self
      * @throws Exception
      */
     public function __call($method, $args)

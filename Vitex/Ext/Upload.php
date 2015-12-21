@@ -62,7 +62,7 @@ class Upload extends Middleware
     /**
      * 设置存储路径
      * @param  string  $path 路径，绝对路径
-     * @return $this
+     * @return self
      */
     public function setDest($path)
     {

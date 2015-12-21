@@ -66,7 +66,7 @@ class Route
      * 路由分组
      * @param string $pattern 分组标识
      * @param string $class 分组文件名或者一个包含注册路由的callable
-     * @return $this
+     * @return self
      */
     public function group($pattern, $class)
     {
@@ -78,7 +78,7 @@ class Route
     /**
      * 设置 分组的默认路径
      * @param  string     $path                            路径
-     * @return object/string 路由对象或者分组路径
+     * @return self
      */
     public function setGroupPath($path)
     {
@@ -88,7 +88,7 @@ class Route
 
     /**
      * 获取分组路径
-     * @return string
+     * @return string 分组路径
      */
     public function getGroupPath()
     {
@@ -101,6 +101,7 @@ class Route
 
     /**
      * 应用分组信息
+     * @return self
      */
     public function applyGroup()
     {
@@ -169,7 +170,7 @@ class Route
      * @param string $method 路由匹配方法
      * @param string $pattern 路由匹配
      * @param mixed $callable 执行的方法
-     * @return $this
+     * @return self
      */
     public function register($method, $pattern, $callable)
     {
@@ -181,7 +182,7 @@ class Route
     /**
      * 404页面
      * @param callable $call 404执行的方法
-     * @return $this
+     * @return self
      */
     public function notFound(callable $call = null)
     {
@@ -196,7 +197,7 @@ class Route
 
     /**
      * 执行下一个匹配的URL规则
-     * @return callable [description]
+     * @return self
      */
     public function next()
     {

@@ -52,7 +52,7 @@ class Controller
      * 设置配置文件
      * @param string /array $name 键值/数组配置
      * @param string /null  $val  值
-     * @return $this
+     * @return self
      */
     public function setConfig($name, $val = null)
     {
@@ -70,7 +70,7 @@ class Controller
     }
     /**
      * 启用view视图
-     * @return object $view
+     * @return View
      */
     public function view()
     {

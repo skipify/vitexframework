@@ -93,7 +93,7 @@ class Response
 
     /**
      * 获取实例的单例
-     * @return null|Response [type] [description]
+     * @return self
      */
     public static function getInstance()
     {
@@ -107,7 +107,7 @@ class Response
      * 设置模板中的数据可以设置单个也可以设置多个
      * @param  string $key 键值
      * @param  string $val 内容
-     * @return object $this
+     * @return self
      */
     public function set($key, $val = null)
     {
@@ -162,7 +162,7 @@ class Response
      * 设置请求头信息
      * @param string $key 键值
      * @param string $val 键名
-     * @return $this
+     * @return self
      */
     public function setHeader($key, $val)
     {
@@ -199,7 +199,7 @@ class Response
     /**
      * 发送header加发送一段内容
      * @param mixed $str 发送一段内容,如果内容是数组则会调用json发送
-     * @return $this
+     * @return self
      */
     public function send($str = null)
     {
@@ -218,7 +218,7 @@ class Response
     /**
      * 设置状态码
      * @param  mixed $status 状态码
-     * @return object
+     * @return self
      */
     public function setStatus($status = null)
     {
@@ -278,7 +278,7 @@ class Response
      * @param string $key cookie键名
      * @param string $name cookie值
      * @param string $expires 过期时间
-     * @return $this
+     * @return self
      */
     public function setCookie($key, $name, $expires = '')
     {
@@ -293,7 +293,7 @@ class Response
     /**
      * 清空所有cookie或者指定的cookie
      * @param  string $key cookie名
-     * @return object $this
+     * @return self
      */
     public function clearCookie($key = null)
     {
@@ -337,7 +337,7 @@ class Response
      *
      * @param  mixed $pro 扩展的属性名或者方法名,或者一个关联数组
      * @param  string /null $data   属性值或者一个callable的方法
-     * @return object      $this
+     * @return self
      */
     public function extend($pro, $data = null)
     {
@@ -359,7 +359,7 @@ class Response
      * 执行调用扩展的方法
      * @param  string $method 扩展的方法名
      * @param  mixed $args 参数名
-     * @return object $this
+     * @return self
      * @throws Exception
      */
     public function __call($method, $args)
