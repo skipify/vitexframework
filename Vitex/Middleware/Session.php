@@ -32,7 +32,7 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 
     public function call()
     {
-        $this->vitex->req['session'] = $this;
+        $this->vitex->req->session = $this;
         $this->runNext();
     }
 

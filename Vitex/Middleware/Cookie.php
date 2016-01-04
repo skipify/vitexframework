@@ -109,7 +109,7 @@ class Cookie extends Middleware
     public function call()
     {
         $cookie = $this->getCookie();
-        $this->vitex->req['cookies'] = new Set($cookie);
+        $this->vitex->req->cookies = new Set($cookie);
         $this->runNext();
     }
 }

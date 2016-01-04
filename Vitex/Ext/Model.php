@@ -208,11 +208,14 @@ class Model
 
     /**
      * 返回当前对象的实例，一般用于子查询实例化model
+     * @param string $prefix 表名前缀
      * @return self
      */
-    public static function sub()
+    public static function sub($prefix='')
     {
-        return new self;
+        $self = new self;
+        $self->setPrefix($prefix);
+        return $self;
     }
 
     /**
