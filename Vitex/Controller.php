@@ -21,6 +21,7 @@ class Controller
     public $vitex;
     public $req;
     public $res;
+    public $view;
 
     //处理一些变量
     public function __construct()
@@ -33,8 +34,7 @@ class Controller
         //初始化 request response
         $this->req = $this->vitex->req;
         $this->res = $this->vitex->res;
-        //view视图
-        $this->view = $this->vitex->view;
+
         //日志
         $this->log = $this->vitex->log;
     }
@@ -74,7 +74,9 @@ class Controller
      */
     public function view()
     {
-        return $this->vitex->view();
+        //view视图
+        $this->view = $this->vitex->view();
+        return $this->view;
     }
     /**
      * 直接输出模板信息
