@@ -57,6 +57,18 @@ class Request implements \ArrayAccess, \Iterator
      * @var Set session信息 $_SESSION
      */
     public $session;
+    /**
+     * @var string IP地址
+     */
+    public $ip;
+    /**
+     * @var string host
+     */
+    public $hostname;
+    /**
+     * @var string referer
+     */
+    public $referer;
 
     private function __construct()
     {
@@ -88,7 +100,7 @@ class Request implements \ArrayAccess, \Iterator
      */
     public function parseReq()
     {
-        $this->ip       = $this->env->get('REMOTE_ADDR');
+        $this->ip       = $this->getIp();
         $this->hostname = $this->env->get('HTTP_HOST');
         $this->referrer = $this->env->get('HTTP_REFERER');
         $this->referer  = $this->referrer;
@@ -102,6 +114,19 @@ class Request implements \ArrayAccess, \Iterator
             $this->secure = false;
         }
         return $this;
+    }
+
+    /**
+     * 获取IP
+     * @return string
+     */
+    private function getIp()
+    {
+        $ip = $this->env->get("HTTP_CLIENT_IP");
+        $ip = $ip ? : $this->env->get("HTTP_X_FORWARDED_FOR");
+        $ip = $ip ? : $this->env->get("REMOTE_ADDR");
+        $ip = long2ip(ip2long($ip));
+        return $ip;
     }
 
     /**

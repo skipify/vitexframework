@@ -143,7 +143,8 @@ class Vitex
         if (!($errno & error_reporting())) {
             return;
         }
-        $this->log->error("Code:{code}\tMsg:{msg}\tFile:{file}\tLine:{line}", ['code' => $errno, 'msg' => $errstr, 'file' => $errfile, 'line' => $errline]);
+        $this->log->error("Code:{code}\tMsg:{msg}\tFile:{file}\tLine:{line}",
+            ['code' => $errno, 'msg' => $errstr, 'file' => $errfile, 'line' => $errline]);
     }
 
     /**
@@ -461,6 +462,22 @@ class Vitex
             return $this->preUse($pattern);
         }
         return $this->invoke($pattern, $call);
+    }
+
+    /**
+     * 直接执行中间件
+     * @param $middleware Middleware
+     * @return $this
+     * @throws Exception
+     */
+    public function runMiddleware($middleware)
+    {
+        if ($middleware instanceof Middleware) {
+            $middleware->setVitex($this);
+            $middleware->call();
+            return $this;
+        }
+        throw new Exception("中间件参数不是有效的中间件");
     }
 
     /**

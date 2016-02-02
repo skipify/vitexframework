@@ -22,11 +22,13 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
     use \Vitex\helper\SetMethod;
     public function __construct($sid = '')
     {
-        if (session_id() == '') {
-            if ($sid) {
-                session_id($sid);
+        if(!isset($_SESSION)){
+            if (session_id() == '') {
+                if ($sid) {
+                    session_id($sid);
+                }
+                session_start();
             }
-            session_start();
         }
     }
 
