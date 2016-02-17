@@ -76,7 +76,7 @@ class Router
         if (filter_var($url, FILTER_VALIDATE_URL)) {
             return $url;
         }
-        $url = '/' . ltrim($url, '/');
+        $url     = '/' . ltrim($url, '/');
         $baseUrl = "";
         if ($this->cacheBaseurl === null) {
             $vitex   = Vitex::getInstance();
@@ -207,7 +207,6 @@ class Router
         return $this->_patterns;
     }
 
-
     /**
      * 匹配URL方法
      * @param $method
@@ -270,7 +269,7 @@ class Router
             //当前应用
             $vitex = Vitex::getInstance();
             $app   = $vitex->appName;
-            $class = '\\' . ucfirst($app) . '\\Controller\\' . $class;
+            $class = '\\' . $app . '\\Controller\\' . $class;
         }
         $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {

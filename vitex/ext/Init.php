@@ -119,7 +119,7 @@ class Init
         if (file_exists($indexfile)) {
             return false;
         }
-        $code = 'PD9waHAKcmVxdWlyZSAnLi4vdmVuZG9yL2F1dG9sb2FkLnBocCc7CiR2aXRleCA9IFxWaXRleFxWaXRleDo6Z2V0SW5zdGFuY2UoKTsKCmNvbnN0IFdFQlJPT1QgPSBfX0RJUl9fOwovL+mFjee9rui3r+eUseaWh+S7tuWcsOWdgAovL+mFjee9ruaooeadv+i3r+W+hAovL+mFjee9ruWIm+W7uueahOW6lOeUqGFwcO+8jOaKiuivpeebruW9leWinuWKoOWIsOiHquWKqOWKoOi9veeahOWQjeWNleS4rQokdml0ZXgtPmluaXQoJ3thcHB9JywgZGlybmFtZShfX0RJUl9fKSk7Cgokdml0ZXgtPnVzaW5nKG5ldyBcVml0ZXhcTWlkZGxld2FyZVxTZXNzaW9uKCkpOwoKJHZpdGV4LT5hbGwoJy8nLCBmdW5jdGlvbiAoKSB7CiAgICBlY2hvICc8aDE+V2VsY29tZSBWaXRleCEhPC9oMT4nOwp9KTsKCiR2aXRleC0+Z3JvdXAoJy93ZWxjb21lJywgJ0luZGV4Jyk7CiR2aXRleC0+Z2V0KCcvdXNlcicsJ1VzZXInKTsgLy/osIPnlKhDb250cm9sbGVy5LitVXNlcuexu+eahGdldOaWueazlQoKJHZpdGV4LT5ydW4oKTs=';
+        $code = 'PD9waHAKcmVxdWlyZSAnLi4vdmVuZG9yL2F1dG9sb2FkLnBocCc7CiR2aXRleCA9IFx2aXRleFxWaXRleDo6Z2V0SW5zdGFuY2UoKTsKCmNvbnN0IFdFQlJPT1QgPSBfX0RJUl9fOwovL+mFjee9rui3r+eUseaWh+S7tuWcsOWdgAovL+mFjee9ruaooeadv+i3r+W+hAovL+mFjee9ruWIm+W7uueahOW6lOeUqGFwcO+8jOaKiuivpeebruW9leWinuWKoOWIsOiHquWKqOWKoOi9veeahOWQjeWNleS4rQokdml0ZXgtPmluaXQoJ3thcHB9JywgZGlybmFtZShfX0RJUl9fKSk7Cgokdml0ZXgtPnVzaW5nKG5ldyBcdml0ZXhcTWlkZGxld2FyZVxTZXNzaW9uKCkpOwoKJHZpdGV4LT5hbGwoJy8nLCBmdW5jdGlvbiAoKSB7CiAgICBlY2hvICc8aDE+V2VsY29tZSBWaXRleCEhPC9oMT4nOwp9KTsKCiR2aXRleC0+Z3JvdXAoJy93ZWxjb21lJywgJ0luZGV4Jyk7CiR2aXRleC0+Z2V0KCcvdXNlcicsJ1VzZXInKTsgLy/osIPnlKhDb250cm9sbGVy5LitVXNlcuexu+eahGdldOaWueazlQoKJHZpdGV4LT5ydW4oKTs=';
         $code = base64_decode($code);
         //创建新文件
         file_put_contents($indexfile, str_replace('{app}', $this->appname, $code));
@@ -131,8 +131,8 @@ class Init
     public function model()
     {
         $file = $this->dirname . '/' . $this->appname . '/model/Index.php';
-        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2Uge2FwcH1cTW9kZWw7CgpjbGFzcyBJbmRleCBleHRlbmRzIFxWaXRleFxFeHRcTW9kZWwKewogICAgcHVibGljIGZ1bmN0aW9uIF9fY29uc3RydWN0KCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgLy/pu5jorqTnmoTooajlkI3mmK/nsbvlkI0g5pys5L6L5Li6IGluZGV4KOWwj+WGmSkKICAgICAgICAvL+m7mOiupOeahOS4u+mUruS4uiBpZAogICAgICAgIC8v5Y+v5Lul5Zyo6L+Z6YeM6YeN5paw6K6+572u5Li76ZSu5ZKM6KGo5ZCNCiAgICAgICAgJHRoaXMtPnBrICAgID0gJ2lkJzsKICAgICAgICAkdGhpcy0+dGFibGUgPSAndXNlcic7CiAgICB9Cn0=';
-        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
+        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2Uge2FwcH1cTW9kZWw7CgpjbGFzcyBJbmRleCBleHRlbmRzIFx2aXRleFxFeHRcTW9kZWwKewogICAgcHVibGljIGZ1bmN0aW9uIF9fY29uc3RydWN0KCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgLy/pu5jorqTnmoTooajlkI3mmK/nsbvlkI0g5pys5L6L5Li6IGluZGV4KOWwj+WGmSkKICAgICAgICAvL+m7mOiupOeahOS4u+mUruS4uiBpZAogICAgICAgIC8v5Y+v5Lul5Zyo6L+Z6YeM6YeN5paw6K6+572u5Li76ZSu5ZKM6KGo5ZCNCiAgICAgICAgJHRoaXMtPnBrICAgID0gJ2lkJzsKICAgICAgICAkdGhpcy0+dGFibGUgPSAndXNlcic7CiAgICB9Cn0=';
+        file_put_contents($file, str_replace('{app}', $this->appname, base64_decode($code)));
         return true;
     }
 
@@ -156,11 +156,11 @@ class Init
     public function controller()
     {
         $file = $this->dirname . '/' . $this->appname . '/controller/Controller.php';
-        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7Cgp1c2UgXFZpdGV4XENvbnRyb2xsZXIgYXMgVmNvbnRyb2xsZXI7CgpjbGFzcyBDb250cm9sbGVyIGV4dGVuZHMgVmNvbnRyb2xsZXIKewoKfQ==';
-        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
+        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7Cgp1c2UgXHZpdGV4XENvbnRyb2xsZXIgYXMgVmNvbnRyb2xsZXI7CgpjbGFzcyBDb250cm9sbGVyIGV4dGVuZHMgVmNvbnRyb2xsZXIKewoKfQ==';
+        file_put_contents($file, str_replace('{app}', $this->appname, base64_decode($code)));
         $file = $this->dirname . '/' . $this->appname . '/controller/User.php';
         $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7CgpjbGFzcyBVc2VyIGV4dGVuZHMgQ29udHJvbGxlcgp7CiAgICBwdWJsaWMgZnVuY3Rpb24gZ2V0KCkKICAgIHsKICAgICAgICBlY2hvICd1c2VyJzsKICAgIH0KfQ==';
-        file_put_contents($file, str_replace('{app}', ucfirst($this->appname), base64_decode($code)));
+        file_put_contents($file, str_replace('{app}', $this->appname, base64_decode($code)));
     }
 
 }
