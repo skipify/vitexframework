@@ -178,7 +178,7 @@ class Vitex
         $this->appName = $app;
         $setting       = array_merge($_setting, $setting);
         $this->setConfig($setting);
-        $namespace = ucfirst($app);
+        $namespace = $app;
         $this->loader->addNamespace('\\' . $namespace, $dir . '/' . $app . '/');
         //初始化预加载的中间件
         foreach ($middleware as $mw) {
