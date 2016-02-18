@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.7.7";
+    const VERSION = "0.8.0";
     /**
      * App instance
      */
