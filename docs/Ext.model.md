@@ -5,7 +5,7 @@
 使用此类之前必须要加载 PDO类库，设置好数据库链接等。   
 
 ``` 
-$vitex->using(new \Vitex\Ext\Pdo([
+$vitex->using(new \vitex\ext\Pdo([
 	'host'     => 'localhost',
 	'database' => 'test',
 	'charset'  => 'utf8',
@@ -18,14 +18,14 @@ $vitex->using(new \Vitex\Ext\Pdo([
 
 第三个参数为密码   
 
-`$vitex->using(new \Vitex\Ext\Pdo(’mysql:dbname=test;host=localhost;charset=utf8‘, 'root', 'root'));`
+`$vitex->using(new \vitex\ext\Pdo(’mysql:dbname=test;host=localhost;charset=utf8‘, 'root', 'root'));`
 
 Model是一个简单的ORM，非常轻量级的数据库操作类。
 
 ## 使用
 
 ``` 
-use \Vitex\Ext\Model;
+use \vitex\ext\Model;
 
 class User extends Model
 
@@ -136,7 +136,7 @@ $this->changeDatabase([
 
 **示例**  
 
-`\Vitex\Ext\Model::sub()->from('user')->select('id')`  
+`\vitex\ext\Model::sub()->from('user')->select('id')`  
 
 //如果当做条件传递给`where`会自动调用toString方法转为字符串 `select id from user `  
 
@@ -185,7 +185,7 @@ $this->select("user.name as uname")
 
 **签名**  
 
-`whereRaw(string  $val) : \Vitex\Ext\object`  
+`whereRaw(string  $val) : \vitex\ext\object`  
 
 **参数**  
 
@@ -206,7 +206,7 @@ $this->where('age','>',26)->whereRaw("and name='Vitex'")
 
 **签名**   
 
-`where(mixed $key,string $op,string $val) : \Vitex\Ext\object`   
+`where(mixed $key,string $op,string $val) : \vitex\ext\object`   
 
 **参数**   
 
@@ -231,7 +231,7 @@ $this->where(["id"=>1,"name"=>"vitex"]) => $this->where('id','=',1)->where('name
 
 **签名**   
 
-`whereIn(string  $key,string $val) : \Vitex\Ext\object`   
+`whereIn(string  $key,string $val) : \vitex\ext\object`   
 
 **参数**   
 
@@ -244,7 +244,7 @@ string/array/object $val 值
 ``` 
 $this->whereIn("name","a,b,c") where name in ('a','b','c')  
 $this->whereIn("name",['a','b',c]) // 同上  
-$this->whereIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) `
+$this->whereIn('id',\vitex\ext\Model::sub()->from("user")->select('id')) `
 where id in (select id from user)
 //如果是子查询的whereIn，请确保子查询的代码中不会包含 ,,如果包含 ,可能会导致错误   
 ```
@@ -255,7 +255,7 @@ where id in (select id from user)
 
 **签名**   
 
-`whereNotIn(string  $key,string $val) : \Vitex\Ext\object`   
+`whereNotIn(string  $key,string $val) : \vitex\ext\object`   
 
 **参数**   
 
@@ -268,7 +268,7 @@ string/array/object $val 值
 ``` 
 $this->whereNotIn("name","a,b,c") where name not in ('a','b','c')  
 $this->whereNotIn("name",['a','b',c]) // 同上  
-$this->whereNotIn('id',\Vitex\Ext\Model::sub()->from("user")->select('id')) 
+$this->whereNotIn('id',\vitex\ext\Model::sub()->from("user")->select('id')) 
 where id not in (select id from user)
 ```
 
@@ -280,7 +280,7 @@ where id not in (select id from user)
 
 **签名**   
 
-`whereNull(string  $key) : \Vitex\Ext\object`   
+`whereNull(string  $key) : \vitex\ext\object`   
 
 **参数**   
 
@@ -296,7 +296,7 @@ string $key 键值，字段名
 
 **签名**   
 
-`whereNotNull(string  $key) : \Vitex\Ext\object`   
+`whereNotNull(string  $key) : \vitex\ext\object`   
 
 **参数**   
 
@@ -314,7 +314,7 @@ string/array/object $val 值
 
 **签名**   
 
-`whereExists(object/string  $key) : \Vitex\Ext\object`   
+`whereExists(object/string  $key) : \vitex\ext\object`   
 
 **参数**   
 
@@ -323,7 +323,7 @@ string $key 子查询
 **示例**   
 
 ``` 
-$this->whereExists(\Vitex\Ext\Model::sub()->from("user")->select('id,name')) 
+$this->whereExists(\vitex\ext\Model::sub()->from("user")->select('id,name')) 
 //where exists (select id,name from user)   
 $this->whereExists('select id,name from user')     
 ```
@@ -334,7 +334,7 @@ $this->whereExists('select id,name from user')
 
 **签名**   
 
-`whereNotExists(object/string  $key) : \Vitex\Ext\object`   
+`whereNotExists(object/string  $key) : \vitex\ext\object`   
 
 **参数**   
 
@@ -342,7 +342,7 @@ string $key 子查询
 
 **示例**   
 
-`$this->whereNotExists(\Vitex\Ext\Model::sub()->from("user")->select('id,name')) `   
+`$this->whereNotExists(\vitex\ext\Model::sub()->from("user")->select('id,name')) `   
 
 //where not exists (select id,name from user)   
 
@@ -354,7 +354,7 @@ string $key 子查询
 
 **签名**   
 
-`whereBetween(string  $key,array $val) : \Vitex\Ext\object`   
+`whereBetween(string  $key,array $val) : \vitex\ext\object`   
 
 **参数**   
 
@@ -372,7 +372,7 @@ array $val 值,一个包含两个元素的数组， between ele1 and ele2
 
 **签名**   
 
-`whereNotBetween(string  $key,array $val) : \Vitex\Ext\object`   
+`whereNotBetween(string  $key,array $val) : \vitex\ext\object`   
 
 **参数**   
 
@@ -391,7 +391,7 @@ array $val 值,一个包含两个元素的数组， not between ele1 and ele2
 **签名**
 
 ``` 
-findInSet(string $column,mixed $val) : \Vitex\Ext\Model
+findInSet(string $column,mixed $val) : \vitex\ext\Model
 ```
 
 **参数**
@@ -568,7 +568,7 @@ string/callable 	$str 	union字符串或者一个可以tostring的对象（例�
 
 `$this->union('select * from user')`  
 
-`$this->union(\Vitex\Ext\Model::sub()->from('user'))`  
+`$this->union(\vitex\ext\Model::sub()->from('user'))`  
 
 ### set()
 

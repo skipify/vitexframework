@@ -8,16 +8,16 @@
 
 ``` php
 //初始化一个验证码实例，没有指定参数此时生成一个普通验证码80*40的透明png图片直接header输出到浏览器
-$captcha = new \Vitex\Ext\Captcha();
+$captcha = new \vitex\ext\Captcha();
 $captaha->get();
 //验证返回的验证码是否正确，正确则返回true否则返回false
-\Vitex\Ext\Catpcha::test("asdf");
+\vitex\ext\Catpcha::test("asdf");
 ```
 
 指定参数
 
 ``` php
-use \Vitex\Ext\Captcha;
+use \vitex\ext\Captcha;
 //此方法生成一个计算型的验证码比如 输入验证码内容为 3+4=?
 $catpcha = new Captcha(["type"=>2,"linenum"=>6]);
 $captcha->get();

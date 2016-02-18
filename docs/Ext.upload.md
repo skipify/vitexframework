@@ -1,13 +1,13 @@
 # Upload 文件上传
 
-Upload类是一个专门用于上传的工具，此类是一个继承自\Vitex\Middleware的中间件程序；他可以当做一个中间件来使用，也可以单独在处理程序中当做普通的类来调用。  
+Upload类是一个专门用于上传的工具，此类是一个继承自\vitex\middleware的中间件程序；他可以当做一个中间件来使用，也可以单独在处理程序中当做普通的类来调用。  
 
 ## 当做中间件使用
 
 中间件形式的调用，所有的配置都必须在构造函数中指定  
 
 ``` 
-$vitex->using(new \Vitex\Ext\Upload([
+$vitex->using(new \vitex\ext\Upload([
 	'ext' => 'jpg',  
 	'fieldname' => 'filename',  
 	'dest' => '/home/www/default'  
@@ -19,7 +19,7 @@ $vitex->using(new \Vitex\Ext\Upload([
 ​	
 
 ``` 
-$upload = new \Vitex\Ext\Upload([
+$upload = new \vitex\ext\Upload([
 	'ext' => 'jpg',  
 	'fieldname' => 'filename',  
 	'dest' => '/home/www/default'  

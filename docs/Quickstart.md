@@ -16,7 +16,7 @@
 	
 	<?php
 	require '../Vitex/Vitex.php';
-	$vitex = \Vitex\Vitex::getInstance();
+	$vitex = \vitex\Vitex::getInstance();
 
 	$vitex->all('/', function ($req) {
 		echo "Hello Vitex!!";

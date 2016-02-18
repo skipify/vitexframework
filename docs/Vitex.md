@@ -4,7 +4,7 @@
 
 	
 
-	`$vitex = \Vitex\Vitex::getInstance()`
+	`$vitex = \vitex\Vitex::getInstance()`
 
 创建vitex的实例。
 
@@ -24,7 +24,7 @@ setConfig/getConfig
 'debug'               => true,   
 'templates.path'     => './templates',   
 'templates.ext'      => '.html',
-'view'               => '\Vitex\View', 
+'view'               => '\vitex\View', 
 'callback' => 'callback',  
 'router.group_path'   => '',   
 'router.compatible'  => false, //路由兼容模式，不支持pathinfo的路由开启  
@@ -87,7 +87,7 @@ string 	$name 	配置名
 
 这是一个静态方法，用于获取Vitex的实例（单例对象）。  
 
-`$vitex = \Vitex\Vitex::getInstance()`  
+`$vitex = \vitex\Vitex::getInstance()`  
 
 ### init
 
@@ -301,9 +301,9 @@ mixed $call 要执行的中间件处理方法或者null(应用中间件时)
 
 **示例**  
 
-	`$vitex->using(new \Vitex\Middleware\Session())`  
+	`$vitex->using(new \vitex\middleware\Session())`  
 
-	所有的预处理中间件(应用级中间件)必须要继承自 \Vitex\Middleware类   
+	所有的预处理中间件(应用级中间件)必须要继承自 \vitex\middleware类   
 
 ``` 
 `$vitex->using('/',function($req,$res,$next){echo $req->query->name;})`  

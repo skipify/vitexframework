@@ -2,7 +2,7 @@
 
 此中间没有默认加载，如果需要使用请手工加载： 
 
-`$vitex->using(new\Vitex\Middleware\Session());`
+`$vitex->using(new\vitex\middleware\Session());`
 
 ## 使用方式
 

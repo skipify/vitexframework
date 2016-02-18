@@ -8,7 +8,7 @@
 
 ## API
 
-`$acl = new \Vitex\Ext\Acl()`  
+`$acl = new \vitex\ext\Acl()`  
 
 ### addRule()
 
@@ -18,11 +18,11 @@
 
 **签名**  
 
-`addRule(\Vitex\Ext\string/array  $pattern)`   
+`addRule(\vitex\ext\string/array  $pattern)`   
 
 **参数**  
 
-\Vitex\Ext\string/array 	$pattern  规则多个请传数组  
+\vitex\ext\string/array 	$pattern  规则多个请传数组  
 
 **示例**  
 
@@ -82,15 +82,15 @@ string 	$url 	URL
 
 **签名**  
 
-`addChild(\Vitex\Ext\Acl  $child) : object`  
+`addChild(\vitex\ext\Acl  $child) : object`  
 
 **参数**  
 
-\Vitex\Ext\Acl 	$child 	子对象   
+\vitex\ext\Acl 	$child 	子对象   
 
 **示例**  
 
-	$acl2 = new \Vitex\Ext\Acl();   
+	$acl2 = new \vitex\ext\Acl();   
 
 	$acl2->addRule('/user/:id');  
 

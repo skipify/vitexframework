@@ -12,7 +12,7 @@
 
 ``` 
 require '../vendor/autoload.php';
-$vitex = \Vitex\Vitex::getInstance();
+$vitex = \vitex\Vitex::getInstance();
 const WEBROOT = __DIR__;
 $vitex->init('app', dirname(__DIR__));
 ```
@@ -39,7 +39,7 @@ $appname = $vitex->setAppMap()->multiInit();
 
 ``` 
 require '../vendor/autoload.php';
-$vitex = \Vitex\Vitex::getInstance();
+$vitex = \vitex\Vitex::getInstance();
 const WEBROOT = __DIR__;
 //设置应用映射
 $vitex->setAppMap([
@@ -63,7 +63,7 @@ $vitex->multiInit();
 
 ``` 
 require '../vendor/autoload.php';
-$vitex = \Vitex\Vitex::getInstance();
+$vitex = \vitex\Vitex::getInstance();
 const WEBROOT = __DIR__;
 //设置应用映射
 //首先注册一个默认的请求处理方式，对于所有未知的请求都会路由到此处，如果不指定此路由，当有未知路由访问时则会显示404,此处可以设置为默认路由，用于不需要分组的应用来使用

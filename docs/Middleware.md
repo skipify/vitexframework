@@ -22,7 +22,7 @@ Cookie执行后主要是在Request对象中增加了一个 cookies 的属性，�
 
 session 中间件没有自动加载，如果需要使用session 可以手动加载该中间件  
 
-`$vitex->using(new \Vitex\Middleware\Session());`  
+`$vitex->using(new \vitex\middleware\Session());`  
 
 Session中间件主要是重新定义了session信息，在Request对象中增加了session属性,  
 加载Session后可以使用 `$req->session->name`或`$req->session['name']` 来获取session  
@@ -30,16 +30,16 @@ Session中间件主要是重新定义了session信息，在Request对象中增�
 
 ## 中间件开发
 
-所有的中间件都应该继承 \Vitex\Middleware ，这样才可以使用using方法注册中间件。  
+所有的中间件都应该继承 \vitex\middleware ，这样才可以使用using方法注册中间件。  
 
-基类\Vitex\Middleware包含一个子类必须要实现的方法 `call`,此方法供给调用中间件执行时调用。  
+基类\vitex\middleware包含一个子类必须要实现的方法 `call`,此方法供给调用中间件执行时调用。  
 
 包含一个 `runNext` 的 final 方法，此方法为执行下一个中间件的调用函数，如果call方法中不好含`$this->runNext()` 那么系统在执行到该中间件后会自动中断后续中间件的执行。  
 
 >**注意：** 此中间件的中的中断并不会中断请求的执行，只是会阻止其他**早于**当前中间件注册的中间件的执行(执行与注册顺序相反)。
 
 
-	class Test extends \Vitex\Middleware
+	class Test extends \vitex\middleware
 	{
 
 		public function call()
@@ -49,16 +49,16 @@ Session中间件主要是重新定义了session信息，在Request对象中增�
 		}
 	}
 
-### \Vitex\Middleware
+### \vitex\middleware
 
 #### nextMiddleware()
 设置下一个要执行的预处理中间件，Vitex用它来实现call的`链式`调用
 **参数**  
-\Vitex\Middleware 	$call 	中间件
+\vitex\middleware 	$call 	中间件
 
 #### setVitex()
 
-设置当前应用，本方法是Vitex注册中间件时使用，使得所有继承  \Vitex\Middleware的对象都可以使用`$this->vitex`调用 Vitex
+设置当前应用，本方法是Vitex注册中间件时使用，使得所有继承  \vitex\middleware的对象都可以使用`$this->vitex`调用 Vitex
 **参数**  
 object 	$vitex 	Vitex类的一个实例
 
@@ -74,7 +74,7 @@ object 	$vitex 	Vitex类的一个实例
 
 #### call()
 
-此方法是一个抽象方法，所有继承\Vitex\Middleware的接口都必须要实现此方法。
+此方法是一个抽象方法，所有继承\vitex\middleware的接口都必须要实现此方法。
 此方法是Vitex执行调用中间件的时候自动调用的方法，因此必须要实现。
 
 > **注意** call方法中要注意 `$this->runNext()`方法的使用，此方法是执行下一个注册的中间件的触发方法，如果你不是确认要中断中间件的执行请务必要执行此方法。

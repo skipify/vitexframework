@@ -196,14 +196,14 @@ $vitex->get('/',function($req,$res,$next){
 处理函数的类定义需要继承vitex的Controller类
 
 ``` 
-	class User extends \Vitex\Controller
+	class User extends \vitex\Controller
 	{
 		public function get()
 		{
 			//在方法里可以直接用
 			//$this->req 调用 $req对象
 			//$this->res 调用 $res对象
-			//$this->vitex  调用 Vitex实例 等同于  \Vitex\Vitex::getInstance(); 
+			//$this->vitex  调用 Vitex实例 等同于  \vitex\Vitex::getInstance(); 
 			//此外 $vitex中的其他方法也可以直接使用例如 ：
 			//$this->getConfig() === $this->vitex->getConfig();
 		}
