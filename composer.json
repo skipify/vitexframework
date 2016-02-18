@@ -1,6 +1,6 @@
 {
     "name": "skipify/vitex",
-    "version":"0.8.0",
+    "version":"0.7.7",
     "description": "A Tiny Framework.",
     "keywords": ["framework", "vitex"],
     "license": "MIT",
@@ -16,7 +16,7 @@
         }
     ],
     "bin": [
-        "Vitex/Ext/Init.php"
+        "vitex/ext/Init.php"
     ],
     "require": {
         "php": ">=5.5.0",
@@ -24,6 +24,6 @@
         "ext-mbstring": "*"
     },
     "autoload": {
-        "psr-4": {"Vitex\\": "Vitex"}
+        "psr-4": {"vitex\\": "Vitex"}
     }
 }
