@@ -24,6 +24,6 @@
         "ext-mbstring": "*"
     },
     "autoload": {
-        "psr-4": {"vitex\\": "Vitex"}
+        "psr-4": {"vitex\\": "vitex"}
     }
 }
