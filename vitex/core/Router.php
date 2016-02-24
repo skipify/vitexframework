@@ -39,8 +39,8 @@ class Router
 
     /**
      * 设置预支的正则表达式
-     * @param mixed $name 名称/或者关联数组
-     * @param string $regexp 正则
+     * @param  mixed  $name   名称/或者关联数组
+     * @param  string $regexp 正则
      * @return self
      */
     public function setRegexp($name, $regexp = null)
@@ -91,7 +91,7 @@ class Router
      */
     /**
      * 判断当前字符是否复合参数的命名规则
-     * @param  String      $letter 字符
+     * @param  String    $letter 字符
      * @return boolean
      */
     public function isValid($letter)
@@ -146,9 +146,9 @@ class Router
 
     /**
      * 注册映射一个请求参数
-     * @param string $method 请求方法
-     * @param string $pattern 匹配参数
-     * @param mixed $call 执行的方法
+     * @param  string $method  请求方法
+     * @param  string $pattern 匹配参数
+     * @param  mixed  $call    执行的方法
      * @return self
      */
 
@@ -209,8 +209,8 @@ class Router
 
     /**
      * 匹配URL方法
-     * @param $method
-     * @param $url
+     * @param  $method
+     * @param  $url
      * @return \Generator
      */
     private function match($method, $url)
@@ -255,9 +255,9 @@ class Router
 
     /**
      * 根据路由信息实例化相应的控制器类来返回函数方法对象
-     * @param  string $str                 字符串
-     * @param  string $httpmethod          http请求的方法
-     * @return callable  可执行的方法
+     * @param  string   $str                 字符串
+     * @param  string   $httpmethod          http请求的方法
+     * @return callable 可执行的方法
      */
     public function getCallable($str, $httpmethod)
     {
@@ -269,7 +269,7 @@ class Router
             //当前应用
             $vitex = Vitex::getInstance();
             $app   = $vitex->appName;
-            $class = '\\' . $app . '\\Controller\\' . $class;
+            $class = '\\' . $app . '\\controller\\' . $class;
         }
         $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {
@@ -281,9 +281,9 @@ class Router
 
     /**
      * 匹配URL匹配信息
-     * @param array $matches
-     * @return object
      * @internal param array $params 匹配的URL段
+     * @param  array    $matches
+     * @return object
      */
     public function _parseParams(array $matches)
     {
