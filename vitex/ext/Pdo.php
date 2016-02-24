@@ -13,7 +13,7 @@
 namespace vitex\ext;
 
 use vitex\core\Exception;
-use vitex\middleware;
+use vitex\Middleware;
 
 class Pdo extends Middleware
 {
@@ -101,7 +101,7 @@ class Pdo extends Middleware
 
     /**
      * 执行返数据，生成器数据
-     * @param  string $mode                返回的数据模式，默认为class模式
+     * @param  string     $mode                返回的数据模式，默认为class模式
      * @return \Generator 一个信息对象
      */
     public function fetch($mode = \PDO::FETCH_CLASS)
@@ -116,8 +116,8 @@ class Pdo extends Middleware
 
     /**
      * 返回全部的复合查询的数据
-     * @param int|string $mode 返回的数据模式，默认为class模式
-     * @return array 一个包含对象的数组
+     * @param  int|string $mode                         返回的数据模式，默认为class模式
+     * @return array      一个包含对象的数组
      */
     public function fetchAll($mode = \PDO::FETCH_CLASS)
     {
@@ -158,7 +158,7 @@ class Pdo extends Middleware
     {
         if ($this->vitex->getConfig('debug')) {
 
-            $msg = "<p style='color:red;font-weight:bold'>".$sql."<p>";
+            $msg = "<p style='color:red;font-weight:bold'>" . $sql . "<p>";
             $msg .= "<p>" . $error . "</p>";
         } else {
             $msg = 'SQL:' . $sql . '  Error: ' . $error;
