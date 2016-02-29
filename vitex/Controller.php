@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -41,7 +41,7 @@ class Controller
 
     /**
      * 获取配置
-     * @param  string $name 配置名
+     * @param  string  $name 配置名
      * @return mixed
      */
     public function getConfig($name)
@@ -50,13 +50,13 @@ class Controller
     }
     /**
      * 设置配置文件
-     * @param string /array $name 键值/数组配置
-     * @param string /null  $val  值
+     * @param  string /array $name 键值/数组配置
+     * @param  string /null  $val 值
      * @return self
      */
     public function setConfig($name, $val = null)
     {
-        return $this->vitex->setConfig($name,$val);
+        return $this->vitex->setConfig($name, $val);
     }
     /**
      * 构造URL
@@ -66,7 +66,7 @@ class Controller
      */
     public function url($url, $params = [])
     {
-        return $this->vitex->url($url,$params);
+        return $this->vitex->url($url, $params);
     }
     /**
      * 启用view视图
@@ -86,7 +86,7 @@ class Controller
      */
     public function render($tpl, array $data = [], $status = null)
     {
-        $this->vitex->render($tpl,$data,$status);
+        $this->vitex->render($tpl, $data, $status);
     }
     public function __call($method, $args)
     {
@@ -99,7 +99,7 @@ class Controller
 
     /**
      * 当调用不存在的属性时会自动去Vitex查找
-     * @param  string $name 键值属性名
+     * @param  string $name          键值属性名
      * @return mixed  属性的值
      */
     public function __get($name)

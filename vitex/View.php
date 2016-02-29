@@ -3,13 +3,14 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
  * @license MIT
  */
 namespace Vitex;
+
 use vitex\core\Exception;
 
 /**
@@ -31,14 +32,14 @@ class View
 
     public function __construct()
     {
-        $this->data = new helper\Set();
-        $this->vitex = Vitex::getInstance();
+        $this->data   = new helper\Set();
+        $this->vitex  = Vitex::getInstance();
         $this->tplext = $this->vitex->getConfig('templates.ext');
         $this->setTplPath($this->vitex->getConfig('templates.path'));
     }
 
     /**
-     * @param $style 模板样式名称
+     * @param  $style 模板样式名称
      * @return self
      */
     public function setStyle($style)
@@ -49,8 +50,8 @@ class View
 
     /**
      * 给模板传递变量
-     * @param string $key 键值
-     * @param string $val 键名
+     * @param  string $key 键值
+     * @param  string $val 键名
      * @return self
      */
     public function set($key, $val = null)
@@ -67,7 +68,7 @@ class View
 
     /**
      * 获取数据
-     * @param  string $key 键值
+     * @param  string $key              键值
      * @return mixed  要返回的值
      */
     public function get($key = null)
@@ -89,9 +90,9 @@ class View
 
     /**
      * 设置/获取当前显示的模板所在路径
-     * @param $tplpath
-     * @return self
      * @internal param string $tpl 模板路径名字
+     * @param  $tplpath
+     * @return self
      */
     public function setTplPath($tplpath)
     {
@@ -115,17 +116,17 @@ class View
 
     /**
      * 返回解析的模板数据
-     * @param  string $tplname 模板名称
-     * @param  array  $data 数据
-     * @param bool    $merge
-     * @return string 解析后的数据
+     * @param  string           $tplname             模板名称
+     * @param  array            $data                数据
+     * @param  bool             $merge
      * @throws core\Exception
+     * @return string           解析后的数据
      */
     public function fetch($tplname, array $data = [], $merge = true)
     {
         if ($merge) {
-            $locals = $this->vitex->res->locals->all();
-            $data = array_merge($locals, $this->get(), $data);
+            $locals        = $this->vitex->res->locals->all();
+            $data          = array_merge($locals, $this->get(), $data);
             $this->tpldata = $data;
         }
         $tplname = $this->style . $tplname;
@@ -136,18 +137,18 @@ class View
         }
         extract($data, EXTR_OVERWRITE);
         ob_start();
-        if (file_exists($file)){
+        if (file_exists($file)) {
             include $file;
         } else {
-            throw new Exception("模板文件：".$file."不存在");
+            throw new Exception("模板文件：" . $file . "不存在");
         }
         return ob_get_clean();
     }
 
     /**
      * 定义一个模板中可以用的URL构造函数
-     * @param  string $url url段
-     * @param  array  $params 关联数组
+     * @param  string $url           url段
+     * @param  array  $params        关联数组
      * @return string 链接地址
      */
     public function url($url, $params = [])
@@ -158,8 +159,8 @@ class View
     /**
      * 装载模板,本方法一般用于模板嵌套中使用，数据如果不添加则在子模板中仍然使用父模板中一样的数据
      * @param  string  $tplname 模板名称
-     * @param  array   $data 附加的数据
-     * @param  boolean $merge 是否要重新合并数据
+     * @param  array   $data    附加的数据
+     * @param  boolean $merge   是否要重新合并数据
      * @return void
      */
     public function render($tplname, array $data = [], $merge = false)
@@ -171,7 +172,7 @@ class View
     /**
      * 展示模板内容，直接输出
      * @param  string $tplname 模板名称
-     * @param  array  $data 数据
+     * @param  array  $data    数据
      * @return void
      */
     public function display($tplname, array $data = [])

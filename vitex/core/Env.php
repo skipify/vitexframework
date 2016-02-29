@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -73,8 +73,8 @@ class Env implements \ArrayAccess
 
     /**
      * 修改环境变量
-     * @param  string $key    键值
-     * @param  string $val    键名
+     * @param  string $key 键值
+     * @param  string $val 键名
      * @return self
      */
     public function set($key, $val)
@@ -85,8 +85,8 @@ class Env implements \ArrayAccess
 
     /**
      * 设置获取请求方法
-     * @param  string/null   $method     请求方法
-     * @return self 返回值
+     * @param  string/null $method     请求方法
+     * @return self        返回值
      */
     public function method($method = null)
     {
@@ -96,7 +96,7 @@ class Env implements \ArrayAccess
         $this->set("REQUEST_METHOD", $method);
         return $this;
     }
-    
+
     /**
      * 一个兼容的pathinfo获取方法
      * 如果包含分组，这里要重写pathinfo的信息
@@ -121,7 +121,7 @@ class Env implements \ArrayAccess
 
     /**
      * 设置重写后的pathinfo信息
-     * @param $pathinfo
+     * @param  $pathinfo
      * @return self
      */
     public function setPathinfo($pathinfo)

@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -25,8 +25,8 @@ class LogWriter
     }
 
     /**
-     * @param $level
-     * @param $message
+     * @param  $level
+     * @param  $message
      * @return $this
      */
     public function write($level, $message)

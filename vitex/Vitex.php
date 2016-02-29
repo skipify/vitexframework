@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.8.2";
+    const VERSION = "0.8.3";
     /**
      * App instance
      */

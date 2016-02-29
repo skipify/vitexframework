@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -64,8 +64,8 @@ class Route
 
     /**
      * 路由分组
-     * @param string $pattern 分组标识
-     * @param string $class 分组文件名或者一个包含注册路由的callable
+     * @param  string $pattern 分组标识
+     * @param  string $class   分组文件名或者一个包含注册路由的callable
      * @return self
      */
     public function group($pattern, $class)
@@ -77,7 +77,7 @@ class Route
 
     /**
      * 设置 分组的默认路径
-     * @param  string     $path                            路径
+     * @param  string $path 路径
      * @return self
      */
     public function setGroupPath($path)
@@ -129,7 +129,7 @@ class Route
 
     /**
      * 解析分组的内容
-     * @param mixed $g 可执行的方法或者一个文件
+     * @param  mixed       $g 可执行的方法或者一个文件
      * @throws Exception
      */
     private function parseGroupMethod($g)
@@ -167,9 +167,9 @@ class Route
 
     /**
      * 注册路由信息
-     * @param string $method 路由匹配方法
-     * @param string $pattern 路由匹配
-     * @param mixed $callable 执行的方法
+     * @param  string $method   路由匹配方法
+     * @param  string $pattern  路由匹配
+     * @param  mixed  $callable 执行的方法
      * @return self
      */
     public function register($method, $pattern, $callable)
@@ -181,7 +181,7 @@ class Route
 
     /**
      * 404页面
-     * @param callable $call 404执行的方法
+     * @param  callable $call 404执行的方法
      * @return self
      */
     public function notFound(callable $call = null)

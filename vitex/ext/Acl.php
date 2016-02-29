@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -24,8 +24,8 @@ class Acl
 
     /**
      * 添加匹配规则
-     * @param string /array $pattern 规则多个请传数组
-     * @param string $method 请求方法默认为all
+     * @param  string /array  $pattern 规则多个请传数组
+     * @param  string $method 请求方法默认为all
      * @return self
      */
     public function addRule($pattern, $method = 'all')
@@ -121,7 +121,7 @@ class Acl
     /**
      * 添加一个子规则对象，把目标对象规则合并到当前对象中
      * @param  \vitex\ext\Acl $child         子对象
-     * @return self         当前对象
+     * @return self           当前对象
      */
     public function addChild(\vitex\ext\Acl $child)
     {
@@ -136,8 +136,8 @@ class Acl
      * 按照组添加一组整体的权限
      * 注意分组的权限也会被加入到当前对象的权限中去
      *
-     * @param  string    $alias  规则名
-     * @param  array $rules  array
+     * @param  string $alias 规则名
+     * @param  array  $rules array
      * @return self
      */
     public function addGroup($alias, $rules, $method = "all")

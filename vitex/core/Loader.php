@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -126,7 +126,7 @@ class Loader
             // in the relative class name, append with .php
             $file = $base_dir
             . str_replace('\\', '/', $relative_class)
-            . '.php';
+                . '.php';
 
             // if the mapped file exists, require it
             if ($this->requireFile($file)) {

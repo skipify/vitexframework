@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -123,8 +123,8 @@ class Request implements \ArrayAccess, \Iterator
     private function getIp()
     {
         $ip = $this->env->get("HTTP_CLIENT_IP");
-        $ip = $ip ? : $this->env->get("HTTP_X_FORWARDED_FOR");
-        $ip = $ip ? : $this->env->get("REMOTE_ADDR");
+        $ip = $ip ?: $this->env->get("HTTP_X_FORWARDED_FOR");
+        $ip = $ip ?: $this->env->get("REMOTE_ADDR");
         $ip = long2ip(ip2long($ip));
         return $ip;
     }
@@ -224,8 +224,8 @@ class Request implements \ArrayAccess, \Iterator
      * 扩展方法,扩展的如果是类方法必须至少包含一个参数,第一个参数总是当前这个类的实例
      * 例如 function($obj){$obj->extend('a','1');}//第一个参数即为当前类的实例
      *
-     * @param  mixed       $pro    扩展的属性名或者方法名,或者一个关联数组
-     * @param  string/null $data   属性值或者一个callable的方法
+     * @param  mixed       $pro  扩展的属性名或者方法名,或者一个关联数组
+     * @param  string/null $data 属性值或者一个callable的方法
      * @return self
      */
     public function extend($pro, $data = null)
@@ -246,10 +246,10 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 执行调用扩展的方法
-     * @param  string $method 扩展的方法名
-     * @param  mixed $args 参数名
-     * @return self
+     * @param  string      $method 扩展的方法名
+     * @param  mixed       $args   参数名
      * @throws Exception
+     * @return self
      */
     public function __call($method, $args)
     {

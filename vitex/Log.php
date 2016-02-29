@@ -3,7 +3,7 @@
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
- * @package Vitex
+ * @package vitex
  *
  * @author  skipify <skipify@qq.com>
  * @copyright skipify
@@ -11,6 +11,7 @@
  */
 
 namespace Vitex;
+
 use vitex\helper\LogWriter;
 
 /**
@@ -32,7 +33,7 @@ class Log
     const DEBUG     = 'debug';
     //
     protected $enabled;
-    protected $level  = 0;
+    protected $level = 0;
     /**
      * @var array|null|LogWriter
      */
@@ -45,7 +46,7 @@ class Log
 
     /**
      * 设置日志写入
-     * @param  $writer
+     * @param $writer
      */
     public function setWriter($writer)
     {
@@ -66,7 +67,7 @@ class Log
 
     /**
      * 设置是否启用日志记录，如果不启用则自动进入黑洞
-     * @param \boolean $enabled
+     * @param  \boolean $enabled
      * @return $this
      */
     public function setEnabled($enabled)
