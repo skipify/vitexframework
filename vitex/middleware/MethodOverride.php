@@ -12,7 +12,7 @@
 
 namespace vitex\middleware;
 
-use vitex\middleware;
+use vitex\Middleware;
 
 /**
  * 请求方法重写的类，可以使用此方法通过代理重写，或者直接客户端通过参数重写方法

@@ -12,7 +12,7 @@
 
 namespace vitex\middleware;
 
-use vitex\middleware;
+use vitex\Middleware;
 
 /**
  * 把相关的Session信息附加到 req对象中
@@ -22,7 +22,7 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
     use \vitex\helper\SetMethod;
     public function __construct($sid = '')
     {
-        if(!isset($_SESSION)){
+        if (!isset($_SESSION)) {
             if (session_id() == '') {
                 if ($sid) {
                     session_id($sid);
@@ -40,8 +40,8 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 
     /**
      * 设置session的值
-     * @param mixed $key session键名，如果为数组时则为包含键值的一个关联数组
-     * @param mixed $val session值，如果第一个参数是数组的时候此参数不需要指定
+     * @param  mixed   $key session键名，如果为数组时则为包含键值的一个关联数组
+     * @param  mixed   $val session值，如果第一个参数是数组的时候此参数不需要指定
      * @return $this
      */
     public function set($key, $val = null)

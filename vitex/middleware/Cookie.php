@@ -13,7 +13,7 @@ namespace vitex\middleware;
 
 use vitex\helper\Set;
 use vitex\helper\Utils;
-use vitex\middleware;
+use vitex\Middleware;
 
 /**
  * cookie中间件，用于把Cookie信息附加到req对象中
@@ -88,7 +88,7 @@ class Cookie extends Middleware
 
     /**
      * 清空所有或者指定的cookie
-     * @param  string $key    键名
+     * @param  string $key 键名
      * @return self
      */
     public function clearCookie($key = null)
@@ -108,7 +108,7 @@ class Cookie extends Middleware
      */
     public function call()
     {
-        $cookie = $this->getCookie();
+        $cookie                    = $this->getCookie();
         $this->vitex->req->cookies = new Set($cookie);
         $this->runNext();
     }
