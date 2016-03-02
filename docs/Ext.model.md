@@ -534,6 +534,12 @@ string 	$column 	要分组的字段
 
 `$this->groupBy('name')`  
 
+`$this->select(["count(*) as num","FROM_UNIXTIME( `create_at`, '%H' ) as hour"])`
+
+如上示例，如果本身是个函数，则字段中包含`,`的话一定要用数组的形式 或者多次调用 select 不要直接使用 
+
+`$this->select("count(*) as num,FROM_UNIXTIME( `create_at`, '%H' ) as hour")` 这种形式会构造出错
+
 ### distinct()
 
 去重查询,支持链式操作        
