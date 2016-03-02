@@ -866,10 +866,7 @@ class Model
         $sql .= $this->buildWhere();
         //groupby
         if ($this->_sql['group']) {
-            $groupby = array_map(function ($item) {
-                return $this->formatColumn($item);
-            }, $this->_sql['group']);
-            $sql .= ' group by ' . implode(',', $groupby) . ' ';
+            $sql .= ' group by ' . implode(',', $this->_sql['group']) . ' ';
         }
 
         //having
