@@ -1171,7 +1171,7 @@ class Model
                 throw new Exception("传递的字段与自增值无法对应，请查看数量");
             }
         } else {
-            $column = [$this->formatColumn($column)];
+            $column = [$column];
         }
 
         $sql  = "update " . $this->getTable() . " set ";
