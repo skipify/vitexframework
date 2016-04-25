@@ -955,7 +955,11 @@ class Model
                         break;
                     case 'not between':
                     case 'between':
-                        $sql .= ' ' . $op . ' ' . $val[0] . ' and ' . $val[1];
+                        if (!is_numeric($val[0])) {
+                            $val[0] = "'" . $val[0] . "'";
+                            $val[1] = "'" . $val[1] . "'";
+                        }
+                        $sql .= ' ' . $column . ' ' . $op . ' ' . $val[0] . ' and ' . $val[1];
                         break;
                     default:
                         if (!is_numeric($val)) {
