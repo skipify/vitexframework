@@ -44,7 +44,7 @@ class Vitex
      * @var array
      */
     private $defaultSetting = array(
-        'debug'                 => true,
+        'debug'                 => false,
         // View
         'templates.path'        => './templates',
         'templates.ext'         => '.html',
