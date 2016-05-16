@@ -923,7 +923,7 @@ class Model
             }
         }
         //where
-        if ($this->_sql['where'] || $this->_sql['whereraw']) {
+        if ($this->_sql['where'] || $this->_sql['whereraw'] || $this->_sql['findinset']) {
             $sql .= 'where ';
             $haswhere = false;
             foreach ($this->_sql['where'] as $k => list($column, $op, $val, $type)) {
