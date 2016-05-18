@@ -26,6 +26,8 @@ class Router
     protected $caseSensitive = false;
     protected $regexps       = [];
     protected $cacheBaseurl  = null;
+    protected $routeClass   = null;
+    protected $routeMethod  = null;
     public function __construct()
     {
         $this->env = Env::getInstance();
@@ -208,6 +210,15 @@ class Router
     }
 
     /**
+     * 返回本次路由到的类和方法,如果是直接callable的方法则会返回[null,null]
+     * @return array 匹配到的类和方法
+     */
+    public function getRouteClassMethod()
+    {
+        return [$this->routeClass,$this->routeMethod];
+    }
+
+    /**
      * 匹配URL方法
      * @param  $method
      * @param  $url
@@ -271,6 +282,8 @@ class Router
             $app   = $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
+        $this->routeClass  = $class;
+        $this->routeMethod = $method;
         $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
