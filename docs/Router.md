@@ -219,3 +219,13 @@ $vitex->notFound(function($req,$res,$next){
 //404页面与普通路由一致
 ```
 
+## 获取当前匹配的控制器和方法
+
+```
+$vitex->route->router->getRouteMethodClass(); 
+Array
+(
+    [0] => \app\controller\User  控制器
+    [1] => get   方法名
+)
+```
