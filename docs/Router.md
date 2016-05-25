@@ -2,7 +2,7 @@
 
 ## Overview
 
-	
+​	
 
 	Vitex中使用了注册路由的机制，也就是只有明确指定的路由才可以被访问，这样的好处很明显就是不会产生一些未知的请求问题；但是不足也很明显，使用起来相对比较繁琐一些。
 
@@ -144,6 +144,20 @@ $vitex->get('|^test/(?<id>[0-9]+)$|', function ($req) {
 });
 //可以对分组起名
 ```
+
+> 注意：正则表达式形式的写法必须要添加分组名  
+
+例如：
+
+```
+
+$vitex->group("user","user")  //指定 /user开头的分组到user router文件
+
+user.php (router文件)中使用正则匹配则
+$vitex->get("|^user/get-[0-9]+\.html$|","User@info")  //  相当于访问  /user/get-1.html
+```
+
+
 
 **处理函数**  
 
