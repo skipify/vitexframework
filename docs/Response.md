@@ -78,7 +78,7 @@ boolean 	$isdata 	下载的是文件还是一段字符数据 默认是false 为�
 **示例**  
 
 ### setCookie()
-设置cookie  
+设置cookie  设置默认是加密的,可以改变cookies.encrypt为false关闭加密
 **签名**  
 `setCookie(string  $key, string  $name) `  
 **参数**  

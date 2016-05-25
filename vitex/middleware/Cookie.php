@@ -20,8 +20,6 @@ use vitex\Middleware;
  */
 class Cookie extends Middleware
 {
-    private $encrypt = false;
-
     public function __construct()
     {
         parent::__construct();
@@ -57,8 +55,7 @@ class Cookie extends Middleware
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
         $encrypt    = $this->vitex->getConfig('cookies.encrypt');
         if ($encrypt) {
-            list($data, $key) = Utils::encrypt($value, $secret_key);
-            $value            = $key . '|' . base64_encode($data);
+            $value = Utils::encrypt($value, $secret_key);
         }
         setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
     }
@@ -75,9 +72,9 @@ class Cookie extends Middleware
         if ($encrypt) {
             $secret_key = $this->vitex->getConfig('cookies.secret_key');
             foreach ($cookie as &$c) {
-                list($key, $data) = explode('|', $c);
-                $data             = base64_decode($data);
-                $c                = Utils::decrypt($data, $secret_key, $key);
+                try {
+                    $c = Utils::decrypt($c, $secret_key);
+                } catch(Exception $e){}
             }
         }
         if ($name === null) {

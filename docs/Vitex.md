@@ -21,7 +21,7 @@ setConfig/getConfig
 配置如下   
 
 ``` 
-'debug'               => true,   
+'debug'               => false, //默认关闭调试   
 'templates.path'     => './templates',   
 'templates.ext'      => '.html',
 'view'               => '\vitex\View', 
@@ -29,7 +29,7 @@ setConfig/getConfig
 'router.group_path'   => '',   
 'router.compatible'  => false, //路由兼容模式，不支持pathinfo的路由开启  
 'methodoverride.key' => '__METHOD', //url request method 重写的key  
-'cookies.encrypt'    => false, //是否启用cookie加密  
+'cookies.encrypt'    => true, //是否启用cookie加密  默认启用
 'cookies.lifetime'   => '20 minutes',  
 'cookies.path'       => '/',  
 'cookies.domain'     => null,  

@@ -54,7 +54,7 @@ class Vitex
         'router.compatible'     => false, //路由兼容模式，不支持pathinfo的路由开启
         'router.case_sensitive' => false, //是否区分大小写
         'methodoverride.key'    => '__METHOD', //url request method 重写的key
-        'cookies.encrypt'       => false, //是否启用cookie加密
+        'cookies.encrypt'       => true, //是否启用cookie加密
         'cookies.lifetime'      => '20 minutes',
         'cookies.path'          => '/',
         'cookies.domain'        => null,
