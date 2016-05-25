@@ -174,7 +174,10 @@ class Route
      */
     public function register($method, $pattern, $callable)
     {
-        $pattern = $this->groupurl . $pattern;
+        if($pattern[0] != '|'){
+            //非正则表达式的匹配段
+            $pattern = $this->groupurl . $pattern;
+        }
         $this->router->map($method, $pattern, $callable);
         return $this;
     }
