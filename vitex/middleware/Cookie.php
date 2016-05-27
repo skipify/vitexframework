@@ -14,6 +14,7 @@ namespace vitex\middleware;
 use vitex\helper\Set;
 use vitex\helper\Utils;
 use vitex\Middleware;
+use vitex\core\Exception;
 
 /**
  * cookie中间件，用于把Cookie信息附加到req对象中
