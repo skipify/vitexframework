@@ -26,8 +26,8 @@ class Router
     protected $caseSensitive = false;
     protected $regexps       = [];
     protected $cacheBaseurl  = null;
-    protected $routeClass   = null;
-    protected $routeMethod  = null;
+    protected $routeClass    = null;
+    protected $routeMethod   = null;
     public function __construct()
     {
         $this->env = Env::getInstance();
@@ -112,40 +112,56 @@ class Router
      */
     public function getSlice($matcher)
     {
-        $len    = strlen($matcher);
-        $temp   = '';
-        $start  = null;
-        $slices = [];
+        $len      = strlen($matcher);
+        $temp     = '';
+        $start    = null;
+        $slices   = [];
+        $hasColon = false; //是否包含:
+
         for ($i = 0; $i < $len; $i++) {
             $letter = $matcher[$i];
             if ($letter == ':') {
-                $start = $i;
+                $start    = $i;
+                $hasColon = true;
                 continue;
             }
-
             if ($start !== null && $this->isValid($letter)) {
                 $temp .= $letter;
             }
-
             if (!$this->isValid($letter) && $start !== null) {
-                $slices[] = [$temp, "(?<" . $temp . ">[^/]+)", $start, $i];
-                $start    = null;
-                $temp     = '';
+                if ($hasColon) {
+                    $slices[] = $this->getSlicePattern($temp, $start, $i);
+                    $hasColon = false;
+                } else {
+                    $slices[] = [$temp, "(?<" . $temp . ">[^/]+)", $start, $i];
+                }
+                $start = null;
+                $temp  = '';
             }
         }
         if ($temp) {
-            $regexp = '[^/]+';
-            $name   = $temp;
-            if (strpos($temp, '@') !== false) {
-                list($name, $regexpKey) = explode('@', $temp);
-                $regexp                 = $this->getRegexp($regexpKey);
-            }
-            $slices[] = [$temp, "(?<" . $name . ">" . $regexp . ")", $start, $i];
+            $slices[] = $this->getSlicePattern($temp, $start, $i);
         }
-
         return $slices;
     }
 
+    /**
+     * 获取匹配分组的字符串
+     * @param  $temp
+     * @param  $start
+     * @param  $i
+     * @return array
+     */
+    private function getSlicePattern($temp, $start, $i)
+    {
+        $regexp = '[^/]+';
+        $name   = $temp;
+        if (strpos($temp, '@') !== false) {
+            list($name, $regexpKey) = explode('@', $temp);
+            $regexp                 = $this->getRegexp($regexpKey);
+        }
+        return [$temp, "(?<" . $name . ">" . $regexp . ")", $start, $i];
+    }
     /**
      * 注册映射一个请求参数
      * @param  string $method  请求方法
@@ -215,7 +231,7 @@ class Router
      */
     public function getRouteClassMethod()
     {
-        return [$this->routeClass,$this->routeMethod];
+        return [$this->routeClass, $this->routeMethod];
     }
 
     /**
@@ -284,7 +300,7 @@ class Router
         }
         $this->routeClass  = $class;
         $this->routeMethod = $method;
-        $obj = new $class;
+        $obj               = new $class;
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return false;
