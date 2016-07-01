@@ -1062,13 +1062,12 @@ class Model
 
     /**
      * 提交事务
-     * @return self
+     * @return boolean
      */
     final public function commit()
     {
-        $this->pdo->commit();
         $this->_begintransaction = false;
-        return $this;
+        return $this->pdo->commit();
     }
 
     /**
