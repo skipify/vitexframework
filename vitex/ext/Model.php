@@ -1044,14 +1044,16 @@ class Model
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->commit();
         return $lastid;
     }
+
     /**
      * 是否已经开启事务
      * @return boolean
      */
-    final public hasBeginTransaction()
+    final public function hasBeginTransaction()
     {
         return $this->_begintransaction;
     }
+
     /**
      * 事务开始启动事务
      * @throws \vitex\core\Exception
