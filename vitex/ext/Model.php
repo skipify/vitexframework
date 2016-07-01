@@ -91,8 +91,8 @@ class Model
     /**
      * @var Pdo
      */
-    private $pdo;
-    private $DB;
+    protected $pdo;
+    protected $DB;
 
     public function __construct($table = '')
     {
