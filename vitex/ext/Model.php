@@ -326,6 +326,9 @@ class Model
      */
     public function whereIn($key, $val)
     {
+        if(!$val){
+            throw new Exception("whereIn方法的第二个参数不得为空");
+        }
         return $this->_where("whereIn", $key, $val);
     }
 
@@ -337,6 +340,9 @@ class Model
      */
     public function whereNotIn($key, $val)
     {
+        if(!$val){
+            throw new Exception("orWhereIn方法的第二个参数不得为空");
+        }
         return $this->_where("whereNotIn", $key, $val);
     }
 
