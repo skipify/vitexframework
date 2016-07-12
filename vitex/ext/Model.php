@@ -89,9 +89,12 @@ class Model
      */
     public $sql;
     /**
-     * @var Pdo
+     * @var \Pdo
      */
     protected $pdo;
+    /**
+     * @var \vitex\ext\Pdo
+     */
     protected $DB;
 
     public function __construct($table = '')
@@ -322,7 +325,9 @@ class Model
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
      * @param  string $val 值
-     * @return self
+     * @return Model
+     * @throws Exception
+     * @throws \Error
      */
     public function whereIn($key, $val)
     {
@@ -336,7 +341,9 @@ class Model
      * 基本的whereNotIn查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
      * @param  string $val 值
-     * @return self
+     * @return Model
+     * @throws Exception
+     * @throws \Error
      */
     public function whereNotIn($key, $val)
     {

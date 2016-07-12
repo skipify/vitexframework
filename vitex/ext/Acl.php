@@ -16,6 +16,9 @@ use vitex\core\Router;
 class Acl
 {
     private $rules = [];
+    /**
+     * @var array
+     */
     private $group = [];
     public function __construct()
     {
@@ -89,8 +92,9 @@ class Acl
 
     /**
      * 判断当前指定的URL是否通过权限检测
-     * @param  string  $url                 URL
-     * @return boolean 规则是否匹配
+     * @param  string $url URL
+     * @param string $method
+     * @return bool 规则是否匹配
      */
     public function isAllowed($url, $method = 'all')
     {
@@ -106,6 +110,7 @@ class Acl
     /**
      * 只要有一个规则满足即可
      * @param  不定参数
+     * @param string $method
      * @return bool
      */
     public function anyAllowed($rules, $method = "all")
@@ -123,7 +128,7 @@ class Acl
      * @param  \vitex\ext\Acl $child         子对象
      * @return self           当前对象
      */
-    public function addChild(\vitex\ext\Acl $child)
+    public function addChild(Acl $child)
     {
         $rules = $child->getRule();
         foreach ($rules as $rule) {
@@ -137,8 +142,9 @@ class Acl
      * 注意分组的权限也会被加入到当前对象的权限中去
      *
      * @param  string $alias 规则名
-     * @param  array  $rules array
-     * @return self
+     * @param  array $rules array
+     * @param string $method
+     * @return Acl
      */
     public function addGroup($alias, $rules, $method = "all")
     {
@@ -168,14 +174,17 @@ class Acl
 
     /**
      * 检查是否有分组权限
-     * @param  string $alias         分组名
-     * @return bool   是否通过
+     * @param  string $alias 分组名
+     * @param $pattern
+     * @param string $method
+     * @return bool 是否通过
      */
     public function groupAllowed($alias, $pattern, $method = 'all')
     {
         if (isset($this->group[$alias])) {
             return false;
         }
+
         $rule = $this->group[$alias];
         return $rule->isAllowed($pattern, $method);
     }

@@ -21,6 +21,7 @@ class Request implements \ArrayAccess, \Iterator
 {
 
     //环境变量
+    public  $uploadError;
     private $env;
     //当前实例
     private static $_instance = null;
@@ -68,7 +69,17 @@ class Request implements \ArrayAccess, \Iterator
     /**
      * @var string referer
      */
-    public $referer;
+    public $referer,$referrer;
+
+    /**
+     * @var bool
+     */
+    public $isAjax,$isXhr;
+
+    /**
+     * @var string
+     */
+    public $protocol,$version,$secure;
 
     private function __construct()
     {
@@ -170,6 +181,7 @@ class Request implements \ArrayAccess, \Iterator
     /**
      * 获取server变量的信息
      * @param string $key 键值
+     * @return array
      */
     public function getEnv($key)
     {
@@ -237,7 +249,7 @@ class Request implements \ArrayAccess, \Iterator
             return $this;
         }
         if (is_callable($data)) {
-            $this->methods[$pro] = Closure::bind($data, $this, 'Request');
+            $this->methods[$pro] = \Closure::bind($data, $this, 'Request');
         } else {
             $this->{$pro} = $data;
         }

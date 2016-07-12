@@ -20,9 +20,12 @@ class Route
 {
 
     private $themethod = "GET";
-    public $router;
     /**
      * @var Router
+     */
+    public $router;
+    /**
+     * @var \Generator
      */
     protected $_router; //路由callable
     private $_notfound;
@@ -144,10 +147,10 @@ class Route
             }
             //绝对路径
             $isload = false;
+            $vitex = Vitex::getInstance();
             /**
              * 此变量用于设定的路由文件中使用
              */
-            $vitex = Vitex::getInstance();
             if (strpos($g, '/') !== false && file_exists($g)) {
                 require $g;
                 $isload = true;
@@ -191,7 +194,7 @@ class Route
     {
         if ($call === null) {
             $vitex = Vitex::getInstance();
-            call_user_func($this->_notfound, $vitex->req, $vitex->res, $next);
+            call_user_func($this->_notfound, $vitex->req, $vitex->res, function(){$this->next();});
         } else {
             $this->_notfound = $call;
         }

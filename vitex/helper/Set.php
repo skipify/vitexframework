@@ -42,6 +42,7 @@ class Set implements \ArrayAccess, \Iterator, \Countable
 
     /**
      * 删除信息
+     * @param $key
      * @return string $key
      */
     public function remove($key)

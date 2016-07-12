@@ -12,6 +12,7 @@
 
 namespace vitex\middleware;
 
+use vitex\helper\SetMethod;
 use vitex\Middleware;
 
 /**
@@ -19,7 +20,7 @@ use vitex\Middleware;
  */
 class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 {
-    use \vitex\helper\SetMethod;
+    use SetMethod;
     public function __construct($sid = '')
     {
         if (!isset($_SESSION)) {

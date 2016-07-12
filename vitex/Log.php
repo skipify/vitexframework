@@ -47,6 +47,7 @@ class Log
     /**
      * 设置日志写入
      * @param $writer
+     * @return $this
      */
     public function setWriter($writer)
     {

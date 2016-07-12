@@ -31,10 +31,10 @@ abstract class Middleware
 
     /**
      * 设置下一个要执行的预处理中间件
-     * @param  \vitex\middleware $call 中间件
+     * @param  Middleware $call 中间件
      * @return void
      */
-    final public function nextMiddleware(\vitex\middleware $call)
+    final public function nextMiddleware(Middleware $call)
     {
         $this->nextMw = $call;
     }

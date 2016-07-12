@@ -10,6 +10,7 @@
  * @license MIT
  */
 namespace vitex\core;
+use vitex\Vitex;
 
 /**
  * 当前类用于重新组织环境变量
@@ -111,7 +112,7 @@ class Env implements \ArrayAccess
         $pathinfo = $this->get('PATH_INFO');
         if (!$pathinfo) {
             //兼容模式
-            $vitex = \vitex\Vitex::getInstance();
+            $vitex = Vitex::getInstance();
             if ($vitex->getConfig('router.compatible')) {
                 $pathinfo = isset($_GET['u']) ? $_GET['u'] : '';
             }
@@ -132,6 +133,8 @@ class Env implements \ArrayAccess
 
     /**
      * Array Access
+     * @param mixed $offset
+     * @return bool
      */
     public function offsetExists($offset)
     {

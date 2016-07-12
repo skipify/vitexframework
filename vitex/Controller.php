@@ -13,14 +13,30 @@ namespace Vitex;
 
 use vitex\core\Exception;
 
+/**
+ * Vitex开发基类
+ * @package Vitex
+ * @method hook(string $name, callable $call, int $priority = 100)
+ * @method applyHook(string $name)
+ * @method getHooks(string $name)
+ * */
 class Controller
 {
     /**
      * @var Vitex
      */
     public $vitex;
+    /**
+     * @var \vitex\core\Request
+     */
     public $req;
+    /**
+     * @var \vitex\core\Response
+     */
     public $res;
+    /**
+     * @var \vitex\View
+     */
     public $view;
 
     //处理一些变量
@@ -88,6 +104,7 @@ class Controller
     {
         $this->vitex->render($tpl, $data, $status);
     }
+
     public function __call($method, $args)
     {
         if (method_exists($this->vitex, $method)) {

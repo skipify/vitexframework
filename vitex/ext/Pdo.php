@@ -21,7 +21,11 @@ class Pdo extends Middleware
     public $pdo    = null;
     public $sql    = '';
 
-    public $sth = null; //statment handler
+    /**
+     * @var \PDOStatement
+     */
+    public $sth = null;
+    public $error; //错误信息
 
     public function __construct($setting, $username = '', $password = '')
     {
@@ -101,11 +105,12 @@ class Pdo extends Middleware
 
     /**
      * 执行返数据，生成器数据
-     * @param  string     $mode                返回的数据模式，默认为class模式
+     * @param int|string $mode 返回的数据模式，默认为class模式
      * @return \Generator 一个信息对象
      */
     public function fetch($mode = \PDO::FETCH_CLASS)
     {
+        $run = null;
         try {
             $run = $this->sth->fetch($mode);
         } catch (\PDOException $e) {
@@ -152,7 +157,8 @@ class Pdo extends Middleware
      *
      * @author skipify
      *
-     * @return void
+     * @param $sql
+     * @param $error
      */
     public function errorInfo($sql, $error)
     {

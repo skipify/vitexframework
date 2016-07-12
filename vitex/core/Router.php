@@ -162,6 +162,7 @@ class Router
         }
         return [$temp, "(?<" . $name . ">" . $regexp . ")", $start, $i];
     }
+
     /**
      * 注册映射一个请求参数
      * @param  string $method  请求方法

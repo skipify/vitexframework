@@ -39,7 +39,7 @@ class View
     }
 
     /**
-     * @param  $style 模板样式名称
+     * @param  string $style 模板样式名称
      * @return self
      */
     public function setStyle($style)
