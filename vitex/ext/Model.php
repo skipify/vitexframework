@@ -952,7 +952,7 @@ class Model
                         }
                         if (is_array($val)) {
                             $val = array_map(function ($v) {
-                                if (is_numeric($v)) {
+                                if (is_numeric($v) && $v < 255) {
                                     return $v;
                                 } else {
                                     return "'" . $v . "'";
