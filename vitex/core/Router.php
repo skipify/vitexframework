@@ -318,7 +318,6 @@ class Router
             'url' => $url,
             'method' => $method,
         ];
-        print_r($patterns);
         //指定的方法
         foreach ($patterns as list($_method, $pattern, $call)) {
             if ($method !== $_method && $_method !== 'ALL' && $_method !== 'INVOKE') {
