@@ -24,3 +24,4 @@
   - [Upload](Ext.upload.md)
   - [Captcha](Ext.captcha.md)
   - [Pagination](Ext.pagination.md)
+  - [Filter](Ext.filter.md)
