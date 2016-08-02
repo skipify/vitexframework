@@ -44,24 +44,24 @@ class Vitex
      * @var array
      */
     private $defaultSetting = array(
-        'debug'                 => false,
+        'debug' => false,
         // View
-        'templates.path'        => './templates',
-        'templates.ext'         => '.html',
-        'view'                  => '\vitex\View',
-        'callback'              => 'callback', //jsonp时自动获取的值
-        'router.group_path'     => '',
-        'router.compatible'     => false, //路由兼容模式，不支持pathinfo的路由开启
+        'templates.path' => './templates',
+        'templates.ext' => '.html',
+        'view' => '\vitex\View',
+        'callback' => 'callback', //jsonp时自动获取的值
+        'router.group_path' => '',
+        'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
         'router.case_sensitive' => false, //是否区分大小写
-        'methodoverride.key'    => '__METHOD', //url request method 重写的key
-        'cookies.encrypt'       => true, //是否启用cookie加密
-        'cookies.lifetime'      => '20 minutes',
-        'cookies.path'          => '/',
-        'cookies.domain'        => null,
-        'cookies.secure'        => false,
-        'cookies.httponly'      => false,
-        'cookies.secret_key'    => 'Vitex is a micro restfull framework',
-        'charset'               => 'utf-8',
+        'methodoverride.key' => '__METHOD', //url request method 重写的key
+        'cookies.encrypt' => true, //是否启用cookie加密
+        'cookies.lifetime' => '20 minutes',
+        'cookies.path' => '/',
+        'cookies.domain' => null,
+        'cookies.secure' => false,
+        'cookies.httponly' => false,
+        'cookies.secret_key' => 'Vitex is a micro restfull framework',
+        'charset' => 'utf-8',
     );
     /**
      * 两个内置的hooks执行点
@@ -112,11 +112,11 @@ class Vitex
         //init app
         $this->settings = $this->defaultSetting;
         //初始化各种变量
-        $this->env   = core\Env::getInstance();
+        $this->env = core\Env::getInstance();
         $this->route = new core\Route();
         //初始化 request response
-        $this->req      = core\Request::getInstance();
-        $this->res      = core\Response::getInstance();
+        $this->req = core\Request::getInstance();
+        $this->res = core\Response::getInstance();
         $this->res->url = function ($url, $params = []) {
             return $this->url($url, $params);
         };
@@ -132,9 +132,9 @@ class Vitex
     /**
      * 捕获处理异常
      *
-     * @param  int        $errno   错误代码
-     * @param  string     $errstr  错误提示
-     * @param  string     $errfile 错误文件
+     * @param  int $errno 错误代码
+     * @param  string $errstr 错误提示
+     * @param  string $errfile 错误文件
      * @param  int|string $errline 错误行
      * @return bool
      */
@@ -162,21 +162,21 @@ class Vitex
 
     /**
      * 初始化一个应用,包括设置各种路径添加加载命名空间等
-     * @param  string       $app          应用的名称
-     * @param  string       $dir          应用的路径
-     * @param  array|string $setting      批量设置配置
-     * @param  array        $middleware
+     * @param  string $app 应用的名称
+     * @param  string $dir 应用的路径
+     * @param  array|string $setting 批量设置配置
+     * @param  array $middleware
      * @return self
      */
 
     public function init($app, $dir, array $setting = [], array $middleware = [])
     {
         $_setting = [
-            'templates.path'   => $dir . '/' . $app . '/templates',
+            'templates.path' => $dir . '/' . $app . '/templates',
             'router.grouppath' => $dir . '/' . $app . '/route',
         ];
         $this->appName = $app;
-        $setting       = array_merge($_setting, $setting);
+        $setting = array_merge($_setting, $setting);
         $this->setConfig($setting);
         $namespace = $app;
         $this->loader->addNamespace('\\' . $namespace, $dir . '/' . $app . '/');
@@ -205,9 +205,9 @@ class Vitex
         if (!$apps && !$defapps) {
             throw new Exception("无法找到设置的初始化映射规则");
         }
-        $app        = null;
-        $dir        = null;
-        $setting    = [];
+        $app = null;
+        $dir = null;
+        $setting = [];
         $middleware = null;
         if ($apps) {
             $_apps = $this->getAppConfig($apps);
@@ -246,16 +246,34 @@ class Vitex
     }
 
     /**
+     * 注入一个应用到当前的应用中,使之在当前应用可以直接通过命名空间访问注入的应用
+     * 注入的应用也可以注册到当前路由,但是需要指定完全限定名的命名空间
+     * @param $app  string 应用名(目录名)
+     * @param $path string 路径  ($path.$app可以访问)
+     * @return $this
+     * @throws Exception
+     */
+    public function injectApp($app, $path = '')
+    {
+        if (!defined('WEBROOT')) {
+            throw new Exception('入口文件必须定义一个WEBROOT的变量到根目录');
+        }
+        $path = $path ? $path : dirname(WEBROOT) . '/';
+        $this->loader->addNamespace('\\'.$app, $path.$app);
+        return $this;
+    }
+
+    /**
      * 获取分组配置信息
-     * @param  array $apps    配置数组
+     * @param  array $apps 配置数组
      * @return array 配置
      */
     private function getAppConfig($apps)
     {
-        $pathinfo  = trim($this->env->getPathinfo(), '/');
+        $pathinfo = trim($this->env->getPathinfo(), '/');
         $pathinfos = explode('/', $pathinfo);
-        $group     = isset($pathinfos[0]) ? $pathinfos[0] : '';
-        $_apps     = null;
+        $group = isset($pathinfos[0]) ? $pathinfos[0] : '';
+        $_apps = null;
         if (isset($apps[$group])) {
             $_apps = $apps[$group];
             array_shift($pathinfos);
@@ -273,15 +291,15 @@ class Vitex
      * [
      *     'symbol' => [appname,dirname,setting,middleware] //后两个参数可以省略
      * ]
-     * @param  array            $map    一个映射的方式
-     * @param  string           $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
+     * @param  array $map 一个映射的方式
+     * @param  string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
      * @throws core\Exception
      * @return self
      */
     public function setAppMap(array $map, $domain = "default")
     {
         $domain = str_replace(['http://', '/'], '', $domain);
-        $_map   = [];
+        $_map = [];
         //过滤数据,格式化配置参数
         foreach ($map as $key => $val) {
             $paramLen = count($val);
@@ -302,7 +320,7 @@ class Vitex
 
             $_map[$skey] = $val;
         }
-        $oldMap                   = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
+        $oldMap = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
         $this->multiApps[$domain] = array_merge($oldMap, $_map);
         return $this;
     }
@@ -310,7 +328,7 @@ class Vitex
     /**
      * 设置配置文件
      * @param  $name
-     * @param  null        $val
+     * @param  null $val
      * @throws Exception
      * @return self
      */
@@ -335,8 +353,8 @@ class Vitex
 
     /**
      * 构造URL
-     * @param  string $url           url或者一个路由段
-     * @param  array  $params        关联数组转为querystring
+     * @param  string $url url或者一个路由段
+     * @param  array $params 关联数组转为querystring
      * @return string 最终的url
      */
     public function url($url, $params = [])
@@ -346,7 +364,7 @@ class Vitex
 
     /**
      * 获取配置
-     * @param  string  $name 配置名
+     * @param  string $name 配置名
      * @return mixed
      */
     public function getConfig($name)
@@ -357,14 +375,14 @@ class Vitex
 
     /**
      * 注册钩子函数
-     * @param  string   $name     钩子名称
-     * @param  callable $call     可执行的方法
-     * @param  integer  $priority 执行的优先级，数字越大越提前
+     * @param  string $name 钩子名称
+     * @param  callable $call 可执行的方法
+     * @param  integer $priority 执行的优先级，数字越大越提前
      * @return self
      */
     public function hook($name, callable $call, $priority = 100)
     {
-        $priority             = intval($priority);
+        $priority = intval($priority);
         $this->hooks[$name][] = array($call, $priority);
         return $this;
     }
@@ -388,7 +406,7 @@ class Vitex
 
     /**
      * 获取指定钩子或者所有的hooks
-     * @param  string  $name 钩子的名字
+     * @param  string $name 钩子的名字
      * @return array
      */
     public function getHooks($name = null)
@@ -414,9 +432,9 @@ class Vitex
 
     /**
      * 直接输出模板信息
-     * @param string $tpl    模板地址
-     * @param array  $data   传递给模板的数据
-     * @param int    $status 状态码，默认会输出200
+     * @param string $tpl 模板地址
+     * @param array $data 传递给模板的数据
+     * @param int $status 状态码，默认会输出200
      */
     public function render($tpl, array $data = [], $status = null)
     {
@@ -431,7 +449,7 @@ class Vitex
 
     /**
      * 预处理中间件
-     * @param  Middleware       $call
+     * @param  Middleware $call
      * @throws core\Exception
      * @return self
      */
@@ -452,7 +470,7 @@ class Vitex
 
     /**
      * 注册中间件，所有的中间件都是通过using调用
-     * @param  string   /array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
+     * @param  string /array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
      * @param  callable /null           $call 执行的方法
      * @return self
      */
@@ -483,11 +501,11 @@ class Vitex
     /**
      * 注册路由请求
      * @param string $method 请求方法
-     * @param array  $args   请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
+     * @param array $args 请求的参数，当参数超过2个的时候，中间的参数为中间件，该中间件仅在此次运行中执行
      */
     public function setRoute($method, $args)
     {
-        $pattern  = array_shift($args);
+        $pattern = array_shift($args);
         $callable = array_pop($args);
 
         //包含额外的参数
@@ -522,7 +540,7 @@ class Vitex
     /**
      * 路由分组
      * @param  string $pattern 分组标识 url的一部分
-     * @param  string $class   分组对应的类的名字
+     * @param  string $class 分组对应的类的名字
      * @return self
      */
     public function group($pattern, $class)
@@ -534,8 +552,8 @@ class Vitex
     /**
      * 注册中间件，所有的中间件都是通过invoke调用
      * 中间件方法其实是一个特殊的请求
-     * @param  string   /array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
-     * @param  callable $call  执行的方法
+     * @param  string /array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
+     * @param  callable $call 执行的方法
      * @return self
      */
     private function invoke($pattern, callable $call)
@@ -631,7 +649,7 @@ class Vitex
      */
     public function map()
     {
-        $args    = func_get_args();
+        $args = func_get_args();
         $methods = array_shift($args);
         $methods = is_array($methods) ? $methods : explode(',', $methods);
 
