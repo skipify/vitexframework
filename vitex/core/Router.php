@@ -20,7 +20,7 @@ use vitex\Vitex;
  */
 class Router
 {
-    private $_patterns = [];
+    private   $_patterns     = [];
     protected $env;
     protected $vitex         = null;
     protected $caseSensitive = false;
@@ -28,20 +28,21 @@ class Router
     protected $cacheBaseurl  = null;
     protected $routeClass    = null;
     protected $routeMethod   = null;
+
     public function __construct()
     {
         $this->env = Env::getInstance();
         $this->setRegexp([
-            'digit'      => '[0-9]+',
-            'alpha'      => '[a-zA-Z]+',
+            'digit' => '[0-9]+',
+            'alpha' => '[a-zA-Z]+',
             'alphadigit' => '[0-9a-zA-Z]+',
-            'float'      => '[0-9]+\.{1}[0-9]+',
+            'float' => '[0-9]+\.{1}[0-9]+',
         ]);
     }
 
     /**
      * 设置预支的正则表达式
-     * @param  mixed  $name   名称/或者关联数组
+     * @param  mixed $name 名称/或者关联数组
      * @param  string $regexp 正则
      * @return self
      */
@@ -67,10 +68,11 @@ class Router
         }
         return isset($this->regexps[$name]) ? $this->regexps[$name] : '[^/]+';
     }
+
     /**
      * 根据指定的参数生成url地址
-     * @param  string $url                    路有段，如果是个有效的Url则会直接返回
-     * @param  array  $params                 参数段，会被转为 querystring
+     * @param  string $url 路有段，如果是个有效的Url则会直接返回
+     * @param  array $params 参数段，会被转为 querystring
      * @return string 返回的链接地址
      */
     public function url($url, $params = [])
@@ -78,10 +80,10 @@ class Router
         if (filter_var($url, FILTER_VALIDATE_URL)) {
             return $url;
         }
-        $url     = '/' . ltrim($url, '/');
+        $url = '/' . ltrim($url, '/');
         $baseUrl = "";
         if ($this->cacheBaseurl === null) {
-            $vitex   = Vitex::getInstance();
+            $vitex = Vitex::getInstance();
             $baseUrl = $vitex->getConfig('baseurl');
         }
         $qs = http_build_query($params);
@@ -93,7 +95,7 @@ class Router
      */
     /**
      * 判断当前字符是否复合参数的命名规则
-     * @param  String    $letter 字符
+     * @param  String $letter 字符
      * @return boolean
      */
     public function isValid($letter)
@@ -107,21 +109,32 @@ class Router
 
     /**
      * 提取出匹配路径中的分组信息
-     * @param  string $matcher          分组路径
+     * @param  string $matcher 分组路径
      * @return array  匹配的分组
      */
     public function getSlice($matcher)
     {
-        $len      = strlen($matcher);
-        $temp     = '';
-        $start    = null;
-        $slices   = [];
+        $len = strlen($matcher);
+        $temp = ''; //临时字符串
+        $start = null;
+        $slices = [];
         $hasColon = false; //是否包含:
 
         for ($i = 0; $i < $len; $i++) {
             $letter = $matcher[$i];
+
+            /*可选*/
+            $optionSeg = $this->getOptionPattern($letter, $i);
+            if ($optionSeg) {
+                $slices[] = $optionSeg;
+                $temp = '';
+                $start = null;
+                $hasColon = false;
+                continue;
+            }
+
             if ($letter == ':') {
-                $start    = $i;
+                $start = $i;
                 $hasColon = true;
                 continue;
             }
@@ -136,7 +149,7 @@ class Router
                     $slices[] = [$temp, "(?<" . $temp . ">[^/]+)", $start, $i];
                 }
                 $start = null;
-                $temp  = '';
+                $temp = '';
             }
         }
         if ($temp) {
@@ -155,33 +168,76 @@ class Router
     private function getSlicePattern($temp, $start, $i)
     {
         $regexp = '[^/]+';
-        $name   = $temp;
+        $name = $temp;
         if (strpos($temp, '@') !== false) {
             list($name, $regexpKey) = explode('@', $temp);
-            $regexp                 = $this->getRegexp($regexpKey);
+            $regexp = $this->getRegexp($regexpKey);
         }
         return [$temp, "(?<" . $name . ">" . $regexp . ")", $start, $i];
     }
 
     /**
+     * 解析可选匹配的字符串
+     * @param $letter
+     * @param $i int 当前字符位置
+     * @return mixed
+     */
+    private function getOptionPattern($letter, $i)
+    {
+        static $isOption = false;//是否是可选参数
+        static $optionTemp = '';
+        static $start = null;
+
+        $start = $start === null ? $i : $start;
+        $isOption = $letter == '[' ? true : $isOption;
+
+        //排除?*的匹配
+        //仅仅匹配 [/  这种形式
+        if ($optionTemp == '[' && $letter != '/') {
+            $isOption = false;
+            $start = null;
+            $optionTemp = '';
+            return false;
+        }
+
+        if ($isOption) {
+            $optionTemp .= $letter;
+        }
+
+        if ($letter == ']') {
+            //处理
+            $name = trim($optionTemp, '[]/:');
+            $slice = $this->getSlicePattern($name, $start, $i);
+            $slice[0] = $optionTemp;
+            $slice[1] = '(\/' . $slice[1] . ')?';
+            //还原标识数据
+            $isOption = false;
+            $optionTemp = '';
+            $start = null;
+            return $slice;
+        }
+        return false;
+    }
+
+    /**
      * 注册映射一个请求参数
-     * @param  string $method  请求方法
+     * @param  string $method 请求方法
      * @param  string $pattern 匹配参数
-     * @param  mixed  $call    执行的方法
+     * @param  mixed $call 执行的方法
      * @return self
      */
 
     public function map($method, $pattern, $call)
     {
         if ($this->vitex === null) {
-            $this->vitex         = Vitex::getInstance();
+            $this->vitex = Vitex::getInstance();
             $this->caseSensitive = $this->vitex->getConfig('router.case_sensitive');
         }
 
         $matcher = $pattern;
-        $method  = strtoupper($method);
+        $method = strtoupper($method);
         $matcher = trim($matcher, '/');
-        $cases   = $this->caseSensitive ? '' : 'i';
+        $cases = $this->caseSensitive ? '' : 'i';
 
         if (!$matcher) {
             $matcher = '|^/$|';
@@ -193,9 +249,13 @@ class Router
         } else {
             //替换 *为匹配除了 /分组之外的所有内容
             $matcher = str_replace(['*', '?'], ['([^\/]*)', '([^\/]?)'], $matcher);
-            $slices  = $this->getSlice($matcher);
+            $slices = $this->getSlice($matcher);
             foreach ($slices as list($slice, $reg)) {
-                $matcher = str_replace(':' . $slice, $reg, $matcher);
+                if (strpos($slice, '[') !== false) {
+                    $matcher = str_replace($slice, $reg, $matcher);
+                } else {
+                    $matcher = str_replace(':' . $slice, $reg, $matcher);
+                }
             }
             $matcher = '|^' . $matcher . '$|' . $cases;
         }
@@ -210,7 +270,7 @@ class Router
     public function getRouter()
     {
         $method = strtoupper($this->env->method());
-        $url    = $this->env->getPathinfo();
+        $url = $this->env->getPathinfo();
         //默认首页
         $url = rtrim($url, '/');
         $url = $url ? $url : '/';
@@ -243,27 +303,28 @@ class Router
      */
     private function match($method, $url)
     {
-        $patterns  = $this->_patterns;
-        $matches   = array();
-        $vitex     = Vitex::getInstance();
-        $req       = $vitex->req;
+        $patterns = $this->_patterns;
+        $matches = array();
+        $vitex = Vitex::getInstance();
+        $req = $vitex->req;
         $req->path = $url;
-        $url       = trim($url, '/');
+        $url = trim($url, '/');
         if (!$url) {
             $url = '/';
         }
         //保存请求信息
 
         $req->route = [
-            'url'    => $url,
+            'url' => $url,
             'method' => $method,
         ];
+        print_r($patterns);
         //指定的方法
         foreach ($patterns as list($_method, $pattern, $call)) {
             if ($method !== $_method && $_method !== 'ALL' && $_method !== 'INVOKE') {
                 continue;
             }
-            $req->route['matchUrl']    = $pattern;
+            $req->route['matchUrl'] = $pattern;
             $req->route['matchMethod'] = $method;
             if (preg_match($pattern, $url, $matches)) {
                 //设置url匹配的分段信息
@@ -283,36 +344,38 @@ class Router
 
     /**
      * 根据路由信息实例化相应的控制器类来返回函数方法对象
-     * @param  string   $str                 字符串
-     * @param  string   $httpmethod          http请求的方法
+     * @param  string $str 字符串
+     * @param  string $httpmethod http请求的方法
      * @return callable 可执行的方法
      */
     public function getCallable($str, $httpmethod)
     {
-        $strs   = explode('@', $str);
-        $class  = array_shift($strs);
+        $strs = explode('@', $str);
+        $class = array_shift($strs);
         $method = strtolower($strs ? array_pop($strs) : $httpmethod);
         //完全限定命名空间
         if ($class[0] != '\\') {
             //当前应用
             $vitex = Vitex::getInstance();
-            $app   = $vitex->appName;
+            $app = $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
-        $this->routeClass  = $class;
+        $this->routeClass = $class;
         $this->routeMethod = $method;
-        $obj               = new $class;
+        $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return false;
         }
-        return function () use ($obj, $method) {return $obj->{$method}();};
+        return function () use ($obj, $method) {
+            return $obj->{$method}();
+        };
     }
 
     /**
      * 匹配URL匹配信息
      * @internal param array $params 匹配的URL段
-     * @param  array    $matches
+     * @param  array $matches
      * @return object
      */
     public function _parseParams(array $matches)

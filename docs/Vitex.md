@@ -211,6 +211,17 @@ integer 	$priority 	执行的优先级，数字越大越提前
 
 	`$vitex->hook('login',function(){echo 'islogin';})`
 
+### injectApp
+注入应用,可以在当前应用中注入其他的应用,也就是把其他的应用的命名空间加到本应用中,使得本应用可以直接访问注入的应用
+
+例如当前A应用,如果要直接使用自动加载加载B应用那么就得把B应用注入到当前命名空间,此时使用此方法注入
+
+```
+$vitex->injectApp('app2'); // 注入与当前应用同目录的app2
+$vitex->injectApp("app",'/home/www/user/');  注入 指定目录中的 app应用到当前应用
+```
+
+
 ### applyHook
 
 执行指定的钩子名称所注册的所有方法  
@@ -310,6 +321,16 @@ mixed $call 要执行的中间件处理方法或者null(应用中间件时)
 每一个中间件的方法都可以接受三个参数，request对象，response对象，一个执行下
 一个匹配路由的next方法
 ```
+
+### runMiddleware()
+直接执行中间件,在using方法中一般是全局范围内加载中间件,此方法可以在局部动态载入中间件.
+可以在控制器或者其他可以获取到Vitex的地方直接执行,有效范围为当前执行到结束.
+
+**示例**
+
+`$vitex->runMiddleware(new \vitex\middleware\Session())`
+
+
 
 ### group
 
