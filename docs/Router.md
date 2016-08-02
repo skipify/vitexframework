@@ -158,6 +158,21 @@ $vitex->get("|^user/get-[0-9]+\.html$|","User@info")  //  相当于访问  /user
 ```
 
 
+*可选匹配*
+
+```
+/foo/:bar[/:baz]
+
+可以匹配  /foo/123   /foo/abc/123  /foo/a/b
+
+/foo/:bar@alpha[/:baz@digit]  
+
+可以匹配 /foo/name/1   /foo/user/3   /foo/user
+
+```
+
+[/] 为可选url段的形式 [/:baz] **不可以**写成[:baz]
+
 
 **处理函数**  
 
