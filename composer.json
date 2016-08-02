@@ -1,6 +1,6 @@
 {
     "name": "skipify/vitex",
-    "version":"0.8.3",
+    "version":"0.9.0",
     "description": "A Tiny Framework.",
     "keywords": ["framework", "vitex"],
     "license": "MIT",
