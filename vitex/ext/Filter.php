@@ -39,62 +39,97 @@ class Filter
 
     /**
      * 只返回字母数字
-     * @param $str
+     * @param $str mixed
      * @return mixed
      */
     public static function alnum($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::alnum($val);
+            }
+            return $str;
+        }
         return preg_replace('/[^0-9a-z]/i', '', $str);
     }
 
     /**
      * 只返回字母
-     * @param $str
+     * @param $str mixed
      * @return mixed
      */
     public static function alpha($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::alpha($val);
+            }
+            return $str;
+        }
         return preg_replace('/[^a-z]/i', '', $str);
-
     }
 
     /**
      * 仅返回数字类型
-     * @param $str
+     * @param $str mixed
      * @return mixed
      */
     public static function number($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::number($val);
+            }
+            return $str;
+        }
         return filter_var($str, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION | FILTER_FLAG_ALLOW_THOUSAND | FILTER_FLAG_ALLOW_SCIENTIFIC);
     }
 
     /**
      * 返回整形数据,只要是数字即可,不包含16进制,开头可以是0
-     * @param $str
+     * @param $str mixed
      * @return mixed
      */
     public static function int($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::int($val);
+            }
+            return $str;
+        }
         return preg_replace('/[^0-9]/', '', $str);
     }
 
     /**
      * 转义  <> '"&字符
-     * @param $str
+     * @param $str mixed
      * @return string
      */
     public static function safe($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::safe($val);
+            }
+            return $str;
+        }
         return htmlspecialchars($str, ENT_QUOTES);
     }
 
     /**
      * 给引号加斜线转义
-     * @param $str
+     * @param $str mixed
      * @return string
      */
     public static function addslashes($str)
     {
+        if(is_array($str)){
+            foreach($str as $key=>$val){
+                $str[$key] = self::addslashes($val);
+            }
+            return $str;
+        }
         return addslashes($str);
     }
 
