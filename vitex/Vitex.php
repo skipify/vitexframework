@@ -103,6 +103,7 @@ class Vitex
 
     private function __construct()
     {
+        $this->execTime();//记录执行开始时间
         //注册加载 加载器
         require __DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . "Loader.php";
         $this->loader = new Loader();
@@ -259,7 +260,7 @@ class Vitex
             throw new Exception('入口文件必须定义一个WEBROOT的变量到根目录');
         }
         $path = $path ? $path : dirname(WEBROOT) . '/';
-        $this->loader->addNamespace('\\'.$app, $path.$app);
+        $this->loader->addNamespace('\\' . $app, $path . $app);
         return $this;
     }
 
@@ -658,6 +659,26 @@ class Vitex
             $this->setRoute($method, $args);
         }
         return $this;
+    }
+
+    /**
+     * 页面执行时间
+     *
+     * @author skipify
+     *
+     * @return int
+     */
+    public function execTime($symbol = '')
+    {
+        static $_time_stamp = [];
+        $symbol = $symbol ? $symbol : 'start';
+        $now = microtime(true) * 100;//当前毫秒
+        if (isset($_time_stamp[$symbol])) {
+            return $now - $_time_stamp[$symbol];
+        } else {
+            $_time_stamp[$symbol] = $now;
+        }
+        return $now;
     }
 
     /**
