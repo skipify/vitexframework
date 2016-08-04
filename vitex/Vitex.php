@@ -668,10 +668,9 @@ class Vitex
      *
      * @return int
      */
-    public function execTime($symbol = '')
+    public function execTime($symbol = '__start')
     {
         static $_time_stamp = [];
-        $symbol = $symbol ? $symbol : 'start';
         $now = microtime(true) * 100;//当前毫秒
         if (isset($_time_stamp[$symbol])) {
             return $now - $_time_stamp[$symbol];
