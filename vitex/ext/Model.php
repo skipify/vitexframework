@@ -1091,7 +1091,18 @@ class Model
         $this->_begintransaction = false;
         return $this->pdo->commit();
     }
-
+    /**
+     * 回滚事务
+     * @return $this
+     */
+    final public function rollBack()
+    {
+        if ($this->_begintransaction) {
+            $this->pdo->rollBack();
+            $this->_begintransaction = false;
+        }
+        return $this;
+    }
     /**
      * ORM似的保存
      * 保存当前模型，如果存在主键则尝试修改，如果不存在主键则尝试新建
