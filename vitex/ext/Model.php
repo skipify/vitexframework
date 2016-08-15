@@ -119,7 +119,12 @@ class Model
      */
     public function init(array $setting)
     {
-        return $this->changeDatabase($setting);
+        if(!$this->vitex->pdo){
+            $this->vitex->runMiddleware(new \vitex\ext\Pdo($setting));
+            $this->DB  = $this->vitex->pdo;
+            $this->pdo = $this->DB->pdo;
+        }
+        return $this;
     }
     /**
      * 切换Model层使用的数据库连接
