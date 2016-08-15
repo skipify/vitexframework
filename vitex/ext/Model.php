@@ -103,16 +103,24 @@ class Model
         try {
             $this->DB  = $this->vitex->pdo;
             $this->pdo = $this->DB->pdo;
-        } catch (Exception $e) {
-            throw new \Error('使用ORM之前您必须要调用一个数据库连接的类返回一个PDO的变量,或者直接加载pdo中间件');
-        }
+        } catch (Exception $e) {}
         if ($table) {
-            $this->from($table);
+            $this->table = $table;
+        } else {
+            $class       = explode('\\', get_class($this));
+            $this->table = strtolower(end($class));
         }
-        $class       = explode('\\', get_class($this));
-        $this->table = strtolower(end($class));
     }
 
+    /**
+     * 初始化数据库连接
+     * @param array $setting
+     * @return Model
+     */
+    public function init(array $setting)
+    {
+        return $this->changeDatabase($setting);
+    }
     /**
      * 切换Model层使用的数据库连接
      * @param  array  $setting 数据库链接信息
@@ -222,11 +230,15 @@ class Model
 
     /**
      * 直接执行sql语句 @#_ 当做表前缀替换掉
-     * @param  string $sql           sql语句
-     * @return mixed  执行结果
+     * @param  string $sql sql语句
+     * @return mixed 执行结果
+     * @throws Exception
      */
     public function query($sql)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sql = str_replace('@#_', $this->prefix, $sql);
         return $this->DB->query($sql);
     }
@@ -999,11 +1011,15 @@ class Model
 
     /**
      * 根据where条件修改内容
-     * @param  array $arr           要修改的数据 关联数组
+     * @param  array $arr 要修改的数据 关联数组
      * @return mixed 执行结果
+     * @throws Exception
      */
     final public function update(array $arr)
     {
+        if(!$this->pdo){
+            throw  new Exception('您还没有连接数据库');
+        }
         //修改
         $sql  = "update " . $this->getTable() . " set ";
         $sets = [];
@@ -1021,11 +1037,15 @@ class Model
     /**
      * 要插入数据库的数据，可以是多维数组
      * 当为二维数组的时候插入多条数据
-     * @param  array   $arr                               关联数组或者二维数组
-     * @return integer 成功则返回最后插入的ID
+     * @param  array $arr 关联数组或者二维数组
+     * @return int 成功则返回最后插入的ID
+     * @throws Exception
      */
     final public function insert($arr = [])
     {
+        if(!$this->pdo){
+            throw  new Exception('您还没有连接数据库');
+        }
         $keys = [];
         if (count($arr) === 0) {
             return false;
@@ -1074,6 +1094,9 @@ class Model
      */
     final public function begin()
     {
+        if(!$this->pdo){
+            throw  new Exception('您还没有连接数据库');
+        }
         if ($this->_begintransaction) {
             throw new Exception("已经开启了一个事务，请勿重新开启");
         }
@@ -1084,25 +1107,35 @@ class Model
 
     /**
      * 提交事务
-     * @return boolean
+     * @return bool
+     * @throws Exception
      */
     final public function commit()
     {
+        if(!$this->pdo){
+            throw  new Exception('您还没有连接数据库');
+        }
         $this->_begintransaction = false;
         return $this->pdo->commit();
     }
+
     /**
      * 回滚事务
      * @return $this
+     * @throws Exception
      */
     final public function rollBack()
     {
+        if(!$this->pdo){
+            throw  new Exception('您还没有连接数据库');
+        }
         if ($this->_begintransaction) {
             $this->pdo->rollBack();
             $this->_begintransaction = false;
         }
         return $this;
     }
+
     /**
      * ORM似的保存
      * 保存当前模型，如果存在主键则尝试修改，如果不存在主键则尝试新建
@@ -1131,11 +1164,15 @@ class Model
 
     /**
      * 删除数据
+     * @return bool
+     * @throws Exception
      * @throws \Error
-     * @return boolean  删除的数据结果
      */
     final public function delete()
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sql   = "delete from " . $this->getTable() . " ";
         $where = $this->buildWhere();
         //条件判断
@@ -1155,10 +1192,14 @@ class Model
 
     /**
      * 清空当前指定的表
-     * @return boolean
+     * @return bool
+     * @throws Exception
      */
     final public function truncate()
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $table = $this->getTable();
         $sql   = "truncate table " . $table;
         return $this->DB->execute($sql);
@@ -1202,6 +1243,9 @@ class Model
      */
     private function stepField($column, $amount)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         if (is_array($column)) {
             if (is_array($amount) && count($amount) != count($column)) {
                 throw new Exception("传递的字段与自增值无法对应，请查看数量");
@@ -1231,11 +1275,16 @@ class Model
 
     /**
      * 统计数量
-     * @param  string $column  字段名
-     * @return int    数量
+     * @param  string $column 字段名
+     * @return int 数量
+     * @throws Exception
+     * @throws \Error
      */
     public function count($column = '*')
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sql  = $this->buildSql($column);
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['num']) ? $info['num'] : 0;
@@ -1283,6 +1332,9 @@ class Model
 
     private function _maxMinSumAvg($method, $field)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $field                = $this->formatColumn($field);
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
         $sql                  = $this->limit(1)->buildSql();
@@ -1349,40 +1401,55 @@ class Model
 
     /**
      * 执行指定的select类型sql
-     * @param  string $sql                       sql语句
-     * @param  int    $type                      返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
-     * @return array  返回值，多维数组
+     * @param  string $sql sql语句
+     * @param int $type 返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
+     * @return array 返回值，多维数组
+     * @throws Exception
      */
     final public function fetchAll($sql, $type = \PDO::FETCH_ASSOC)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sth = $this->DB->query($sql);
         return $this->DB->fetchAll($type);
     }
 
     /**
      * 执行指定的select类型sql
-     * @param  string $sql                       sql语句
-     * @param  int    $type                      返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
-     * @return array  返回值，一维数组
+     * @param  string $sql sql语句
+     * @param int $type 返回类型，默认为关联数组，可以指定其他类型具体查看PDO文档
+     * @return array 返回值，一维数组
+     * @throws Exception
      */
     final public function fetch($sql, $type = \PDO::FETCH_ASSOC)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $info = $this->DB->query($sql)->fetch($type);
         return $info;
     }
 
     /**
      * 执行一个没有返回值的sql语句
-     * @param  string $sql                 sql语句
-     * @return int    执行是否成功
+     * @param  string $sql sql语句
+     * @return int 执行是否成功
+     * @throws Exception
      */
     final public function execute($sql)
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         return $this->DB->execute($sql);
     }
 
     private function _get()
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sql          = $this->limit(1)->buildSql();
         $info         = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->_post  = $info;
@@ -1392,6 +1459,9 @@ class Model
 
     private function _getAll()
     {
+        if(!$this->DB){
+            throw  new Exception('您还没有连接数据库');
+        }
         $sql = $this->buildSql();
         $sth = $this->DB->query($sql);
         return $this->DB->fetchAll(\PDO::FETCH_ASSOC);
