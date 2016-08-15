@@ -2,7 +2,46 @@
 
 ## 前置条件
 
-使用此类之前必须要加载 PDO类库，设置好数据库链接等。   
+使用此类之前必须要加载 PDO类库，设置好数据库链接等。 
+0.9.1 之后版本以不再强制需要调用Model类之前链接数据库.,您可以在您继承Model类的子类中手工链接数据库,这样可以避免有些请求不需要链接数据库而造成资源浪费
+
+
+```
+class MyModel extends Model
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->init([
+            'username' => 'root',
+            'password'=>'root'
+            'host'     => 'localhost',
+            'database' => 'test',
+            'charset'  => 'utf8',
+        ]);
+    }
+}
+
+```
+// 如果是要更换数据库链接请使用changeDatabase()方法
+```
+class MyModel extends Model
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->init([
+            'username' => 'root',
+            'password'=>'root'
+            'host'     => 'localhost',
+            'database' => 'test',
+            'charset'  => 'utf8',
+        ]);
+        $this->changeDatabase(/*other setting*/);
+    }
+}
+```
+
 
 ``` 
 $vitex->using(new \vitex\ext\Pdo([
@@ -56,40 +95,22 @@ select * from user where age in (select age from user where id > 10)
 
 ## API
 
-### def()
+### init
+初始化数据库,对于未默认进行数据库链接的程序可以使用此方式在model类的子类中单独链接程序,已经连接过数据库时此方法不会做任何事情.
 
-定义一个新的模型数据，也就是说初始化一条记录，这条记录的字段应该是与数据库对应的,支持链式操作        
+如果需要重新连接其他的数据库,请使用changeDatabase方法
 
-**签名**  
-
-`def(array  $arr = array()) `  
-
-**参数**  
-
-array 	$arr 	数据数组，字段对应数据库中表的字段  
-
-**示例**  
-
-`$model->def(['name'=>'Vitex','age'=>26])`
-
-### setPrefix()
-
-设置表前缀,此方法直接返回对象本身支持链式操作,支持链式操作      
-
-**签名**  
-
-`setPrefix(string  $prefix) : object`  
-
-**参数**  
-
-string 	$prefix 前缀
-
-**示例**  
-
-`$model->setPrefix('cms_')`  
+```
+$this->init([
+            'username' => 'root',
+            'password'=>'root'
+            'host'     => 'localhost',
+            'database' => 'test',
+            'charset'  => 'utf8',
+        ]);
+```
 
 ### changeDatabase
-
 切换数据库链接，用于程序中动态改变链接其他的数据库，应用的范围是该模型层
 
 **签名**
@@ -124,6 +145,45 @@ $this->changeDatabase([
 ])
 ```
 
+如果您执行了 changeDatabase 方法后又想要恢复原来的数据库链接,则可以使用:
+
+```
+$this->DB  = $this->vitex->pdo;
+$this->pdo = $this->DB->pdo;
+```
+来恢复使用中间件执行的数据库连接
+
+### def()
+
+定义一个新的模型数据，也就是说初始化一条记录，这条记录的字段应该是与数据库对应的,支持链式操作        
+
+**签名**  
+
+`def(array  $arr = array()) `  
+
+**参数**  
+
+array 	$arr 	数据数组，字段对应数据库中表的字段  
+
+**示例**  
+
+`$model->def(['name'=>'Vitex','age'=>26])`
+
+### setPrefix()
+
+设置表前缀,此方法直接返回对象本身支持链式操作,支持链式操作      
+
+**签名**  
+
+`setPrefix(string  $prefix) : object`  
+
+**参数**  
+
+string 	$prefix 前缀
+
+**示例**  
+
+`$model->setPrefix('cms_')`  
 
 
 ### sub()
