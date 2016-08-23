@@ -79,6 +79,7 @@ class Pdo extends Middleware
             $sth->execute($arr);
         } catch (\PDOException $e) {
             $this->errorInfo($sql, $e->getMessage());
+            throw $e;
         }
         $count = $sth->rowCount();
 
@@ -99,6 +100,7 @@ class Pdo extends Middleware
             $this->sth->execute($arr);
         } catch (\PDOException $e) {
             $this->errorInfo($sql, $e->getMessage());
+            throw $e;
         }
         return $this->sth;
     }
@@ -115,6 +117,7 @@ class Pdo extends Middleware
             $run = $this->sth->fetch($mode);
         } catch (\PDOException $e) {
             $this->errorInfo('', $e->getMessage());
+            throw $e;
         }
         yield $run;
     }
@@ -131,6 +134,7 @@ class Pdo extends Middleware
             $rows = $this->sth->fetchAll($mode);
         } catch (\PDOException $e) {
             $this->errorInfo('', $e->getMessage());
+            throw $e;
         }
         return $rows;
     }
