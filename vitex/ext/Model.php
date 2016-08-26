@@ -187,9 +187,10 @@ class Model
 
     /**
      * 负责执行一些未定义的内容
-     * @param  string $method                    方法名
-     * @param  array  $args                      数组
-     * @return mixed  执行结果或者本身
+     * @param  string $method 方法名
+     * @param  array $args 数组
+     * @return mixed 执行结果或者本身
+     * @throws Exception
      */
     public function __call($method, $args)
     {
@@ -208,6 +209,8 @@ class Model
             $this->where($field, '=', $val);
             return $this->_getAll();
         }
+        //未发现方法
+        throw new Exception($method.' Not Found In Model Class');
     }
 
     /**
