@@ -17,8 +17,8 @@ use vitex\Vitex;
 /**
  * 一个简单的Active record
  * knex.js
- * @method array getBy*(string $column,String $val)
- * @method array getAllBy*(string $column,String $val)
+ * @method array getBy*(string $column, String $val)
+ * @method array getAllBy*(string $column, String $val)
  */
 class Model
 {
@@ -27,19 +27,19 @@ class Model
      * @var array
      */
     private $_sql = [
-        'where'     => [],
-        'whereraw'  => [],
+        'where' => [],
+        'whereraw' => [],
         'findinset' => [],
-        'select'    => [],
-        'distinct'  => [],
-        'from'      => '',
-        'limit'     => '',
-        'offset'    => 0,
-        'group'     => [],
-        'having'    => [],
-        'union'     => [],
-        'join'      => [],
-        'order'     => [],
+        'select' => [],
+        'distinct' => [],
+        'from' => '',
+        'limit' => '',
+        'offset' => 0,
+        'group' => [],
+        'having' => [],
+        'union' => [],
+        'join' => [],
+        'order' => [],
     ];
     /**
      * 保存数据集合的数组
@@ -100,14 +100,14 @@ class Model
     public function __construct($table = '')
     {
         $this->vitex = Vitex::getInstance();
-        try {
-            $this->DB  = $this->vitex->pdo;
+        if (isset($this->vitex->pdo)) {
+            $this->DB = $this->vitex->pdo;
             $this->pdo = $this->DB->pdo;
-        } catch (Exception $e) {}
+        }
         if ($table) {
             $this->table = $table;
         } else {
-            $class       = explode('\\', get_class($this));
+            $class = explode('\\', get_class($this));
             $this->table = strtolower(end($class));
         }
     }
@@ -119,30 +119,31 @@ class Model
      */
     public function init(array $setting)
     {
-        if(!$this->vitex->pdo){
+        if (empty($this->vitex->pdo)) {
             $this->vitex->runMiddleware(new \vitex\ext\Pdo($setting));
-            $this->DB  = $this->vitex->pdo;
+            $this->DB = $this->vitex->pdo;
             $this->pdo = $this->DB->pdo;
         }
         return $this;
     }
+
     /**
      * 切换Model层使用的数据库连接
-     * @param  array  $setting 数据库链接信息
+     * @param  array $setting 数据库链接信息
      * @return self
      */
     public function changeDatabase(array $setting)
     {
         $pdoCon = new Pdo($setting);
         $pdoCon->setVitex($this->vitex);
-        $this->DB  = $pdoCon;
+        $this->DB = $pdoCon;
         $this->pdo = $this->DB->pdo;
         return $this;
     }
 
     /**
      * 定义一个新的模型数据
-     * @param  array  $arr 模型数据
+     * @param  array $arr 模型数据
      * @return self
      */
     public function def($arr = [])
@@ -197,7 +198,7 @@ class Model
         //getby
         if (substr($method, 0, 5) == 'getBy') {
             $field = str_replace('getBy', '', $method);
-            $val   = array_shift($args);
+            $val = array_shift($args);
             $this->where($field, '=', $val);
             return $this->_get();
         }
@@ -205,12 +206,12 @@ class Model
         //
         if (substr($method, 0, 8) == 'getAllBy') {
             $field = str_replace('getAllBy', '', $method);
-            $val   = array_shift($args);
+            $val = array_shift($args);
             $this->where($field, '=', $val);
             return $this->_getAll();
         }
         //未发现方法
-        throw new Exception($method.' Not Found In Model Class');
+        throw new Exception($method . ' Not Found In Model Class');
     }
 
     /**
@@ -244,7 +245,7 @@ class Model
      */
     public function query($sql)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         $sql = str_replace('@#_', $this->prefix, $sql);
@@ -261,7 +262,7 @@ class Model
 
     /**
      * 选择要查询的字段名
-     * @param  mixed  $column 可以是字符串，多个字段用,分开，也可以是数组每个元素为一个字段，也可以是*
+     * @param  mixed $column 可以是字符串，多个字段用,分开，也可以是数组每个元素为一个字段，也可以是*
      * @return self
      */
     final public function select($column = '*')
@@ -274,7 +275,7 @@ class Model
         if (!is_array($column)) {
             $column = explode(',', $column);
         }
-        $column               = array_map([$this, 'formatColumn'], $column);
+        $column = array_map([$this, 'formatColumn'], $column);
         $this->_sql['select'] = array_merge($this->_sql['select'], $column);
         return $this;
     }
@@ -285,7 +286,7 @@ class Model
      * table.*
      * table.field as _field
      * table.field _field
-     * @param  string $column           字段名
+     * @param  string $column 字段名
      * @return string 新的字段名
      */
     private function formatColumn($column)
@@ -297,7 +298,7 @@ class Model
         }
         if (strpos($column, '.') !== false) {
             list($table, $column) = explode('.', $column);
-            $table                = '`' . $table . '`.';
+            $table = '`' . $table . '`.';
         } else {
             $table = '';
         }
@@ -307,7 +308,7 @@ class Model
         if (strpos($column, ' ') === false) {
             return $table . '`' . $column . '`';
         }
-        $column  = preg_replace('/[ ]+/', ' ', $column);
+        $column = preg_replace('/[ ]+/', ' ', $column);
         $columns = explode(' ', $column);
         if (count($columns) == 3) {
             list($column, $as, $alias) = $columns;
@@ -320,8 +321,8 @@ class Model
     /**
      * 基本的where查询条件,与前面的操作使用and连接
      * @param  string /array $key 条件列名
-     * @param  string $op    操作符 = != > like等
-     * @param  string $val   值
+     * @param  string $op 操作符 = != > like等
+     * @param  string $val 值
      * @return self
      */
     public function where($key, $op = '', $val = '')
@@ -332,8 +333,8 @@ class Model
     /**
      * 基本的or where查询条件,与前面的操作使用or连接
      * @param  string /array $key 条件列名
-     * @param  string $op    操作符 = != > like等
-     * @param  string $val   值
+     * @param  string $op 操作符 = != > like等
+     * @param  string $val 值
      * @return self
      */
     public function orWhere($key, $op = '', $val = '')
@@ -351,7 +352,7 @@ class Model
      */
     public function whereIn($key, $val)
     {
-        if(!$val){
+        if (!$val) {
             throw new Exception("whereIn方法的第二个参数不得为空");
         }
         return $this->_where("whereIn", $key, $val);
@@ -367,7 +368,7 @@ class Model
      */
     public function whereNotIn($key, $val)
     {
-        if(!$val){
+        if (!$val) {
             throw new Exception("orWhereIn方法的第二个参数不得为空");
         }
         return $this->_where("whereNotIn", $key, $val);
@@ -486,7 +487,7 @@ class Model
     /**
      * 基本的where between a and b查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
-     * @param  array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
+     * @param  array $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
      * @return self
      */
     public function whereBetween($key, array $val)
@@ -497,7 +498,7 @@ class Model
     /**
      * 基本的where not between a and b查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
-     * @param  array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
+     * @param  array $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
      * @return self
      */
     public function whereNotBetween($key, array $val)
@@ -508,7 +509,7 @@ class Model
     /**
      * 基本的or where between a and b查询条件,与前面的操作使用or连接
      * @param  string $key 条件列名
-     * @param  array  $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
+     * @param  array $val ,这是一个数组,包含两个元素 between $val[0] and $val[1]
      * @return self
      */
     public function orWhereBetween($key, array $val)
@@ -519,7 +520,7 @@ class Model
     /**
      * 基本的or where not between a and b查询条件,与前面的操作使用or连接
      * @param  string $key 条件列名
-     * @param  array  $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
+     * @param  array $val ,这是一个数组,包含两个元素 not between $val[0] and $val[1]
      * @return self
      */
     public function orWhereNotBetween($key, array $val)
@@ -531,9 +532,9 @@ class Model
      * where查询语句，支持子查询等
      * @internal param $string /array/callable $val    值
      * @param  $method
-     * @param  string    $key           键值
-     * @param  string    $op            操作符
-     * @param  string    $val
+     * @param  string $key 键值
+     * @param  string $op 操作符
+     * @param  string $val
      * @throws \Error
      * @return object    错误信息
      */
@@ -560,12 +561,12 @@ class Model
         }
         //设定操作符和连接符
         $type = strpos($method, 'or') !== false ? ' or ' : ' and ';
-        $_op  = $where[$method];
-        $op   = $_op ? $_op : $op;
+        $_op = $where[$method];
+        $op = $_op ? $_op : $op;
         if ($op == 'is' || $op == 'is not') {
             $val = 'null';
         }
-        $val = is_array($val) ? $val : (string) $val;
+        $val = is_array($val) ? $val : (string)$val;
 
         $this->_sql['where'][] = [$key, $op, $val, $type];
         return $this;
@@ -585,13 +586,13 @@ class Model
     /**
      * set数据查询
      * @param  string $column 字段名
-     * @param  mixed  $val    查询值
-     * @param  string $type   类型 默认and
+     * @param  mixed $val 查询值
+     * @param  string $type 类型 默认and
      * @return self
      */
     public function findInSet($column, $val, $type = 'and')
     {
-        $column                    = $this->formatColumn($column);
+        $column = $this->formatColumn($column);
         $this->_sql['findinset'][] = [$column, $val, $type];
         return $this;
     }
@@ -609,15 +610,15 @@ class Model
 
     /**
      * Having分组操作条件
-     * @param  string $key      键值
-     * @param  string $op       操作符
-     * @param  array  /callable $val 操作值
-     * @param  string $type     类型 and/or
+     * @param  string $key 键值
+     * @param  string $op 操作符
+     * @param  array /callable $val 操作值
+     * @param  string $type 类型 and/or
      * @return self
      */
     public function having($key, $op, $val, $type = "AND")
     {
-        $key                    = $this->formatColumn($key);
+        $key = $this->formatColumn($key);
         $this->_sql['having'][] = [$key, $op, $val, $type];
         return $this;
     }
@@ -629,7 +630,7 @@ class Model
      */
     final public function from($table)
     {
-        $table              = (string) $table;
+        $table = (string)$table;
         $this->_sql['from'] = $table;
         return $this;
     }
@@ -656,14 +657,14 @@ class Model
         $alias = '';
         if (strpos($table, ' ') !== false) {
             list($table, $alias) = explode(' ', $table);
-            $alias               = ' as `' . $alias . '`';
+            $alias = ' as `' . $alias . '`';
         }
         return '`' . $table . '`' . $alias;
     }
 
     /**
      * 查询的条数
-     * @param  string  $limit  要查询的条数
+     * @param  string $limit 要查询的条数
      * @param  integer $offset 偏移值 默认0
      * @return self
      */
@@ -688,12 +689,12 @@ class Model
     /**
      * 排序字段以及排序方式
      * @param  string $column 字段
-     * @param  string $way    排序方式
+     * @param  string $way 排序方式
      * @return self
      */
     final public function orderBy($column, $way = "DESC")
     {
-        $column                = $this->formatColumn($column);
+        $column = $this->formatColumn($column);
         $this->_sql['order'][] = [$column, $way];
         return $this;
     }
@@ -705,7 +706,7 @@ class Model
      */
     final public function groupBy($column)
     {
-        $column                = $this->formatColumn($column);
+        $column = $this->formatColumn($column);
         $this->_sql['group'][] = $column;
         return $this;
     }
@@ -728,25 +729,25 @@ class Model
 
     /**
      * join操作的集中执行方法
-     * @param  string $type  各种不同的join操作
+     * @param  string $type 各种不同的join操作
      * @param  string $table join的表明
-     * @param  string $col   第一个字段
-     * @param  string $col2  第二个字段
+     * @param  string $col 第一个字段
+     * @param  string $col2 第二个字段
      * @return self
      */
     private function join($type, $table, $col, $op, $col2 = '')
     {
-        $col                         = $this->formatColumn($col);
-        $col2                        = $this->formatColumn($col2);
+        $col = $this->formatColumn($col);
+        $col2 = $this->formatColumn($col2);
         $this->_sql['join'][$type][] = [$table, $col, $op, $col2];
         return $this;
     }
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function innerJoin($table, $col, $op, $col2 = '')
@@ -756,9 +757,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function leftJoin($table, $col, $op, $col2 = '')
@@ -768,9 +769,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function leftOuterJoin($table, $col, $op, $col2 = '')
@@ -780,9 +781,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function rightJoin($table, $col, $op, $col2 = '')
@@ -792,9 +793,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function rightOuterJoin($table, $col, $op, $col2 = '')
@@ -804,9 +805,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function outerJoin($table, $col, $op, $col2 = '')
@@ -816,9 +817,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function fullOuterJoin($table, $col, $op, $col2 = '')
@@ -828,9 +829,9 @@ class Model
 
     /**
      * @param  string $table 表名
-     * @param  string $col   一个连接表的列名
-     * @param  string $op    操作符 = !=
-     * @param  string $col2  另一个连接表的列明
+     * @param  string $col 一个连接表的列名
+     * @param  string $op 操作符 = !=
+     * @param  string $col2 另一个连接表的列明
      * @return self
      */
     public function crossJoin($table, $col, $op, $col2 = '')
@@ -845,7 +846,7 @@ class Model
      */
     final public function union($str)
     {
-        $str                   = (string) $str;
+        $str = (string)$str;
         $this->_sql['union'][] = $str;
         return $this;
     }
@@ -853,7 +854,7 @@ class Model
     /**
      * 设置数据
      * @param  string /array $key 键值
-     * @param  string $val   值
+     * @param  string $val 值
      * @return self
      */
     public function set($key, $val = null)
@@ -868,7 +869,7 @@ class Model
 
     /**
      * 构建sql语句
-     * @param  bool     $iscount
+     * @param  bool $iscount
      * @throws \Error
      * @return string
      */
@@ -1025,11 +1026,11 @@ class Model
      */
     final public function update(array $arr)
     {
-        if(!$this->pdo){
+        if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库');
         }
         //修改
-        $sql  = "update " . $this->getTable() . " set ";
+        $sql = "update " . $this->getTable() . " set ";
         $sets = [];
         foreach ($arr as $key => $val) {
             $sets[] = $this->formatColumn($key) . ' = :' . $key;
@@ -1051,7 +1052,7 @@ class Model
      */
     final public function insert($arr = [])
     {
-        if(!$this->pdo){
+        if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库');
         }
         $keys = [];
@@ -1059,12 +1060,12 @@ class Model
             return false;
         }
         $temp = $arr;
-        $ele  = array_pop($temp);
+        $ele = array_pop($temp);
         if (is_array($ele)) {
             $keys = array_keys($ele);
         } else {
             $keys = array_keys($arr);
-            $arr  = [$arr];
+            $arr = [$arr];
         }
         //整理keys
         $params = array_map(function ($item) {
@@ -1074,8 +1075,8 @@ class Model
             return $this->formatColumn($item);
         }, $keys);
 
-        $sql    = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
-        $sth    = $this->pdo->prepare($sql);
+        $sql = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
+        $sth = $this->pdo->prepare($sql);
         $lastid = null;
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->beginTransaction();
         foreach ($arr as $val) {
@@ -1102,7 +1103,7 @@ class Model
      */
     final public function begin()
     {
-        if(!$this->pdo){
+        if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库');
         }
         if ($this->_begintransaction) {
@@ -1120,7 +1121,7 @@ class Model
      */
     final public function commit()
     {
-        if(!$this->pdo){
+        if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库');
         }
         $this->_begintransaction = false;
@@ -1134,7 +1135,7 @@ class Model
      */
     final public function rollBack()
     {
-        if(!$this->pdo){
+        if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库');
         }
         if ($this->_begintransaction) {
@@ -1147,7 +1148,7 @@ class Model
     /**
      * ORM似的保存
      * 保存当前模型，如果存在主键则尝试修改，如果不存在主键则尝试新建
-     * @param  string $id            主键的值
+     * @param  string $id 主键的值
      * @return mixed  执行结果
      */
     final public function save($id = '')
@@ -1178,10 +1179,10 @@ class Model
      */
     final public function delete()
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
-        $sql   = "delete from " . $this->getTable() . " ";
+        $sql = "delete from " . $this->getTable() . " ";
         $where = $this->buildWhere();
         //条件判断
         //没有外部条件的时候查询当前对象是否有查询过的模型
@@ -1205,18 +1206,18 @@ class Model
      */
     final public function truncate()
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         $table = $this->getTable();
-        $sql   = "truncate table " . $table;
+        $sql = "truncate table " . $table;
         return $this->DB->execute($sql);
     }
 
     /**
      * 自增一个字段
-     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
-     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @param  mixed $column 字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount 自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
      * @return bool  执行sql的结果
      */
     final public function increment($column, $amount = 1)
@@ -1226,8 +1227,8 @@ class Model
 
     /**
      * 自减一个字段
-     * @param  mixed $column              字段名,可以使用一个数组传递多个字段
-     * @param  mixed $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @param  mixed $column 字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount 自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
      * @return bool  执行sql的结果
      */
     final public function decrement($column, $amount = 1)
@@ -1244,14 +1245,14 @@ class Model
 
     /**
      * 自减/增一个字段
-     * @param  mixed                   $column              字段名,可以使用一个数组传递多个字段
-     * @param  mixed                   $amount              自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
+     * @param  mixed $column 字段名,可以使用一个数组传递多个字段
+     * @param  mixed $amount 自增的数制默认为1，如果是一个数组则对应前面的字段也必须为数组，如果column为数组此参数不为数组则默认所有字段增加相同的值
      * @throws \vitex\core\Exception
      * @return bool                    执行sql的结果
      */
     private function stepField($column, $amount)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         if (is_array($column)) {
@@ -1262,7 +1263,7 @@ class Model
             $column = [$column];
         }
 
-        $sql  = "update " . $this->getTable() . " set ";
+        $sql = "update " . $this->getTable() . " set ";
         $sets = [];
         foreach ($column as $key => $val) {
             if (is_array($amount)) {
@@ -1270,7 +1271,7 @@ class Model
             } else {
                 $num = $amount;
             }
-            $val    = $this->formatColumn($val);
+            $val = $this->formatColumn($val);
             $sets[] = $val . " = (" . $val . " + " . $num . ") ";
         }
         $sql .= implode(',', $sets);
@@ -1290,23 +1291,23 @@ class Model
      */
     public function count($column = '*')
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
-        $sql  = $this->buildSql($column);
+        $sql = $this->buildSql($column);
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['num']) ? $info['num'] : 0;
     }
 
     /**
      * 一个简化的array_map操作，可以按照指定的字段返回一个仅包含该字段的数组
-     * @param  string $column        字段名
+     * @param  string $column 字段名
      * @return array  返回数组
      */
     final public function pluck($column)
     {
         $infos = $this->getAll();
-        $info  = array_map(function ($val) use ($column) {
+        $info = array_map(function ($val) use ($column) {
             return $val[$column];
         }, $infos);
         return $info;
@@ -1314,7 +1315,7 @@ class Model
 
     /**
      * 根据主键获取值
-     * @param  string $id         ID
+     * @param  string $id ID
      * @return mixed  返回值
      */
     final public function get($id = null)
@@ -1340,19 +1341,19 @@ class Model
 
     private function _maxMinSumAvg($method, $field)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
-        $field                = $this->formatColumn($field);
+        $field = $this->formatColumn($field);
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
-        $sql                  = $this->limit(1)->buildSql();
-        $info                 = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $sql = $this->limit(1)->buildSql();
+        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['info']) ? $info['info'] : 0;
     }
 
     /**
      * 查询指定字段的最大值
-     * @param  string $field            字段名
+     * @param  string $field 字段名
      * @return number 返回最大值
      */
     final public function max($field)
@@ -1362,7 +1363,7 @@ class Model
 
     /**
      * 查询指定字段的最小值
-     * @param  string $field            字段名
+     * @param  string $field 字段名
      * @return number 返回最小值
      */
     final public function min($field)
@@ -1372,7 +1373,7 @@ class Model
 
     /**
      * 查询指定字段的平均值
-     * @param  string $field            字段名
+     * @param  string $field 字段名
      * @return number 返回平均值
      */
     final public function avg($field)
@@ -1382,7 +1383,7 @@ class Model
 
     /**
      * 查询指定字段的和值
-     * @param  string $field         字段名
+     * @param  string $field 字段名
      * @return number 返回和值
      */
     final public function sum($field)
@@ -1393,17 +1394,17 @@ class Model
     /**
      * 直接按照分页查询相关的信息，包括总页数以及当前分页的内容
      * @param  integer $page 当前要查询的页码
-     * @param  integer $num  每页的信息条数 默认10条
+     * @param  integer $num 每页的信息条数 默认10条
      * @return array   $info 返回值，第一个元素是包含的信息，第二个元素是总的行数
      */
     final public function page($page = 1, $num = 10)
     {
         $start = ($page - 1) * $num;
         $this->limit($num, $start);
-        $bak        = $this->_sql;
-        $infos      = $this->_getAll();
+        $bak = $this->_sql;
+        $infos = $this->_getAll();
         $this->_sql = $bak;
-        $total      = $this->count();
+        $total = $this->count();
         return [$infos, $total];
     }
 
@@ -1416,7 +1417,7 @@ class Model
      */
     final public function fetchAll($sql, $type = \PDO::FETCH_ASSOC)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         $sth = $this->DB->query($sql);
@@ -1432,7 +1433,7 @@ class Model
      */
     final public function fetch($sql, $type = \PDO::FETCH_ASSOC)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         $info = $this->DB->query($sql)->fetch($type);
@@ -1447,7 +1448,7 @@ class Model
      */
     final public function execute($sql)
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         return $this->DB->execute($sql);
@@ -1455,19 +1456,19 @@ class Model
 
     private function _get()
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
-        $sql          = $this->limit(1)->buildSql();
-        $info         = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
-        $this->_post  = $info;
+        $sql = $this->limit(1)->buildSql();
+        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $this->_post = $info;
         $this->isfind = true;
         return $info;
     }
 
     private function _getAll()
     {
-        if(!$this->DB){
+        if (!$this->DB) {
             throw  new Exception('您还没有连接数据库');
         }
         $sql = $this->buildSql();
@@ -1482,20 +1483,20 @@ class Model
     private function resetCon()
     {
         $this->_sql = [
-            'where'     => [],
-            'whereraw'  => [],
+            'where' => [],
+            'whereraw' => [],
             'findinset' => [],
-            'select'    => [],
-            'distinct'  => [],
-            'from'      => '',
-            'limit'     => '',
-            'offset'    => 0,
-            'group'     => [],
-            'having'    => [],
-            'union'     => [],
-            'on'        => [],
-            'join'      => [],
-            'order'     => [],
+            'select' => [],
+            'distinct' => [],
+            'from' => '',
+            'limit' => '',
+            'offset' => 0,
+            'group' => [],
+            'having' => [],
+            'union' => [],
+            'on' => [],
+            'join' => [],
+            'order' => [],
         ];
     }
 }
