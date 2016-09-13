@@ -996,7 +996,7 @@ class Model
                         $sql .= ' ' . $column . ' ' . $op . ' ' . $val[0] . ' and ' . $val[1];
                         break;
                     default:
-                        if (!is_numeric($val)) {
+                        if (!is_numeric($val) || $val > 255) {
                             $val = "'" . $val . "'";
                         }
                         $sql .= $column . ' ' . $op . ' ' . $val . ' ';
