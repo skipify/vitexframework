@@ -60,10 +60,10 @@ class Pagination
     /**
      * 获取分页代码
      * @param string $wrap
+     * @param bool $retArr
      * @return string 返回的分页html
-     * @internal param $
      */
-    public function get($wrap = "")
+    public function get($wrap = "",$retArr = false)
     {
         $curpage = intval(isset($_GET[$this->param]) ? $_GET[$this->param] : 1);
         $pages   = $this->getLink($this->url, $curpage);
@@ -72,7 +72,7 @@ class Pagination
                 $page = '<' . $wrap . '>' . $page . '</' . $wrap . '>';
             }
         }
-        return implode('', $pages);
+        return $retArr ? $pages : implode('', $pages);
     }
     /**
      * 获取分页数组

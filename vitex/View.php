@@ -90,7 +90,6 @@ class View
 
     /**
      * 设置/获取当前显示的模板所在路径
-     * @internal param string $tpl 模板路径名字
      * @param  $tplpath
      * @return self
      */
