@@ -868,6 +868,15 @@ class Model
     }
 
     /**
+     * 获取当前设置的查询条件配置
+     * @return array
+     */
+    public function getSqlSet()
+    {
+        return $this->_sql;
+    }
+
+    /**
      * 构建sql语句
      * @param  bool $iscount
      * @throws \Error
