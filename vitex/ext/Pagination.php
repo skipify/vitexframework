@@ -10,23 +10,23 @@ class Pagination
      * 显示的页码数量
      * @var integer
      */
-    private $linknum   = 10;
-    private $totalpage = null;
+    protected $linknum   = 10;
+    protected $totalpage = null;
     /**
      * 信息总记录行数
      * @var int
      */
-    private $totalrows = null;
+    protected $totalrows = null;
     /**
      * 信息每页行数
      * @var integer
      */
-    private $perpage = 10;
+    protected $perpage = 10;
     /**
      * 标签说明可以指定不同的表示方法
      * @var array
      */
-    private $label = [
+    protected $label = [
         'first' => '首页',
         'last'  => '末页',
         'prev'  => '上一页',
@@ -36,12 +36,12 @@ class Pagination
      * 链接地址
      * @var string
      */
-    private $url;
+    protected $url;
     /**
      * 获取分页的标示，默认是直接获取get的page参数
      * @var string
      */
-    private $param = 'page';
+    protected $param = 'page';
 
     public function __construct($setting = [])
     {
