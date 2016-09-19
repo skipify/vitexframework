@@ -154,16 +154,15 @@ class Request implements \ArrayAccess, \Iterator
         if($this->isstrip){
            return $this;
         }
-        $bodyData = $this->body->all();
-        foreach($bodyData as &$val){
-            $val = stripslashes($val);
+        if (strtolower($this->env->get('REQUEST_METHOD')) == 'put' || strtolower($this->env->get('REQUEST_METHOD')) == 'delete') {
+            //put方法
+            $body = file_get_contents('php://input');
+            $bodys = [];
+            parse_str($body, $bodys);
+            $_POST = array_merge($bodys, $_POST);
         }
-        $this->body->import($bodyData);
-        $queryData = $this->query->all();
-        foreach($queryData as &$val){
-            $val = stripslashes($val);
-        }
-        $this->query->import($queryData);
+        $this->body->import($_POST);
+        $this->query->import($_GET);
         return $this;
     }
 
