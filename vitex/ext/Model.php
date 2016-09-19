@@ -875,7 +875,15 @@ class Model
     {
         return $this->_sql;
     }
-
+    /**
+     * 设置当前的查询条件配置
+     * @return array
+     */
+    public function setSqlSet(array $set)
+    {
+        $this->_sql = $set;
+        return $this;
+    }
     /**
      * 构建sql语句
      * @param  bool $iscount
