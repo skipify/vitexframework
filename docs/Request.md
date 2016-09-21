@@ -186,11 +186,22 @@ $arr 包含表单名的一个数组
 
 `$this->req->get("name","vitex")`
 
-### setNotFilter
-默认的 $req->body  $req->query的数据都是经过 addslashes处理的,如果需要取消这种处理请调用此方法
+### setFilter
+设置 $req->body  $req->query的数据都是经过 指定的过滤方式过滤
+
+设置使用Filter类的方法来过滤
+调用此方法之后,所有使用Request类获取的query以及post数据都会经过指定的方法过滤
+
 
 ```
-$this->req->setNotFilter();
+$this->req->setFilter(Filter::FILTER_ADDSLASHES);
+```
+
+### setNotFilter/cancelFilter
+设置`setFilter`之后如果要取消过滤请调用此方法
+
+```
+$this->req->cancelFilter();
 ```
 
 ### getBody()
