@@ -23,7 +23,7 @@ class Request implements \ArrayAccess, \Iterator
 
     //环境变量
     public  $uploadError;
-    private $env,$isstrip = false;
+    private $env, $isstrip = false;
     //当前实例
     private static $_instance = null;
 
@@ -142,17 +142,17 @@ class Request implements \ArrayAccess, \Iterator
     }
 
     /**
-     * 自 0.9.0开始,系统$req->body  $req->query的数据会自动增加 addslashes
+     *
      * 此时对于 ' " \ 会自动增加\转义
      * 如果您要获取到最原始的转义前的数据可以使用 $_POST  $_GET来获取
      * 如果要在当前runtime中使用 $req->body $req->query来获取非转义的原始数据,你需要执行此方法
      * 执行此方法后会自动去除默认转义的字符
      * @return $this
      */
-    public function setNotFilter()
+    public function cancelFilter()
     {
-        if($this->isstrip){
-           return $this;
+        if ($this->isstrip) {
+            return $this;
         }
         if (strtolower($this->env->get('REQUEST_METHOD')) == 'put' || strtolower($this->env->get('REQUEST_METHOD')) == 'delete') {
             //put方法
@@ -167,15 +167,39 @@ class Request implements \ArrayAccess, \Iterator
     }
 
     /**
+     * @deprecated
+     */
+    public function setNotFilter()
+    {
+        return $this->cancelFilter();
+    }
+
+    /**
+     * 设置全局过滤方法
+     * @param $filter
+     * @return $this
+     */
+    public function setFilter($filter)
+    {
+        if (strtolower($this->env->get('REQUEST_METHOD')) == 'put' || strtolower($this->env->get('REQUEST_METHOD')) == 'delete') {
+            //put方法
+            $body = file_get_contents('php://input');
+            $bodys = [];
+            parse_str($body, $bodys);
+            $_POST = array_merge($bodys, $_POST);
+        }
+        $this->body->import(Filter::factory($_POST, $filter));
+        $this->query->import(Filter::factory($_GET, $filter));
+        return $this;
+    }
+
+    /**
      * 解析请求query string
      * @return self
      */
     private function queryData()
     {
         $data = $_GET;
-        foreach($data as &$val){
-            $val = Filter::addslashes($val);
-        }
         $this->query = new Set($data);
         return $this;
     }
@@ -194,9 +218,6 @@ class Request implements \ArrayAccess, \Iterator
             $_POST = array_merge($bodys, $_POST);
         }
         $data = $_POST;
-        foreach($data as &$val){
-            $val = Filter::addslashes($val);
-        }
         $this->body = new Set($data);
         return $this;
     }
@@ -246,12 +267,9 @@ class Request implements \ArrayAccess, \Iterator
      * @return null|string
      * @throws Exception
      */
-    public function getBody($key, $def = "", $filter = Filter::FILTER_ADDSLASHES)
+    public function getBody($key, $def = "", $filter = null)
     {
-        $val = null;
-        if (isset($_POST[$key])) {
-            $val = $_POST[$key];
-        }
+        $val = $this->body[$key];
         if ($filter) {
             $val = Filter::factory($val, $filter);
         }
@@ -268,10 +286,7 @@ class Request implements \ArrayAccess, \Iterator
      */
     public function getParam($key, $def = "", $filter = null)
     {
-        $val = null;
-        if (isset($this->params[$key])) {
-            $val = $this->params[$key];
-        }
+        $val = $this->params[$key];
         if ($filter) {
             $val = Filter::factory($val, $filter);
         }
@@ -286,12 +301,9 @@ class Request implements \ArrayAccess, \Iterator
      * @return null|string
      * @throws Exception
      */
-    public function getQuery($key, $def = "", $filter = Filter::FILTER_ADDSLASHES)
+    public function getQuery($key, $def = "", $filter = null)
     {
-        $val = null;
-        if (isset($_GET[$key])) {
-            $val = $_GET[$key];
-        }
+        $val = $this->query[$key];
         if ($filter) {
             $val = Filter::factory($val, $filter);
         }
@@ -306,7 +318,6 @@ class Request implements \ArrayAccess, \Iterator
      */
     public function getData(array $arr, $filter = null)
     {
-        $filter = $filter == Filter::FILTER_ADDSLASHES ? null : $filter;
         $data = [];
         foreach ($arr as $val) {
             $data[$val] = $this->body->{$val};
@@ -316,6 +327,7 @@ class Request implements \ArrayAccess, \Iterator
         }
         return $data;
     }
+
     /**
      * 是否是get请求方法
      * @return bool
