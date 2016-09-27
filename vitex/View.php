@@ -9,7 +9,7 @@
  * @copyright skipify
  * @license MIT
  */
-namespace Vitex;
+namespace vitex;
 
 use vitex\core\Exception;
 

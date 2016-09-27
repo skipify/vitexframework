@@ -10,7 +10,7 @@
  * @license MIT
  */
 
-namespace Vitex;
+namespace vitex;
 
 use vitex\helper\LogWriter;
 

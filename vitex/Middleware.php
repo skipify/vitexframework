@@ -10,7 +10,7 @@
  * @license MIT
  */
 
-namespace Vitex;
+namespace vitex;
 
 /**
  * 中间件方法的基类
