@@ -33,7 +33,7 @@ class Captcha
     private $engine = '';
     public function __construct($setting = [])
     {
-        $this->font = dirname(__FILE__) . '/font.ttf';
+        $this->font = dirname(__FILE__) . '/fangzheng.ttf';
         if ($this->type == 2) {
             $this->width = 100;
         }
@@ -110,6 +110,12 @@ class Captcha
             $code   = substr($code, rand(3, 5), $this->length);
             $code   = str_replace(['2', '0', 'o', '1', 'i'], ['Z', '9', '8', 'L', 'A'], $code);
             $code   = strtoupper($code);
+            $answer = $code;
+        }elseif ($this->type == "3"){
+            $str ="冰消雪融风和日丽山光水色草长莺飞山明水秀明月清风奇花异草鸟语花香千山万水跋山涉水山光水色山明水秀山高水长山高水低穷山恶水水秀山明一碧千里翠色欲流千山一碧碧波荡漾翠绿欲滴绿草如茵万紫千红花红柳绿姹紫嫣红一碧千里翠色欲流翠色欲滴五彩缤纷五光十色春光明媚春意盎然春色满园春暖花开春和景明春山如笑风和日丽烈日炎炎和风细雨彤云密布晴空万里万里无云狂风暴雨倾盆大雨天昏地暗百花齐放百花盛开百花争艳花团锦簇含苞欲放花红柳绿争奇斗艳姹紫嫣红五彩缤纷一碧千里翠色欲流绿草如茵郁郁葱葱枝繁叶茂红叶似火枯木逢春危峰兀立崇山峻岭怪石嶙峋奇峰罗列水平如镜汹涌澎湃波澜壮阔微波粼粼浩浩荡荡碧空如洗晴空万里万里无云愁眉不展眉飞色舞神采奕奕满面春风嬉皮笑脸愁眉苦脸神采飞扬喜形于色得意忘形垂头丧气兴高采烈炯炯有神喜笑颜开喜上眉梢心急如焚心慌意乱心甘情愿惴惴不安忐忑不安心惊肉跳胆战心惊心乱如麻心乱如麻拾金不昧助人为乐默默奉献大公无私坚贞不屈勇往直前尊老爱幼见义勇为乐善好施舍己为人";
+            $str    = str_split($str,12);
+            $index  = mt_rand(0,count($str)-1);
+            $code   = $str[$index];
             $answer = $code;
         } else {
             $operate               = ['+', '-'];
