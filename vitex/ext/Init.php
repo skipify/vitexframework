@@ -130,8 +130,8 @@ class Init
     //模型示例
     public function model()
     {
-        $file = $this->dirname . '/' . $this->appname . '/model/Index.php';
-        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2Uge2FwcH1cbW9kZWw7CgpjbGFzcyBJbmRleCBleHRlbmRzIFx2aXRleFxleHRcTW9kZWwKewogICAgcHVibGljIGZ1bmN0aW9uIF9fY29uc3RydWN0KCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgLy/pu5jorqTnmoTooajlkI3mmK/nsbvlkI0g5pys5L6L5Li6IGluZGV4KOWwj+WGmSkKICAgICAgICAvL+m7mOiupOeahOS4u+mUruS4uiBpZAogICAgICAgIC8v5Y+v5Lul5Zyo6L+Z6YeM6YeN5paw6K6+572u5Li76ZSu5ZKM6KGo5ZCNCiAgICAgICAgJHRoaXMtPnBrICAgID0gJ2lkJzsKICAgICAgICAkdGhpcy0+dGFibGUgPSAndXNlcic7CiAgICB9Cn0=';
+        $file = $this->dirname . '/' . $this->appname . '/model/Model.php';
+        $code = 'PD9waHAKLyoK6L+Z5piv5LiA5Liq5pmu6YCa5qih5Z6LCiAqLwpuYW1lc3BhY2Uge2FwcH1cbW9kZWw7CgpjbGFzcyBNb2RlbCBleHRlbmRzIFx2aXRleFxleHRcTW9kZWwKewogICAgcHVibGljIGZ1bmN0aW9uIF9fY29uc3RydWN0KCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgLy/pu5jorqTnmoTooajlkI3mmK/nsbvlkI0g5pys5L6L5Li6IGluZGV4KOWwj+WGmSkKICAgICAgICAvL+m7mOiupOeahOS4u+mUruS4uiBpZAogICAgICAgIC8v5Y+v5Lul5Zyo6L+Z6YeM6YeN5paw6K6+572u5Li76ZSu5ZKM6KGo5ZCNCiAgICAgICAgJHRoaXMtPnBrICAgID0gJ2lkJzsKICAgICAgICAkdGhpcy0+dGFibGUgPSAndXNlcic7CiAgICB9Cn0=';
         file_put_contents($file, str_replace('{app}', $this->appname, base64_decode($code)));
         return true;
     }
@@ -139,7 +139,7 @@ class Init
     //路由
     public function route()
     {
-        $file = $this->dirname . '/' . $this->appname . '/route/Index.php';
+        $file = $this->dirname . '/' . $this->appname . '/route/index.php';
         $code = 'PD9waHAKCiR2aXRleC0+Z2V0KCcvanNvbicsIGZ1bmN0aW9uICgkcmVxLCAkcmVzKSB7CiAgICAgICAgICAkcmVzLT5qc29uKFsnbmFtZScgPT4gJ3ZpdGV4J10pOwogICAgICB9KQogICAgICAtPmdldCgnLycsIGZ1bmN0aW9uICgkcmVxLCAkcmVzKSB7CiAgICAgICAgICAkcmVzLT5yZW5kZXIoJ3dlbGNvbWUnKTsKICAgICAgfSk7Cg==';
         file_put_contents($file, base64_decode($code));
         return true;
