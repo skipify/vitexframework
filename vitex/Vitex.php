@@ -259,7 +259,7 @@ class Vitex
         if (!defined('WEBROOT')) {
             throw new Exception('入口文件必须定义一个WEBROOT的变量到根目录');
         }
-        $path = $path ? $path : dirname(WEBROOT) . '/';
+        $path = $path ? rtrim($path) . '/' : dirname(WEBROOT) . '/';
         $this->loader->addNamespace('\\' . $app, $path . $app);
         return $this;
     }
