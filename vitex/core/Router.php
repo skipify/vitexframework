@@ -28,6 +28,12 @@ class Router
     protected $cacheBaseurl  = null;
     protected $routeClass    = null;
     protected $routeMethod   = null;
+    /**
+     * 路由的分组APP名称
+     * 多个应用时路由分组文件时设定的APP名称
+     * @var null
+     */
+    private $routeGroupApp = null;
 
     public function __construct()
     {
@@ -278,6 +284,26 @@ class Router
     }
 
     /**
+     * 设置当前路由的app
+     * @param $appName
+     * @return $this
+     */
+    public function setRouteApp($appName)
+    {
+        $this->routeGroupApp = $appName;
+        return $this;
+    }
+
+    /**
+     * 获取当前路由的appName
+     * @return null
+     */
+    public function getRouteApp()
+    {
+        return $this->routeGroupApp;
+    }
+
+    /**
      * 获取所有的匹配字符串
      * @return array 匹配字符串
      */
@@ -356,7 +382,7 @@ class Router
         if ($class[0] != '\\') {
             //当前应用
             $vitex = Vitex::getInstance();
-            $app = $vitex->appName;
+            $app = $this->getRouteApp() ?: $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
         $this->routeClass = $class;

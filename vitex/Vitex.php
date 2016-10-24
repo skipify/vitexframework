@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.9.1";
+    const VERSION = "0.9.5";
     /**
      * App instance
      */
@@ -39,6 +39,12 @@ class Vitex
      * @var array
      */
     private $settings;
+
+    /**
+     * 已经初始化或者注入的应用
+     * @var array
+     */
+    private $initApps = [];
     /**
      * 默认的系统配置
      * @var array
@@ -50,7 +56,7 @@ class Vitex
         'templates.ext' => '.html',
         'view' => '\vitex\View',
         'callback' => 'callback', //jsonp时自动获取的值
-        'router.group_path' => '',
+        'router.grouppath' => '',
         'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
         'router.case_sensitive' => false, //是否区分大小写
         'methodoverride.key' => '__METHOD', //url request method 重写的key
@@ -162,12 +168,37 @@ class Vitex
     }
 
     /**
+     * 设置已经初始化或者已经注入的应用
+     * @param $app
+     * @param $dir
+     * @return $this
+     */
+    public function setInitApps($app, $dir)
+    {
+        $this->initApps[$app] = $dir;
+        return $this;
+    }
+
+    /**
+     * 获取已经初始化或者注入的应用
+     * @param string $app 获取的应用名称
+     * @return array
+     */
+    public function getInitApps($app)
+    {
+        if ($app) {
+            return isset($this->initApps[$app]) ? $this->initApps[$app] : null;
+        }
+        return $this->initApps;
+    }
+
+    /**
      * 初始化一个应用,包括设置各种路径添加加载命名空间等
      * @param  string $app 应用的名称
      * @param  string $dir 应用的路径
      * @param  array|string $setting 批量设置配置
      * @param  array $middleware
-     * @return self
+     * @return $this
      */
 
     public function init($app, $dir, array $setting = [], array $middleware = [])
@@ -187,6 +218,8 @@ class Vitex
                 $this->using($mw);
             }
         }
+        $this->setInitApps($app, $dir);
+        return $this;
     }
 
     /**
@@ -241,6 +274,7 @@ class Vitex
                     $namespace = $appname;
                     $this->loader->addNamespace('\\' . $namespace, $_dir . '/' . $appname . '/');
                 }
+                $this->setInitApps($appname, $_dir);
             }
         }
         return $app;
@@ -261,6 +295,7 @@ class Vitex
         }
         $path = $path ? rtrim($path) . '/' : dirname(WEBROOT) . '/';
         $this->loader->addNamespace('\\' . $app, $path . $app);
+        $this->setInitApps($app, $path);
         return $this;
     }
 
@@ -542,11 +577,12 @@ class Vitex
      * 路由分组
      * @param  string $pattern 分组标识 url的一部分
      * @param  string $class 分组对应的类的名字
+     * @param  string $appName 多个应用时可以指定应用名字用于加载指定应用下的路由文件
      * @return self
      */
-    public function group($pattern, $class)
+    public function group($pattern, $class, $appName = '')
     {
-        $this->route->group($pattern, $class);
+        $this->route->group($pattern, $class, $appName);
         return $this;
     }
 
@@ -665,7 +701,7 @@ class Vitex
      * 页面执行时间
      *
      * @author skipify
-     *
+     * @param string $symbol 记录时间的标示
      * @return int
      */
     public function execTime($symbol = '__start')
