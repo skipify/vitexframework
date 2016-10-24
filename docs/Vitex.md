@@ -357,13 +357,15 @@ mixed $call 要执行的中间件处理方法或者null(应用中间件时)
 
 **签名**  
 
-	`group(string  $pattern, string  $class) : object`  
+	`group(string  $pattern, string  $class,string $appName) : object`  
 
 **参数**  
 
 string 	$pattern 	分组标识 url的一部分
 
 string 	$class 	分组对应的类的名字  
+
+string $appName  多个应用时可以指定应用的名字用于直接加载指定应用的路由文件
 
 **示例**  
 

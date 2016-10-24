@@ -153,6 +153,8 @@ $vitex->get('|^test/(?<id>[0-9]+)$|', function ($req) {
 
 $vitex->group("user","user")  //指定 /user开头的分组到user router文件
 
+$vitex->group("group/user","usergroup")  // 指定 /group/user 开头的分组到 usergroup分组文件
+
 user.php (router文件)中使用正则匹配则
 $vitex->get("|^user/get-[0-9]+\.html$|","User@info")  //  相当于访问  /user/get-1.html
 ```
