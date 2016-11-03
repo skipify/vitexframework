@@ -173,7 +173,7 @@ class Route
             } else {
                 //兼容appName,重设路由分组文件路径
                 if ($appName && ($dir = $vitex->getInitApps($appName))) {
-                    $this->setGroupPath($dir . '/' . $appName . '/router');
+                    $this->setGroupPath($dir . '/' . $appName . '/route');
                 }
                 //设置路由应用
                 $this->router->setRouteApp(($appName ?: $vitex->appName));
