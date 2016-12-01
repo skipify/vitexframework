@@ -1054,6 +1054,7 @@ class Model
         }
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
+        $this->sql = $sql;
         $sth = $this->pdo->prepare($sql);
         $ret = $sth->execute($arr);
         $this->resetCon();
@@ -1093,6 +1094,7 @@ class Model
         }, $keys);
 
         $sql = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
+        $this->sql = $sql;
         $sth = $this->pdo->prepare($sql);
         $lastid = null;
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->beginTransaction();
@@ -1211,6 +1213,7 @@ class Model
             throw new \Error('删除全部数据请使用truncate方法');
         }
         $sql .= $where;
+        $this->sql = $sql;
         $ret = $this->DB->execute($sql);
         $this->resetCon();
         return $ret;
@@ -1228,6 +1231,7 @@ class Model
         }
         $table = $this->getTable();
         $sql = "truncate table " . $table;
+        $this->sql = $sql;
         return $this->DB->execute($sql);
     }
 
@@ -1293,6 +1297,7 @@ class Model
         }
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
+        $this->sql = $sql;
         $ret = $this->DB->execute($sql);
 
         $this->resetCon();
@@ -1312,6 +1317,7 @@ class Model
             throw  new Exception('您还没有连接数据库');
         }
         $sql = $this->buildSql($column);
+        $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['num']) ? $info['num'] : 0;
     }
@@ -1364,6 +1370,7 @@ class Model
         $field = $this->formatColumn($field);
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
         $sql = $this->limit(1)->buildSql();
+        $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         return isset($info['info']) ? $info['info'] : 0;
     }
