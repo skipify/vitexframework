@@ -1504,7 +1504,7 @@ class Model
      * 重置各种查询条件
      * @return void
      */
-    private function resetCon()
+    protected function resetCon()
     {
         $this->_sql = [
             'where' => [],
