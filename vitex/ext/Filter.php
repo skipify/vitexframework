@@ -31,6 +31,9 @@ class Filter
 
     public static function factory($str, $type)
     {
+        if($str === null){
+            return $str;
+        }
         if (method_exists(get_class(), $type)) {
             return self::$type($str);
         }
