@@ -875,6 +875,7 @@ class Model
     {
         return $this->_sql;
     }
+
     /**
      * 设置当前的查询条件配置
      * @return array
@@ -884,6 +885,7 @@ class Model
         $this->_sql = $set;
         return $this;
     }
+
     /**
      * 构建sql语句
      * @param  bool $iscount
@@ -1423,6 +1425,7 @@ class Model
      */
     final public function page($page = 1, $num = 10)
     {
+        $page = max($page, 1);
         $start = ($page - 1) * $num;
         $this->limit($num, $start);
         $bak = $this->_sql;
