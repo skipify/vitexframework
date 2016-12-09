@@ -19,6 +19,9 @@ use vitex\core\Exception;
  * @method hook(string $name, callable $call, int $priority = 100)
  * @method applyHook(string $name)
  * @method getHooks(string $name)
+ * @method runMiddleware(Middleware $middleware)
+ * @method execTime(string $symbol)
+ * @method url(string $url,array $params)
  * */
 class Controller
 {
@@ -74,16 +77,7 @@ class Controller
     {
         return $this->vitex->setConfig($name, $val);
     }
-    /**
-     * 构造URL
-     * @param  string $url           url或者一个路由段
-     * @param  array  $params        关联数组转为querystring
-     * @return string 最终的url
-     */
-    public function url($url, $params = [])
-    {
-        return $this->vitex->url($url, $params);
-    }
+
     /**
      * 启用view视图
      * @return View
