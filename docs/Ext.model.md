@@ -466,8 +466,15 @@ mixed $val 值
 $this->findInSet('pos','a') //pos字段(a,b,c)中包含一个a元素
 ```
 
+### whereTuple()
 
+一组查询条件，该方法的查询条件会被当做一组条件来处理 会自动添加括号
 
+```
+  $this->orWhereTuple(Model::sub()->where("name","=","xx")->where("age","=",100))->orWhere("name","=","john")
+  //  =>
+    ( name="xx" and age = 100) or name="john"
+```
 
 
 ### having()

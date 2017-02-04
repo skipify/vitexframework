@@ -29,6 +29,7 @@ class Model
     private $_sql = [
         'where' => [],
         'whereraw' => [],
+        'wheretuple' => [],
         'findinset' => [],
         'select' => [],
         'distinct' => [],
@@ -359,6 +360,44 @@ class Model
     }
 
     /**
+     * 多个查询条件会当做一组条件来处理
+     *  $this->whereTuple(Model::sub()->where("name","=","xx")->where("age","=",100))->orWhere("name","=","john")
+     *  =>
+     *  ( name="xx" and age = 100) or name="john"
+     * @param $obj Model
+     * @return $this
+     */
+    public function whereTuple($obj)
+    {
+        $where = $obj->buildWhere();
+        if($where){
+            $where = substr($where,6);
+        }
+        $this->_sql['wheretuple'][] = [$where,'and'];
+        return $this;
+    }
+
+    /**
+     * 多个查询条件会当做一组条件来处理
+     *  $this->orWhereTuple(Model::sub()->where("name","=","xx")->where("age","=",100))->orWhere("name","=","john")
+     *  =>
+     *  ( name="xx" and age = 100) or name="john"
+     * @param $obj Model
+     * @return $this
+     */
+    public function orWhereTuple($obj)
+    {
+        $where = $obj->buildWhere();
+        if($where){
+            $where = substr($where,6);
+        }
+        $this->_sql['wheretuple'][] = [$where,'or'];
+        return $this;
+    }
+
+
+
+    /**
      * 基本的whereNotIn查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
      * @param  string $val 值
@@ -399,45 +438,41 @@ class Model
     /**
      * 基本的where is null查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
-     * @param  string $val 值
      * @return self
      */
-    public function whereNull($key, $val)
+    public function whereNull($key)
     {
-        return $this->_where("whereNull", $key, $val);
+        return $this->_where("whereNull", $key);
     }
 
     /**
      * 基本的where is not null查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
-     * @param  string $val 值
      * @return self
      */
-    public function whereNotNull($key, $val)
+    public function whereNotNull($key)
     {
-        return $this->_where("whereNotNull", $key, $val);
+        return $this->_where("whereNotNull", $key);
     }
 
     /**
      * 基本的or where is null查询条件,与前面的操作使用or连接
      * @param  string $key 条件列名
-     * @param  string $val 值
      * @return self
      */
-    public function orWhereNull($key, $val)
+    public function orWhereNull($key)
     {
-        return $this->_where("orWhereNull", $key, $val);
+        return $this->_where("orWhereNull", $key);
     }
 
     /**
      * 基本的or where is not null查询条件,与前面的操作使用or连接
      * @param  string $key 条件列名
-     * @param  string $val 值
      * @return self
      */
-    public function orWhereNotNull($key, $val)
+    public function orWhereNotNull($key)
     {
-        return $this->_where("orWhereNotNull", $key, $val);
+        return $this->_where("orWhereNotNull", $key);
     }
 
     /**
@@ -976,7 +1011,7 @@ class Model
             }
         }
         //where
-        if ($this->_sql['where'] || $this->_sql['whereraw'] || $this->_sql['findinset']) {
+        if ($this->_sql['where'] || $this->_sql['whereraw'] || $this->_sql['findinset'] || $this->_sql['wheretuple']) {
             $sql .= 'where ';
             $haswhere = false;
             foreach ($this->_sql['where'] as $k => list($column, $op, $val, $type)) {
@@ -1014,6 +1049,10 @@ class Model
                         }
                         $sql .= ' ' . $column . ' ' . $op . ' ' . $val[0] . ' and ' . $val[1];
                         break;
+                    case 'is not':
+                    case 'is':
+                        $sql .= $column . ' ' . $op . ' null ';
+                        break;
                     default:
                         if (!is_numeric($val) || $val > 255) {
                             $val = "'" . $val . "'";
@@ -1032,6 +1071,16 @@ class Model
             //where raw
             foreach ($this->_sql['whereraw'] as $raw) {
                 $sql .= ' ' . $raw . ' ';
+                $haswhere = true;
+            }
+            //where tuple
+            foreach ($this->_sql['wheretuple'] as list($raw,$type)) {
+                if($haswhere){
+                    $sql .= $type .' (' . $raw.') ';
+                } else {
+                    $sql .= ' (' . $raw.') ';
+                    $haswhere = true;
+                }
             }
         }
         return $sql;
@@ -1431,7 +1480,10 @@ class Model
         $bak = $this->_sql;
         $infos = $this->_getAll();
         $this->_sql = $bak;
+        $querySql = $this->sql;
         $total = $this->count();
+        //重新组装两个SQL
+        $this->sql = "Rows:".$querySql . "\n Count:" . $this->sql;
         return [$infos, $total];
     }
 
@@ -1512,6 +1564,7 @@ class Model
         $this->_sql = [
             'where' => [],
             'whereraw' => [],
+            'wheretuple' => [],
             'findinset' => [],
             'select' => [],
             'distinct' => [],
