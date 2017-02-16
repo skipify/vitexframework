@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.9.6";
+    const VERSION = "0.9.7";
     /**
      * App instance
      */
@@ -133,6 +133,8 @@ class Vitex
         $this->log = new Log();
         //添加第一个中间件，他总是最后一个执行
         $this->using(new middleware\MethodOverride());
+        //命令行路由
+        $this->using(new middleware\Cli());
         date_default_timezone_set('Asia/Shanghai');
     }
 

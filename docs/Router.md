@@ -26,6 +26,13 @@
 
 当然当前请求为POST的时候还可以使用 表单中传递 __METHOD 参数来指定一个自定义的路由，使用 `map`方法来注册路由  
 
+***注意** 如果是命令行模式的路由，当前支持以下几种形式：
+```
+   php index.php /home/user
+   php index.php /user/edit?id=1
+   php index.php /user/edit id=1
+```
+
 **路由中间件**  
 
 路由中间件为一个特殊的路由类型，相当于Vitex注册了一个自己的自定义路由，相当于注册了一个名为 `using`的自定义路由当做路由中间件。
