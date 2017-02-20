@@ -48,7 +48,9 @@ class Cli extends Middleware
 
     public function call()
     {
-        if ($this->isCli()) {
+        //命令行且没有指定pathinfo
+        //如果指定了pathinfo 则默认不做CLI重写了
+        if ($this->isCli() && !isset($_SERVER['PATH_INFO'])) {
             $this->setPathInfo();
         }
         $this->runNext();
