@@ -21,7 +21,7 @@ use vitex\core\Exception;
  * @method getHooks(string $name)
  * @method runMiddleware(Middleware $middleware)
  * @method execTime(string $symbol)
- * @method url(string $url,array $params)
+ * @method url(string $url,array $params = [])
  * */
 class Controller
 {
