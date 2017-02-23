@@ -22,6 +22,7 @@ use vitex\core\Exception;
  * @method runMiddleware(Middleware $middleware)
  * @method execTime(string $symbol)
  * @method url(string $url,array $params = [])
+ * @method notFound(callable $call = null)
  * */
 class Controller
 {
