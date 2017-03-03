@@ -119,12 +119,17 @@ class Request implements \ArrayAccess, \Iterator
         //请求协议
         $protocol = $this->env->get('SERVER_PROTOCOL');
         //设置变量
-        list($this->protocol, $this->version) = explode('/', $protocol);
-        if ($this->protocol == 'https') {
-            $this->secure = true;
+        if($protocol){
+            list($this->protocol, $this->version) = explode('/', $protocol);
+            if ($this->protocol == 'https') {
+                $this->secure = true;
+            } else {
+                $this->secure = false;
+            }
         } else {
             $this->secure = false;
         }
+
         return $this;
     }
 
