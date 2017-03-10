@@ -40,7 +40,7 @@ class Acl
             return $this;
         }
         //解析URL段
-        $this->rules[$pattern] = [$method, $this->parseRule($pattern)];
+        $this->rules[$pattern.'~~'.$method] = [$method, $this->parseRule($pattern)];
         return $this;
     }
 
