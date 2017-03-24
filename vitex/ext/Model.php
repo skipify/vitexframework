@@ -276,6 +276,8 @@ class Model
         if (!is_array($column) && strpos($column,'(') === false) {
             $column = explode(',', $column);
         }
+        $column = is_array($column)? $column : [$column];
+
         $column = array_map([$this, 'formatColumn'], $column);
         $this->_sql['select'] = array_merge($this->_sql['select'], $column);
         return $this;
