@@ -273,7 +273,7 @@ class Model
             return $this;
         }
         //处理字段名
-        if (!is_array($column)) {
+        if (!is_array($column) && strpos($column,'(') === false) {
             $column = explode(',', $column);
         }
         $column = array_map([$this, 'formatColumn'], $column);
