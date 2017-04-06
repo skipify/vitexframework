@@ -100,7 +100,7 @@ class Acl
     {
         $url = trim($url, '/');
         foreach ($this->rules as list($_method, $rule)) {
-            if (($method == 'all' || $method == $_method) && preg_match($rule, $url, $matches)) {
+            if (($method == 'all' || strtolower($method) == strtolower($_method)) && preg_match($rule, $url, $matches)) {
                 return true;
             }
         }
