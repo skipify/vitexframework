@@ -847,15 +847,23 @@ integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. �
 
 `pluck(string  $column) : array`   
 
+### field()
+
+可以返回查出行中指定字段的值
+
+**签名**  
+
+`field(string  $column) : string`   
+
 **参数**  
 
 string 	$column 字段名
 
 **示例**  
 
-`$this->from('user')->pluck('name')`  
+`$this->from('user')->where("id","=",1)->field('name')`  
 
-返回一个name组成的数组 ['Vitex1','Vitex2']
+返回一个 "vitex"
 
 ### get()
 

@@ -1390,6 +1390,27 @@ class Model
     }
 
     /**
+     * 用于查询返回记录行中的一个字段，仅包含一个字段
+     * @param $column string 字段名称 只能为 field 或者为table.field的形式
+     * @return string
+     * @throws Exception
+     */
+    final public function field($column)
+    {
+        $key = $column;
+        if(strpos($column,'.') !== false){
+            list(,$key) = explode('.',$column);
+        }
+        $key = str_replace('`','',$key);
+        $this->select($column);
+        $info = $this->get();
+        if(!isset($info[$key])){
+            throw  new Exception('参数错误，您的参数只能为 field 或者 table.field的形式');
+        }
+        return $info[$key];
+    }
+
+    /**
      * 根据主键获取值
      * @param  string $id ID
      * @return mixed  返回值
