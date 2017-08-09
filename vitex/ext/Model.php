@@ -1156,6 +1156,7 @@ class Model
             $lastid = $this->pdo->lastInsertId();
         }
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->commit();
+        $this->resetCon();
         return $lastid;
     }
 
