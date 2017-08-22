@@ -40,7 +40,7 @@ class Csrf extends Middleware
         ) {
             $token = $this->vitex->req->body->_token;
             if(!$token){
-                $token = $this->vitex->env->get('X-Csrf-Token');
+                $token = $this->vitex->env->get('HTTP_X_CSRF_TOKEN');
             }
             $cookieToken = $this->vitex->req->cookies->csrf_token;
             $pathinfo = $this->vitex->env->getPathinfo();
@@ -88,7 +88,12 @@ class Csrf extends Middleware
      */
     private function getCsrfToken()
     {
-        $token = md5(rand(0,999).time());
+        if(!isset($this->vitex->req->session['_csrf_token'])){
+            $token = md5(rand(0,999).time());
+            $this->vitex->req->session['_csrf_token'] = $token;
+        } else {
+            $token = $this->vitex->req->session['_csrf_token'];
+        }
         $this->saveScrefToken($token);
         $this->vitex->applyHook("sys.after.generate_csrf_token",$token);
         return $token;
