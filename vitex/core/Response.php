@@ -119,6 +119,13 @@ class Response
         return $this;
     }
 
+    public function get($key = null){
+        if($key === null){
+            return $this->locals->all();
+        }
+        return $this->locals[$key];
+    }
+
     /**
      * 输出json格式的内容
      * @param  mixed    $arr 要输出的内容
@@ -365,7 +372,7 @@ class Response
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new Exception('Not Method ' . $method . ' Found In Response!');
+            throw new Exception('Not Method ' . $method . ' Found In Response!',Exception::CODE_NOTFOUND_METHOD);
         }
         array_unshift($args, $this);
         return call_user_func_array($this->methods[$method], $args);

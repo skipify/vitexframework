@@ -132,14 +132,14 @@ class View
 
         $file = $this->template($tplname);
         if (!file_exists($file)) {
-            throw new Exception("模板文件--" . $file . '--不存在');
+            throw new Exception("模板文件--" . $file . '--不存在',Exception::CODE_NOTFOUND_FILE);
         }
         extract($data, EXTR_OVERWRITE);
         ob_start();
         if (file_exists($file)) {
             include $file;
         } else {
-            throw new Exception("模板文件：" . $file . "不存在");
+            throw new Exception("模板文件：" . $file . "不存在",Exception::CODE_NOTFOUND_FILE);
         }
         return ob_get_clean();
     }

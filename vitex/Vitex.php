@@ -24,7 +24,7 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 class Vitex
 {
-    const VERSION = "0.9.7";
+    const VERSION = "0.9.8";
     /**
      * App instance
      */
@@ -52,10 +52,13 @@ class Vitex
     private $defaultSetting = array(
         'debug' => false,
         // View
-        'templates.path' => './templates',
-        'templates.ext' => '.html',
-        'view' => '\vitex\View',
+        'templates.path' => './templates', //模板的默认路径
+        'templates.ext' => '.html',//模板文件的默认扩展名，当省略扩展名时会自动添加
+        'view' => '\vitex\View', //view类，可以替换为其他的view层
         'callback' => 'callback', //jsonp时自动获取的值
+        'csrf.open' => true,
+        'csrf.onmismatch' => null,//一个回调方法 callable，当token不匹配出错的时候回执行
+        'csrf.except'  => [], //排除的路由规则
         'router.grouppath' => '',
         'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
         'router.case_sensitive' => false, //是否区分大小写
@@ -107,7 +110,11 @@ class Vitex
      */
     public $res;
 
-    private function __construct()
+    /**
+     * Vitex constructor.
+     * @param mixed $setting
+     */
+    private function __construct($setting = [])
     {
         $this->execTime();//记录执行开始时间
         //注册加载 加载器
@@ -118,6 +125,8 @@ class Vitex
 
         //init app
         $this->settings = $this->defaultSetting;
+        $this->setConfig($setting);
+
         //初始化各种变量
         $this->env = core\Env::getInstance();
         $this->route = new core\Route();
@@ -131,6 +140,8 @@ class Vitex
         $this->view = null;
         //日志
         $this->log = new Log();
+
+        $this->using(new middleware\Csrf());
         //添加第一个中间件，他总是最后一个执行
         $this->using(new middleware\MethodOverride());
         //命令行路由
@@ -157,14 +168,15 @@ class Vitex
     }
 
     /**
-     *     get App Instance
-     * @return self
+     * 获取框架实例
+     * @param mixed $setting
+     * @return null|Vitex
      */
 
-    public static function getInstance()
+    public static function getInstance($setting = [])
     {
         if (!(self::$_instance instanceof self)) {
-            self::$_instance = new self;
+            self::$_instance = new self($setting);
         }
         return self::$_instance;
     }
@@ -390,17 +402,6 @@ class Vitex
     }
 
     /**
-     * 构造URL
-     * @param  string $url url或者一个路由段
-     * @param  array $params 关联数组转为querystring
-     * @return string 最终的url
-     */
-    public function url($url, $params = [])
-    {
-        return $this->route->router->url($url, $params);
-    }
-
-    /**
      * 获取配置
      * @param  string $name 配置名
      * @return mixed
@@ -409,6 +410,17 @@ class Vitex
     {
         $setting = $this->settings;
         return isset($setting[$name]) ? $setting[$name] : null;
+    }
+
+    /**
+     * 构造URL
+     * @param  string $url url或者一个路由段
+     * @param  array $params 关联数组转为querystring
+     * @return string 最终的url
+     */
+    public function url($url, $params = [])
+    {
+        return $this->route->router->url($url, $params);
     }
 
     /**
@@ -736,12 +748,12 @@ class Vitex
         if ($this->preMiddleware) {
             $this->preMiddleware->call();
         }
-        $this->applyHook('before.router');
+        $this->applyHook('sys.before.router');
         //分组
         $this->route->applyGroup();
 
         $this->route->next();
-        $this->applyHook('after.router');
+        $this->applyHook('sys.after.router');
         restore_error_handler();
     }
 

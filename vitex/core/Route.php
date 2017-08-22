@@ -186,7 +186,7 @@ class Route
             }
             //加载分组信息出错
             if (!$isload) {
-                throw new Exception('加载分组文件 ' . $g . ' 出错，无法找到文件');
+                throw new Exception('加载分组文件 ' . $g . ' 出错，无法找到文件',Exception::CODE_NOTFOUND_FILE);
             }
         }
     }

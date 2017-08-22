@@ -212,7 +212,7 @@ class Model
             return $this->_getAll();
         }
         //未发现方法
-        throw new Exception($method . ' Not Found In Model Class');
+        throw new Exception($method . ' Not Found In Model Class',Exception::CODE_NOTFOUND_METHOD);
     }
 
     /**
@@ -247,7 +247,7 @@ class Model
     public function query($sql)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sql = str_replace('@#_', $this->prefix, $sql);
         return $this->DB->query($sql);
@@ -356,7 +356,7 @@ class Model
     public function whereIn($key, $val)
     {
         if (!$val) {
-            throw new Exception("whereIn方法的第二个参数不得为空");
+            throw new Exception("whereIn方法的第二个参数不得为空",Exception::CODE_PARAM_VALUE_ERROR);
         }
         return $this->_where("whereIn", $key, $val);
     }
@@ -410,7 +410,7 @@ class Model
     public function whereNotIn($key, $val)
     {
         if (!$val) {
-            throw new Exception("orWhereIn方法的第二个参数不得为空");
+            throw new Exception("orWhereIn方法的第二个参数不得为空",Exception::CODE_PARAM_VALUE_ERROR);
         }
         return $this->_where("whereNotIn", $key, $val);
     }
@@ -1097,7 +1097,7 @@ class Model
     final public function update(array $arr)
     {
         if (!$this->pdo) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         //修改
         $sql = "update " . $this->getTable() . " set ";
@@ -1124,7 +1124,7 @@ class Model
     final public function insert($arr = [])
     {
         if (!$this->pdo) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_UNCONNECT_DATABASE);
         }
         $keys = [];
         if (count($arr) === 0) {
@@ -1177,10 +1177,10 @@ class Model
     final public function begin()
     {
         if (!$this->pdo) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         if ($this->_begintransaction) {
-            throw new Exception("已经开启了一个事务，请勿重新开启");
+            throw new Exception("已经开启了一个事务，请勿重新开启",Exception::CODE_DATABASE_ERROR);
         }
         $this->pdo->beginTransaction();
         $this->_begintransaction = true;
@@ -1195,7 +1195,7 @@ class Model
     final public function commit()
     {
         if (!$this->pdo) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $this->_begintransaction = false;
         return $this->pdo->commit();
@@ -1209,7 +1209,7 @@ class Model
     final public function rollBack()
     {
         if (!$this->pdo) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         if ($this->_begintransaction) {
             $this->pdo->rollBack();
@@ -1253,7 +1253,7 @@ class Model
     final public function delete()
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sql = "delete from " . $this->getTable() . " ";
         $where = $this->buildWhere();
@@ -1264,7 +1264,7 @@ class Model
             $where = $this->buildWhere();
         }
         if (!$where) {
-            throw new \Error('删除全部数据请使用truncate方法');
+            throw new \Error('删除全部数据请使用truncate方法',Exception::CODE_DATABASE_ERROR);
         }
         $sql .= $where;
         $this->sql = $sql;
@@ -1281,7 +1281,7 @@ class Model
     final public function truncate()
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $table = $this->getTable();
         $sql = "truncate table " . $table;
@@ -1328,11 +1328,11 @@ class Model
     private function stepField($column, $amount)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         if (is_array($column)) {
             if (is_array($amount) && count($amount) != count($column)) {
-                throw new Exception("传递的字段与自增值无法对应，请查看数量");
+                throw new Exception("传递的字段与自增值无法对应，请查看数量",Exception::CODE_PARAM_NUM_ERROR);
             }
         } else {
             $column = [$column];
@@ -1368,7 +1368,7 @@ class Model
     public function count($column = '*')
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sql = $this->buildSql($column);
         $this->sql = $sql;
@@ -1406,7 +1406,7 @@ class Model
         $this->select($column);
         $info = $this->get();
         if(!isset($info[$key])){
-            throw  new Exception('参数错误，您的参数只能为 field 或者 table.field的形式');
+            throw  new Exception('参数错误，您的参数只能为 field 或者 table.field的形式',Exception::CODE_PARAM_VALUE_ERROR);
         }
         return $info[$key];
     }
@@ -1440,7 +1440,7 @@ class Model
     private function _maxMinSumAvg($method, $field)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $field = $this->formatColumn($field);
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
@@ -1521,7 +1521,7 @@ class Model
     final public function fetchAll($sql, $type = \PDO::FETCH_ASSOC)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sth = $this->DB->query($sql);
         return $this->DB->fetchAll($type);
@@ -1537,7 +1537,7 @@ class Model
     final public function fetch($sql, $type = \PDO::FETCH_ASSOC)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $info = $this->DB->query($sql)->fetch($type);
         return $info;
@@ -1552,7 +1552,7 @@ class Model
     final public function execute($sql)
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         return $this->DB->execute($sql);
     }
@@ -1560,7 +1560,7 @@ class Model
     private function _get()
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sql = $this->limit(1)->buildSql();
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
@@ -1572,7 +1572,7 @@ class Model
     private function _getAll()
     {
         if (!$this->DB) {
-            throw  new Exception('您还没有连接数据库');
+            throw  new Exception('您还没有连接数据库',Exception::CODE_DATABASE_ERROR);
         }
         $sql = $this->buildSql();
         $sth = $this->DB->query($sql);

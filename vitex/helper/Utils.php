@@ -62,7 +62,7 @@ class Utils
     {
         $data = json_decode(base64_decode($endata), true);
         if (!is_array($data) || !isset($data['iv'], $data['value'], $data['hmac'])) {
-            throw new Exception("无法解密数据");
+            throw new Exception("无法解密数据",Exception::CODE_PARAM_PARSE_ERROR);
         }
         $hmac  = $data['hmac'];
         $iv    = base64_decode($data['iv']);
@@ -73,7 +73,7 @@ class Utils
         $calcHmac  = hash_hmac('sha256', hash_hmac('sha256', $iv.$value, $key), $checkKey, true);
 
         if(hash_equals(hash_hmac('sha256', $hmac, $checkKey, true), $calcHmac)) {
-            throw new Exception("无法解密数据");
+            throw new Exception("无法解密数据",Exception::CODE_PARAM_PARSE_ERROR);
         }
 
         $setting = array_merge(Utils::CRYPT_DEFAULT, $setting);

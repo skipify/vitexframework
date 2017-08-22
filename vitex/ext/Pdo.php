@@ -30,7 +30,7 @@ class Pdo extends Middleware
     public function __construct($setting, $username = '', $password = '')
     {
         if (!$setting) {
-            throw new Exception('数据库链接信息不能为空');
+            throw new Exception('数据库链接信息不能为空',Exception::CODE_PARAM_NUM_ERROR);
         }
         if (is_resource($setting)) {
             $this->pdo = $setting;

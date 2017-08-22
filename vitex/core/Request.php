@@ -448,7 +448,7 @@ class Request implements \ArrayAccess, \Iterator
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new Exception('Not Method ' . $method . ' Found In Request!');
+            throw new Exception('Not Method ' . $method . ' Found In Request!',Exception::CODE_NOTFOUND_METHOD);
         }
         return call_user_func_array($this->methods[$method], $args);
     }

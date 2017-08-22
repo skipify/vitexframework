@@ -37,7 +37,7 @@ class Filter
         if (method_exists(get_class(), $type)) {
             return self::$type($str);
         }
-        throw new Exception("不存在的过滤方法:" . $type);
+        throw new Exception("不存在的过滤方法:" . $type,Exception::CODE_NOTFOUND_METHOD);
     }
 
     /**

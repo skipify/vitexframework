@@ -49,10 +49,10 @@ class Pagination
             $this->{$key} = $val;
         }
         if (!$this->url) {
-            throw new Exception('请指定分页的URL');
+            throw new Exception('请指定分页的URL',Exception::CODE_PARAM_NUM_ERROR);
         }
         if ($this->totalpage === null && $this->totalrows === null) {
-            throw new Exception('总页数totalpage或者信息总条数totalrows至少要设置一个');
+            throw new Exception('总页数totalpage或者信息总条数totalrows至少要设置一个',Exception::CODE_PARAM_NUM_ERROR);
         }
         $this->totalpage = $this->totalpage ?: ceil($this->totalrows / $this->perpage);
     }

@@ -26,6 +26,8 @@ setConfig/getConfig
 'templates.ext'      => '.html',
 'view'               => '\vitex\View', 
 'callback' => 'callback',  
+'csrf.open' => true,
+'csrf.onerror' => null,//一个回调方法 callable，当出错的时候回执行
 'router.group_path'   => '',   
 'router.compatible'  => false, //路由兼容模式，不支持pathinfo的路由开启  
 'methodoverride.key' => '__METHOD', //url request method 重写的key  
@@ -210,7 +212,7 @@ execTime($symbol="__start")
 
 注册钩子函数，注册的钩子可以使用appHook方法来触发钩子函数执行  
 
-系统有两个保留的钩子，一个是before.router在开始路由之前after.router在路由结束滞后  
+系统有两个保留的钩子，一个是sys.before.router在开始路由之前sys.after.router在路由结束滞后  
 
 **签名**  
 
