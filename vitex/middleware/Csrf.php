@@ -30,6 +30,7 @@ class Csrf extends Middleware
 
     /**
      * 验证csrf_token信息是否正确
+     * @return bool
      * @throws TokenMismatchException
      */
     public function verify()
@@ -44,7 +45,16 @@ class Csrf extends Middleware
             $cookieToken = $this->vitex->req->cookies->csrf_token;
             $pathinfo = $this->vitex->env->getPathinfo();
             $except = $this->vitex->getConfig('csrf.except');
-            if($token != $cookieToken && !in_array($pathinfo,$except)){
+            if($token != $cookieToken){
+                /*
+                 * 一个符合排除的链接就排除
+                 */
+                foreach($except as $pattern){
+                    if($this->vitex->route->router->checkUrlMatch($pattern,$pathinfo)){
+                        return true;
+                    }
+                }
+
                 //验证失败出错
                 $callback = $this->vitex->getConfig('csrf.onmismatch');
                 if($callback){
@@ -55,6 +65,7 @@ class Csrf extends Middleware
                 }
             }
         }
+        return true;
     }
 
     /**

@@ -239,9 +239,40 @@ class Router
             $this->vitex = Vitex::getInstance();
             $this->caseSensitive = $this->vitex->getConfig('router.case_sensitive');
         }
-
-        $matcher = $pattern;
         $method = strtoupper($method);
+
+        $matcher = $this->getPatternRegexp($pattern);
+        $this->_patterns[] = [$method, $matcher, $call, $pattern];
+        return $this;
+    }
+
+    /**
+     * 检测一个url是否符合给定的匹配规则
+     * @param $pattern  string 匹配规则
+     * @param $url string 匹配规则
+     * @return bool
+     */
+    public function checkUrlMatch($pattern,$url)
+    {
+        $url = trim($url, '/');
+        if (!$url) {
+            $url = '/';
+        }
+        $matcher = $this->getPatternRegexp($pattern);
+        if(preg_match($matcher, $url, $matches)){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 根据匹配分组获取需要匹配的正则表达式字符串
+     * @param $pattern
+     * @return $matcher string
+     */
+    public function getPatternRegexp($pattern)
+    {
+        $matcher = $pattern;
         $matcher = trim($matcher, '/');
         $cases = $this->caseSensitive ? '' : 'i';
 
@@ -265,8 +296,7 @@ class Router
             }
             $matcher = '|^' . $matcher . '$|' . $cases;
         }
-        $this->_patterns[] = [$method, $matcher, $call, $pattern];
-        return $this;
+        return $matcher;
     }
 
     /**
