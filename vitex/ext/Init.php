@@ -67,7 +67,7 @@ class Init
         echo '请输入应用的入口PHP文件名(index.php)：';
         $inname  = 'index.php';
         $_inname = fread(STDIN, 200);
-        if (trim($_appname)) {
+        if (trim($_inname)) {
             $inname = trim($_inname);
         }
         echo $inname . PHP_EOL;
