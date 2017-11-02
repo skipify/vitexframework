@@ -15,10 +15,11 @@ namespace vitex;
 use vitex\core\Exception;
 use vitex\core\Loader;
 use vitex\helper\LogWriter;
+use vitex\helper\Utils;
 use vitex\middleware;
 use vitex\View;
 
-if (version_compare(PHP_VERSION, '5.5.0', '<')) {
+if (!Utils::phpVersion('5.5')) {
     throw new Exception("I am at least PHP version 5.5.0");
 }
 
@@ -58,7 +59,7 @@ class Vitex
         'callback' => 'callback', //jsonp时自动获取的值
         'csrf.open' => true,
         'csrf.onmismatch' => null,//一个回调方法 callable，当token不匹配出错的时候回执行
-        'csrf.except'  => [], //排除的路由规则
+        'csrf.except' => [], //排除的路由规则
         'router.grouppath' => '',
         'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
         'router.case_sensitive' => false, //是否区分大小写
@@ -70,6 +71,29 @@ class Vitex
         'cookies.secure' => false,
         'cookies.httponly' => false,
         'cookies.secret_key' => 'Vitex is a micro restfull framework',
+        /**
+         * 会话管理
+         * file  cache native//
+         */
+        'session.driver' => 'native',
+        /**
+         * 会话存活期  分钟
+         */
+        'session.lifetime' => 15,
+        /**
+         * 文件保存配置的时候的路径
+         */
+        'session.file.path' => '',
+
+        /**
+         * redis memcache数据缓存时候的实例
+         */
+        'session.cache.instance' => null,
+        /**
+         * 数据库元文件缓存目录
+         */
+        'entitymeta.path' => '',
+
         'charset' => 'utf-8',
     );
     /**
