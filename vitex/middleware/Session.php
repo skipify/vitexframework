@@ -12,8 +12,11 @@
 
 namespace vitex\middleware;
 
+use vitex\ext\sessionhandler\CacheHandler;
+use vitex\ext\sessionhandler\FileHandler;
 use vitex\helper\SetMethod;
 use vitex\Middleware;
+use vitex\Vitex;
 
 /**
  * 把相关的Session信息附加到 req对象中
@@ -23,6 +26,8 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
     use SetMethod;
     public function __construct($sid = '')
     {
+
+        $this->setSessionHandler();
         if (!isset($_SESSION)) {
             if (session_id() == '') {
                 if ($sid) {
@@ -33,10 +38,28 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
         }
     }
 
+
     public function call()
     {
         $this->vitex->req->session = $this;
         $this->runNext();
+    }
+
+    /**
+     * 设置保存session的handler
+     */
+    private function setSessionHandler()
+    {
+        $vitex = Vitex::getInstance();
+        $driver = $vitex->getConfig('session.driver');
+        switch ($driver){
+            case 'cache':
+                session_set_save_handler(new CacheHandler(),true);
+                break;
+            case 'file':
+                session_set_save_handler(new FileHandler(),true);
+                break;
+        }
     }
 
     /**
