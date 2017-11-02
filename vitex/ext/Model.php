@@ -348,7 +348,7 @@ class Model
     /**
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
-     * @param  string $val 值
+     * @param  mixed $val 值
      * @return Model
      * @throws Exception
      * @throws \Error
@@ -1029,7 +1029,7 @@ class Model
                         }
                         if (is_array($val)) {
                             $val = array_map(function ($v) {
-                                if (is_numeric($v) && $v < 255) {
+                                if (is_numeric($v) && $v < 65535) {
                                     return $v;
                                 } else {
                                     return "'" . $v . "'";
@@ -1056,7 +1056,7 @@ class Model
                         $sql .= $column . ' ' . $op . ' null ';
                         break;
                     default:
-                        if (!is_numeric($val) || $val > 255) {
+                        if (!is_numeric($val) || $val > 65535) {
                             $val = "'" . $val . "'";
                         }
                         $sql .= $column . ' ' . $op . ' ' . $val . ' ';
@@ -1121,7 +1121,7 @@ class Model
      * @return int 成功则返回最后插入的ID
      * @throws Exception
      */
-    final public function insert($arr = [])
+    final public function insert(array $arr = [])
     {
         if (!$this->pdo) {
             throw  new Exception('您还没有连接数据库',Exception::CODE_UNCONNECT_DATABASE);
