@@ -14,6 +14,7 @@ namespace vitex;
 
 use vitex\core\Exception;
 use vitex\core\Loader;
+use vitex\core\RouteHandlerInterface;
 use vitex\helper\LogWriter;
 use vitex\helper\Utils;
 use vitex\middleware;
@@ -25,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.10.0";
+    const VERSION = "0.11.0";
     /**
      * App instance
      */
@@ -182,7 +183,7 @@ class Vitex
      * @param  int|string $errline 错误行
      * @return bool
      */
-    public function handler($errno, $errstr = '', $errfile = '', $errline = '')
+    public function errorHandler($errno, $errstr = '', $errfile = '', $errline = '')
     {
         if (!($errno & error_reporting())) {
             return;
@@ -614,13 +615,19 @@ class Vitex
     /**
      * 路由分组
      * @param  string $pattern 分组标识 url的一部分
-     * @param  string $class 分组对应的类的名字
+     * @param  mixed $class 分组对应的类的名字
      * @param  string $appName 多个应用时可以指定应用名字用于加载指定应用下的路由文件
      * @return self
      */
     public function group($pattern, $class, $appName = '')
     {
-        $this->route->group($pattern, $class, $appName);
+        if (is_string($class)) {
+            $this->route->group($pattern, $class, $appName);
+        } elseif (is_callable($class)) {
+            //另外的绑定分组
+            $func = \Closure::bind($class, $this, '\vitex\Vitex');
+            $this->route->group($pattern, $func, $appName);
+        }
         return $this;
     }
 
@@ -736,6 +743,68 @@ class Vitex
     }
 
     /**
+     * 设置路由别名
+     * @param $alias
+     * @return $this
+     */
+    public function setAlias($alias)
+    {
+        $this->route->router->setAlias($alias);
+        return $this;
+    }
+
+    /**
+     * 根据别名获取路由信息
+     * @param $alias
+     * @param array $data
+     * @return mixed|null
+     */
+    public function getByAlias($alias, array $data = [])
+    {
+        return $this->route->router->getByAlias($alias, $data);
+    }
+
+    /**
+     * 路有执行前单独执行此方法
+     * @param callable $callable
+     * @return $this
+     */
+    public function before(callable $callable)
+    {
+        $this->route->router->before($callable);
+        return $this;
+    }
+
+    /**
+     * 路由执行后调用的方法
+     * @param callable $callable
+     * @return $this
+     */
+    public function after(callable $callable)
+    {
+        $this->route->router->after($callable);
+        return $this;
+    }
+
+    /**
+     * 在路由外面单独包裹一个方法执行路由包裹方法
+     * 此类发方法会把路由当做一个方法传入到wrap方法中
+     * @param callable $wrapper
+     * @return $this
+     */
+    public function wrap(callable $wrapper)
+    {
+        $this->route->router->wrap($wrapper);
+        return $this;
+    }
+
+    public function handler(RouteHandlerInterface $handler)
+    {
+        $this->route->router->handler($handler);
+        return $this;
+    }
+
+    /**
      * 页面执行时间
      *
      * @author skipify
@@ -761,7 +830,7 @@ class Vitex
     {
         //输出指定编码以及格式
         $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
-        set_error_handler(array($this, 'handler'));
+        set_error_handler(array($this, 'errorHandler'));
         if ($this->getConfig('debug')) {
             $this->log->setWriter(new LogWriter());
         }

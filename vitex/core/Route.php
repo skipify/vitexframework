@@ -9,6 +9,7 @@
  * @copyright skipify
  * @license MIT
  */
+
 namespace vitex\core;
 
 use vitex\Vitex;
@@ -18,24 +19,53 @@ use vitex\Vitex;
  */
 class Route
 {
-
-    private $themethod = "GET";
     /**
+     * 当前请求的方法
+     * @var string|Env
+     */
+    private $themethod = "GET";
+
+    /**
+     * 路由实例
      * @var Router
      */
     public $router;
+
     /**
      * @var \Generator
      */
     protected $_router; //路由callable
-    private   $_notfound;
+
+    /**
+     * 没有匹配路由时执行的callable
+     * @var \Closure
+     */
+    private $_notfound;
+
+    /**
+     * 路由分组信息
+     * @var array
+     */
     protected $_routerGroup = [];
-    protected $_groupPath   = '';
-    protected $groupurl     = '';
+    protected $_routerGroups = [];//冗余保存的路由分组数据 快速查询
+
+    /**
+     * 路由文件所在的路径
+     * @var string
+     */
+    protected $_groupPath = '';
+
+    /**
+     * 路由链接内容
+     * @var string
+     */
+    protected $groupurl = '';
+
     /**
      * @var Vitex
      */
     private $vitex;
+
     /**
      * @var Env
      */
@@ -68,17 +98,15 @@ class Route
     /**
      * 路由分组
      * @param  string $pattern 分组标识
-     * @param  string $class 分组文件名或者一个包含注册路由的callable
-     * @param string $appName  指定分组的路由文件
+     * @param  mixed $class 分组文件名或者一个包含注册路由的callable
+     * @param string $appName 指定分组的路由文件
      * @return self
      */
     public function group($pattern, $class, $appName = '')
     {
-        if ($pattern !== '/') {
-            //兼容 /的分组路由
-            $pattern = trim($pattern, '/');
-        }
-        $this->_routerGroup[$pattern] = [$class, $appName];
+        $bundle = new RouteBundle($pattern, $class, $appName);
+        $this->_routerGroup[] = $bundle;
+        $this->_routerGroups[$bundle->getPattern() ?: '/'][] = $bundle;//冗余数据
         return $this;
     }
 
@@ -115,32 +143,52 @@ class Route
         $url = $this->env->getPathinfo();
         $url = trim($url, '/');
         if (!$this->_routerGroup) {
-            return false;
+            return $this;
         }
         //提取第一段为分组信息
         $urls = explode('/', $url);
         $findGroup = false;
         $this->vitex = Vitex::getInstance();
-        foreach ($this->_routerGroup as $p => list($g, $appName)) {
+        foreach ($this->_routerGroup as $bundle) {
+            /**
+             * @var $bundle RouteBundle
+             */
             //动态计算分组，支付多级分组
-            $groupCount = substr_count($p, '/');
+            $groupCount = substr_count($bundle->getPattern(), '/');
             $groupCount = $groupCount + 1;
             $gstr = implode('/', array_slice($urls, 0, $groupCount));
-            if ($p != $gstr) {
+            if ($bundle->getPattern() != $gstr) {
                 //当绑定分组为 / 时此处有bug
                 continue;
             }
-            $this->groupurl = $p;
-            $this->parseGroupMethod($g, $appName);
+            $this->groupurl = $bundle->getPattern();
+
+            //查找所有的路由
+            //支持多个分组绑定相同的路由前缀
+            //当多个分组绑定相同的路由前缀时如果路由相同则后面注册的路由会覆盖之前的路由
+            $routeBundles = $this->_routerGroups[$bundle->getPattern() ?: '/'];
+            foreach ($routeBundles as $routeBundle) {
+                /**
+                 * @var $routeBundle RouteBundle
+                 */
+                $this->parseGroupMethod($routeBundle->getGroup(), $routeBundle->getAppName());
+            }
             $findGroup = true;
             break;
         }
 
         //没有找到分组信息,查询是否有 / 的分组
-        if (false === $findGroup && isset($this->_routerGroup['/'])) {
-            $this->groupurl = '/';
-            list($g, $appName) = $this->_routerGroup['/'];
-            $this->parseGroupMethod($g, $appName);
+        if (false === $findGroup) {
+            $rootRouteBundles = $this->_routerGroups['/'];
+            if ($rootRouteBundles) {
+                $this->groupurl = '/';
+                foreach ($rootRouteBundles as $routeBundle) {
+                    /**
+                     * @var $routeBundle RouteBundle
+                     */
+                    $this->parseGroupMethod($routeBundle->getGroup(), $routeBundle->getAppName());
+                }
+            }
         }
         return $this;
     }
@@ -172,6 +220,7 @@ class Route
                 $isload = true;
             } else {
                 //兼容appName,重设路由分组文件路径
+                $tempPath = $this->getGroupPath();
                 if ($appName && ($dir = $vitex->getInitApps($appName))) {
                     $this->setGroupPath($dir . '/' . $appName . '/route');
                 }
@@ -183,10 +232,14 @@ class Route
                     require $g;
                     $isload = true;
                 }
+                /**
+                 * 恢复原来的路由目录
+                 */
+                $this->_groupPath = $tempPath;
             }
             //加载分组信息出错
             if (!$isload) {
-                throw new Exception('加载分组文件 ' . $g . ' 出错，无法找到文件',Exception::CODE_NOTFOUND_FILE);
+                throw new Exception('加载分组文件 ' . $g . ' 出错，无法找到文件', Exception::CODE_NOTFOUND_FILE);
             }
         }
     }
@@ -200,6 +253,10 @@ class Route
      */
     public function register($method, $pattern, $callable)
     {
+        /**
+         * 判断是否是
+         */
+
         if ($pattern[0] != '|') {
             //非正则表达式的匹配段
             $pattern = $this->groupurl . $pattern;

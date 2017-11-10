@@ -20,14 +20,56 @@ use vitex\Vitex;
  */
 class Router
 {
-    private   $_patterns     = [];
+    /**
+     * 所有注册的路由的基本信息
+     *
+     * 请求方法  0
+     * 路由匹配正则 1
+     * 执行方法 2
+     * 原始路由字符串 3
+     * 路由应用 4
+     * 路由别名 5
+     * 方法 6
+     *
+     * @var array
+     */
+    private $_patterns = [];
+    /**
+     * 环境变量实例
+     * @var Env
+     */
     protected $env;
-    protected $vitex         = null;
+    /**
+     * 框架主类
+     * @var null
+     */
+    protected $vitex = null;
+    /**
+     * 路由是否区分大小写
+     * @var bool
+     */
     protected $caseSensitive = false;
-    protected $regexps       = [];
-    protected $cacheBaseurl  = null;
-    protected $routeClass    = null;
-    protected $routeMethod   = null;
+    /**
+     * 当存在占位符时可以使用此配置的内容根据正则限定占位符的内容格式
+     * @var array
+     */
+    protected $regexps = [];
+    /**
+     * 生成路由时的路由前缀
+     * @var null
+     */
+    protected $cacheBaseurl = null;
+
+    /**
+     * 本次路由调用的类
+     * @var null
+     */
+    protected $routeClass = null;
+    /**
+     * 本次路由调用类的方法
+     * @var null
+     */
+    protected $routeMethod = null;
     /**
      * 路由的分组APP名称
      * 多个应用时路由分组文件时设定的APP名称
@@ -39,9 +81,9 @@ class Router
     {
         $this->env = Env::getInstance();
         $this->setRegexp([
+            'alphadigit' => '[0-9a-zA-Z]+',
             'digit' => '[0-9]+',
             'alpha' => '[a-zA-Z]+',
-            'alphadigit' => '[0-9a-zA-Z]+',
             'float' => '[0-9]+\.{1}[0-9]+',
         ]);
     }
@@ -65,7 +107,7 @@ class Router
     /**
      * 获取指定的正则表达式值
      * @param  string $name 名字
-     * @return string 值
+     * @return mixed 值
      */
     public function getRegexp($name = null)
     {
@@ -242,7 +284,139 @@ class Router
         $method = strtoupper($method);
 
         $matcher = $this->getPatternRegexp($pattern);
-        $this->_patterns[] = [$method, $matcher, $call, $pattern];
+        /**
+         * 请求方法
+         * 路由匹配正则
+         * 执行方法
+         * 原始路由字符串
+         * 路由应用
+         * 路由别名
+         * 方法
+         */
+        $this->_patterns[] = [$method, $matcher, $call, $pattern, $this->getRouteApp(), '', []];
+        return $this;
+    }
+
+    /**
+     * 给路由设置别名
+     * @param $alias
+     * @return $this
+     * @throws Exception
+     */
+    public function setAlias($alias)
+    {
+        if (!is_string($alias)) {
+            throw new Exception(Exception::CODE_PARAM_VALUE_ERROR_MSG . ' Alias Must A String', Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        $lastPattern = array_pop($this->_patterns);
+        if ($lastPattern) {
+            $lastPattern[5] = $alias;
+            $this->_patterns[] = $lastPattern;
+        }
+        return $this;
+    }
+
+    /**
+     * 根据别名获取路由信息
+     * @param $alias
+     * @param array $data
+     * @return mixed|null
+     */
+    public function getByAlias($alias, array $data = [])
+    {
+        $pattern = null;
+        foreach ($this->_patterns as $_pattern) {
+            if ($_pattern[5] == $alias) {
+                $pattern = $_pattern;
+                break;
+            }
+        }
+        if ($pattern == null) {
+            return null;
+        }
+
+        /**
+         * 没有指定数据则会直接返回原始路由信息
+         */
+        if (!$data) {
+            return $pattern[3];
+        }
+
+        foreach ($data as $key => $val) {
+            $data[':' . $key] = $val;
+            unset($data[$key]);
+        }
+        $url = str_replace(array_keys($data), array_values($data), $pattern[3]);
+        /**
+         * 替换掉占位符格式限制字符串
+         */
+        $formatLimit = array_map(function ($item) {
+            return '@' . $item;
+        }, array_keys($this->regexps));
+        $url = str_replace($formatLimit, '', $url);
+        return $url;
+    }
+
+    /**
+     * 在路由外面单独包裹一个方法执行路由包裹方法
+     * 此类发方法会把路由当做一个方法传入到wrap方法中
+     * @param callable $wrapper
+     * @return $this
+     */
+    public function wrap(callable $wrapper)
+    {
+        return $this->_method('wrap', $wrapper);
+    }
+
+    /**
+     * 路有执行前单独执行此方法
+     * @param callable $before
+     * @return Router
+     */
+    public function before(callable $before)
+    {
+        return $this->_method('before', $before);
+    }
+
+    /**
+     * 路由执行后调用的方法
+     * @param callable $after
+     * @return Router
+     */
+    public function after(callable $after)
+    {
+        return $this->_method('after', $after);
+    }
+
+    /**
+     * 通过实现RouteHandlerInterface 设置路由调用方法
+     * @param RouteHandlerInterface $handler
+     * @return $this
+     */
+    public function handler(RouteHandlerInterface $handler)
+    {
+        $this->_method('before', [$handler, 'before']);
+        $this->_method('wrap', [$handler, 'wrap']);
+        $this->_method('after', [$handler, 'after']);
+
+        return $this;
+    }
+
+    /**
+     * 设置路由的执行方法
+     * @param $name
+     * @param callable $callable
+     * @return $this
+     */
+    private function _method($name, callable $callable)
+    {
+        $lastPattern = array_pop($this->_patterns);
+        if ($lastPattern) {
+            $methods = $lastPattern[6];//路由方法
+            $methods[$name] = $callable;
+            $lastPattern[6] = $methods;
+            $this->_patterns[] = $lastPattern;
+        }
         return $this;
     }
 
@@ -252,14 +426,14 @@ class Router
      * @param $url string 匹配规则
      * @return bool
      */
-    public function checkUrlMatch($pattern,$url)
+    public function checkUrlMatch($pattern, $url)
     {
         $url = trim($url, '/');
         if (!$url) {
             $url = '/';
         }
         $matcher = $this->getPatternRegexp($pattern);
-        if(preg_match($matcher, $url, $matches)){
+        if (preg_match($matcher, $url, $matches)) {
             return true;
         }
         return false;
@@ -375,19 +549,29 @@ class Router
             'method' => $method,
         ];
         //指定的方法
-        foreach ($patterns as list($_method, $pattern, $call)) {
+        /**
+         * 请求方法
+         * 路由匹配正则
+         * 执行方法
+         * 原始路由字符串
+         * 路由应用
+         * 路由别名
+         * 方法
+         */
+        foreach ($patterns as list($_method, $pattern, $call, $oriPattern, $appName, $alias, $methods)) {
             if ($method !== $_method && $_method !== 'ALL' && $_method !== 'INVOKE') {
                 continue;
             }
             $req->route['matchUrl'] = $pattern;
             $req->route['matchMethod'] = $method;
+            $req->route['matchPattern'] = $oriPattern;
             if (preg_match($pattern, $url, $matches)) {
                 //设置url匹配的分段信息
                 $vitex->req->params = $this->_parseParams($matches);
                 //call
                 if (is_string($call)) {
                     //创建对象
-                    $call = $this->getCallable($call, $method);
+                    $call = $this->getCallable($call, $method, $appName, $methods);
                     if (!$call) {
                         continue;
                     }
@@ -401,29 +585,60 @@ class Router
      * 根据路由信息实例化相应的控制器类来返回函数方法对象
      * @param  string $str 字符串
      * @param  string $httpmethod http请求的方法
+     * @param string $appName 路由注册的应用
      * @return callable 可执行的方法
      */
-    public function getCallable($str, $httpmethod)
+    public function getCallable($str, $httpmethod, $appName = '', $routeMethods)
     {
         $strs = explode('@', $str);
         $class = array_shift($strs);
         $method = strtolower($strs ? array_pop($strs) : $httpmethod);
+
         //完全限定命名空间
         if ($class[0] != '\\') {
             //当前应用
             $vitex = Vitex::getInstance();
-            $app = $this->getRouteApp() ?: $vitex->appName;
+            $app = $appName ?: $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
+
         $this->routeClass = $class;
         $this->routeMethod = $method;
         $obj = new $class;
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
-            return false;
+            return null;
         }
-        return function () use ($obj, $method) {
-            return $obj->{$method}();
+        /**
+         * 返回一个可执行的闭包
+         */
+        return function () use ($obj, $method, $routeMethods) {
+            /**
+             * 路由前执行的方法
+             */
+            $beforeData = null;
+            if (isset($routeMethods['before'])) {
+                $beforeData = call_user_func_array($routeMethods['before'], [Request::getInstance(), Response::getInstance()]);
+            }
+
+            /**
+             * 包裹路由执行
+             */
+            if (isset($routeMethods['wrap'])) {
+                $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method) {
+                    return $obj->{$method}();
+                }, Request::getInstance(), Response::getInstance(),$beforeData]);
+            } else {
+                $result = $obj->{$method}();
+            }
+
+            /**
+             * 路由后执行的方法
+             */
+            if (isset($routeMethods['after'])) {
+                call_user_func_array($routeMethods['after'], [Request::getInstance(), Response::getInstance(),$result]);
+            }
+            return $result;
         };
     }
 
