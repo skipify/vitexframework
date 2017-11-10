@@ -21,6 +21,10 @@ use vitex\Vitex;
 class Response
 {
     private static $_instance = null;
+    /**
+     * 扩展方法
+     * @var array
+     */
     private $methods          = [];
     private $_cookie;
 

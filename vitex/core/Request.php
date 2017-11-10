@@ -28,7 +28,7 @@ class Request implements \ArrayAccess, \Iterator
     private static $_instance = null;
 
     /**
-     * 保存基本的路由信息
+     * 保存当前匹配的基本路由信息
      *
      */
     public $route = [];
