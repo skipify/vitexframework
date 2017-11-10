@@ -437,6 +437,43 @@ callable 	$call 	匹配后执行的方法
 
 	`$vitex->map('get/post',function(){echo 'map';})`
 
+
+### setAlias
+给路由设定一个别名
+
+**签名**
+
+`setAlias(string $alias)`
+
+**参数**
+
+string $alias  别名名称
+
+
+### getByAlias
+根据路由别名获取一个注册的路由,如果是一个带有占位符的路由，则可以通过第二个参数传递相应的数据进行替换
+
+**签名**
+
+`getByAlias(string $alias,array $data)`
+
+**参数**
+string $alias 别名名称
+array $data  数据
+
+**示例**
+
+```
+    $vitex->get('/home','Home@index')->setAlias('home')
+    echo $vitex->getByAlias('home'); // /home
+    
+    $vitex->get('/home/:id@digit','Home@index')->setAlias('home')
+    echo $vitex->getByAlias('home'); // /home/:id@digit    
+    echo $vitex->getByAlias('home',['id'=>123]); // /home/123
+   
+```
+
+
 ### notFound
 
 404页面，如果不指定$call则会触发执行默认或者已经设定(如果设定过)的notfound方法   

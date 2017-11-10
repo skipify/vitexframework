@@ -927,7 +927,85 @@ string 	$id ID主键值
 
 `$this->max("age")` //查询最大年龄
 
+### getMeta()
 
+获取表格结构元数据
+
+
+
+**示例**
+
+`$this->getMeta()`
+
+**返回数据**
+    - field 字段名
+    - type  字段类型
+    - typeArr 字段类型详情
+        - 类型
+        - 长度
+        - 数据 比如 set类型时候的数据
+    - null true 可以为NULL  false 不可以为 NULL    
+    - key PRI 主键 索引等
+    - default 默认值
+    - extra 额外数据
+
+```
+Array
+(
+    [0] => Array
+        (
+            [field] => id
+            [typeArr] => Array
+                (
+                    [0] => int
+                    [1] => 11
+                    [2] => 
+                )
+
+            [type] => int
+            [null] => 
+            [key] => PRI
+            [default] => 
+            [extra] => auto_increment
+        )
+
+    [1] => Array
+        (
+            [field] => userid
+            [typeArr] => Array
+                (
+                    [0] => int
+                    [1] => 11
+                    [2] => 
+                )
+
+            [type] => int
+            [null] => 
+            [key] => 
+            [default] => 
+            [extra] => 
+        )
+
+    [2] => Array
+        (
+            [field] => name
+            [typeArr] => Array
+                (
+                    [0] => varchar
+                    [1] => 30
+                    [2] => 
+                )
+
+            [type] => varchar
+            [null] => 
+            [key] => 
+            [default] => 
+            [extra] => 
+        )
+
+)
+
+```
 
 ### min
 

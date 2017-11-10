@@ -167,6 +167,17 @@ $vitex->get("|^user/get-[0-9]+\.html$|","User@info")  //  相当于访问  /user
 ```
 
 
+## 另外的路由分组
+
+```
+    $vitex->group('/user',function(){
+        $this->get('/:id','User@index')
+    });
+```
+**注意**
+    使用callable的分组时 callable内部注册路由使用 `$this`,因为这个回调已经绑定到Vitex对象上，且此类路由分组不能再使用group引入，如果此分组书写在单独的文件则引入时使用include引入
+
+
 *可选匹配*
 
 ```

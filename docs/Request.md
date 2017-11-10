@@ -244,6 +244,12 @@ $this->req->cancelFilter();
 
 `$this->req->getParam("name","vitex")`
 
+
+### route
+路由参数，当前请求匹配的路由信息参数
+`url`,`method`,`matchUrl`,`matchMethod`,`matchPattern`
+
+
 ### extend()
 
 用于扩展Request类使用,可以使用该方法扩展Request实例的属性和方法
