@@ -1,5 +1,15 @@
 <?php
 /**
+ * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * @version  0.2.0
+ *
+ * @package vitex
+ *
+ * @author  skipify <skipify@qq.com>
+ * @copyright skipify
+ * @license MIT
+ */
+/**
  * 缓存类的session管理
  * 缓存方法需要支持  set  get  delete 三个方法
  */
