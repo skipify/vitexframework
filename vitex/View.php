@@ -24,7 +24,7 @@ class View
      * 传递给模板的数据
      * @var array
      */
-    protected $tpldata;
+    protected $tpldata = [];
     private $templatepath;
     public $vitex;
     public $tplext;
