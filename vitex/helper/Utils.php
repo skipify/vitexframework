@@ -31,6 +31,7 @@ class Utils
      */
     public static function encrypt($data, $key, array $setting = [])
     {
+        $data = (string) $data;
         if(!is_string($data)){
             throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
         }
