@@ -26,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.11.0";
+    const VERSION = "0.11.1";
     /**
      * App instance
      */
@@ -90,10 +90,6 @@ class Vitex
          * redis memcache数据缓存时候的实例
          */
         'session.cache.instance' => null,
-        /**
-         * 数据库元文件缓存目录
-         */
-        'entitymeta.path' => '',
 
         'charset' => 'utf-8',
     );
@@ -555,6 +551,25 @@ class Vitex
             return $this->preUse($pattern);
         }
         return $this->invoke($pattern, $call);
+    }
+
+    /**
+     * 判断是否已经加载一个中间件
+     * @param $class string 中间件类名
+     * @return bool
+     */
+    public function isLoadMiddleware($class)
+    {
+        return in_array($class,$this->preMiddlewareArr) ? true : false;
+    }
+
+    /**
+     * 获得已经加载的中间件列表
+     * @return array
+     */
+    public function getLoadMiddleware()
+    {
+        return $this->preMiddlewareArr;
     }
 
     /**
