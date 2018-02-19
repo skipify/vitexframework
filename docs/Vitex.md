@@ -437,6 +437,24 @@ callable 	$call 	匹配后执行的方法
 
 	`$vitex->map('get/post',function(){echo 'map';})`
 
+### getLoadMiddleware
+
+获取已经加载的中间件列表
+
+### isLoadMiddleware
+检查一个中间件是否已经加载
+
+**签名**
+
+`isLoadMiddleware(string $class):bool`
+
+**示例**
+
+```
+if(!$vitex->isLoadMiddleware('vitex\middleware\Session')){
+    $vitex->using(new \vitex\middleware\Session());
+}
+```
 
 ### setAlias
 给路由设定一个别名
