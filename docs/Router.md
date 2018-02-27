@@ -278,3 +278,9 @@ Array
     [1] => get   方法名
 )
 ```
+
+## 清除路由重新匹配
+
+```
+    $vitex->route->clearRouter();
+```

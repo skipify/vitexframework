@@ -91,6 +91,12 @@ class Vitex
          */
         'session.cache.instance' => null,
 
+        /**
+         * 打印到屏幕的日志格式，默认为html格式，可以更改为txt格式
+         * html|text 两种类型
+         */
+        'log.format' => 'html',
+
         'charset' => 'utf-8',
     );
     /**

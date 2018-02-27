@@ -77,20 +77,29 @@ class Route
         $this->themethod = $this->env->method();
         $this->router = new Router;
         $this->_notfound = function () {
-            echo '<h1>404 Not Found</h1>';
+            echo "<h1>404 Not Found</h1>\n";
             $vitex = Vitex::getInstance();
             if ($vitex->getConfig('debug')) {
                 //输出调试信息
                 $url = $this->env->getPathinfo();
                 $patterns = $this->router->getPattern();
-                echo '<h2>Router Detail</h2>';
-                echo '<strong>URL</strong>: ' . $url . '<br /><strong>Matcher:</strong>';
-                echo '<ul>';
-                foreach ($patterns as list($method, $matcher, $call, $pattern)) {
-                    echo sprintf('<li><span>Method: %s </span> <span>Url: %s</span> <span style="width:500px">RegExp: %s</span></li>', $method, $pattern, $matcher);
+
+                if($vitex->getConfig('log.format') == 'html'){
+                    echo '<h2>Router Detail</h2>';
+                    echo '<strong>URL</strong>: ' . $url . '<br /><strong>Matcher:</strong>';
+                    echo '<ul>';
+                    foreach ($patterns as list($method, $matcher, $call, $pattern)) {
+                        echo sprintf('<li><span>Method: %s </span> <span>Url: %s</span> <span style="width:500px">RegExp: %s</span></li>', $method, $pattern, $matcher);
+                    }
+                    echo '</ul>';
+                    echo '<style type="text/css">li span{display:inline-block;width:150px;}</style>';
+                } else {
+                    echo "Router Detail\n";
+                    echo 'URL: ' . $url . "\n Matcher:\n";
+                    foreach ($patterns as list($method, $matcher, $call, $pattern)) {
+                        echo sprintf("Method: %s \t Url: %s \t RegExp: %s\n", $method, $pattern, $matcher);
+                    }
                 }
-                echo '</ul>';
-                echo '<style type="text/css">li span{display:inline-block;width:150px;}</style>';
             }
         };
     }
@@ -179,7 +188,7 @@ class Route
 
         //没有找到分组信息,查询是否有 / 的分组
         if (false === $findGroup) {
-            $rootRouteBundles = $this->_routerGroups['/'];
+            $rootRouteBundles = isset($this->_routerGroups['/']) ? $this->_routerGroups['/']:null;
             if ($rootRouteBundles) {
                 $this->groupurl = '/';
                 foreach ($rootRouteBundles as $routeBundle) {
