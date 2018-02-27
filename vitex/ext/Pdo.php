@@ -153,7 +153,8 @@ class Pdo extends Middleware
 
     public function close()
     {
-
+        $this->pdo = null;
+        $this->sth = null;
     }
 
     /**
@@ -181,5 +182,10 @@ class Pdo extends Middleware
     {
         $this->vitex->pdo = $this;
         $this->runNext();
+    }
+
+    public function __destruct()
+    {
+        $this->close();
     }
 }

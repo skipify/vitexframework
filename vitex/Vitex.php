@@ -26,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.11.1";
+    const VERSION = "0.11.2";
     /**
      * App instance
      */
@@ -839,6 +839,36 @@ class Vitex
     }
 
     /**
+     * 执行已经加载的中间件
+     * @return $this
+     */
+    public function runLoadMiddleware()
+    {
+        //预处理中间件
+        $this->using(new middleware\Cookie());
+        //预处理中间件执行
+        if ($this->preMiddleware) {
+            $this->preMiddleware->call();
+        }
+        return $this;
+    }
+
+    /**
+     * 路由分发
+     * 加载路由以及分组，匹配执行
+     * @return $this
+     */
+    public function routeDispatch()
+    {
+        $this->applyHook('sys.before.router');
+        //分组
+        $this->route->applyGroup();
+        $this->route->next();
+        $this->applyHook('sys.after.router');
+        return $this;
+    }
+
+    /**
      * 启动程序
      */
     public function run()
@@ -849,19 +879,9 @@ class Vitex
         if ($this->getConfig('debug')) {
             $this->log->setWriter(new LogWriter());
         }
+        $this->runLoadMiddleware();
+        $this->routeDispatch();
 
-        //预处理中间件
-        $this->using(new middleware\Cookie());
-        //预处理中间件执行
-        if ($this->preMiddleware) {
-            $this->preMiddleware->call();
-        }
-        $this->applyHook('sys.before.router');
-        //分组
-        $this->route->applyGroup();
-
-        $this->route->next();
-        $this->applyHook('sys.after.router');
         restore_error_handler();
     }
 

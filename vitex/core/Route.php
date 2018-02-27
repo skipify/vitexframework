@@ -284,6 +284,15 @@ class Route
     }
 
     /**
+     * 清空路由信息，强制重新加载路由信息
+     */
+    public function clearRouter()
+    {
+        $this->_router = null;
+        return $this;
+    }
+
+    /**
      * 执行下一个匹配的URL规则
      * @return self
      */

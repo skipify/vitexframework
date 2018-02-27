@@ -99,6 +99,12 @@ class Model
      */
     protected $DB;
 
+    /**
+     * 上一次检索时间
+     * @var
+     */
+    public $lastQueryAt;
+
     public function __construct($table = '')
     {
         $this->vitex = Vitex::getInstance();
@@ -251,6 +257,7 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $sql = str_replace('@#_', $this->prefix, $sql);
+        $this->lastQueryAt = time();
         return $this->DB->query($sql);
     }
 
@@ -1110,6 +1117,7 @@ class Model
         $this->sql = $sql;
         $sth = $this->pdo->prepare($sql);
         $ret = $sth->execute($arr);
+        $this->lastQueryAt = time();
         $this->resetCon();
         return $ret;
     }
@@ -1156,6 +1164,7 @@ class Model
             $lastid = $this->pdo->lastInsertId();
         }
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->commit();
+        $this->lastQueryAt = time();
         $this->resetCon();
         return $lastid;
     }
@@ -1373,6 +1382,7 @@ class Model
         $sql = $this->buildSql($column);
         $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $this->lastQueryAt = time();
         return isset($info['num']) ? $info['num'] : 0;
     }
 
@@ -1447,6 +1457,7 @@ class Model
         $sql = $this->limit(1)->buildSql();
         $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $this->lastQueryAt = time();
         return isset($info['info']) ? $info['info'] : 0;
     }
 
@@ -1524,6 +1535,7 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $sth = $this->DB->query($sql);
+        $this->lastQueryAt = time();
         return $this->DB->fetchAll($type);
     }
 
@@ -1540,6 +1552,7 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $info = $this->DB->query($sql)->fetch($type);
+        $this->lastQueryAt = time();
         return $info;
     }
 
@@ -1554,6 +1567,7 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        $this->lastQueryAt = time();
         return $this->DB->execute($sql);
     }
 
@@ -1573,6 +1587,7 @@ class Model
         }
         $sql = 'describe ' . $tableName;
         $this->DB->query($sql);
+        $this->lastQueryAt = time();
         $rows = $this->DB->fetchAll(\PDO::FETCH_ASSOC);
         $metaData = [];
         foreach ($rows as $row) {
@@ -1646,6 +1661,7 @@ class Model
         }
         $sql = $this->limit(1)->buildSql();
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $this->lastQueryAt = time();
         $this->_post = $info;
         $this->isfind = true;
         return $info;
@@ -1658,6 +1674,7 @@ class Model
         }
         $sql = $this->buildSql();
         $sth = $this->DB->query($sql);
+        $this->lastQueryAt = time();
         return $this->DB->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -1684,5 +1701,11 @@ class Model
             'join' => [],
             'order' => [],
         ];
+    }
+
+    public function __destruct()
+    {
+        $this->DB = null;
+        $this->pdo = null;
     }
 }
