@@ -26,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.11.2";
+    const VERSION = "0.11.3";
     /**
      * App instance
      */
@@ -467,6 +467,7 @@ class Vitex
     /**
      * 执行钩子方法
      * @param string $name 钩子名称
+     * @return array
      */
     public function applyHook($name)
     {
@@ -476,9 +477,11 @@ class Vitex
         });
         $args = func_get_args();
         array_shift($args);
+        $rets = [];
         foreach ($calls as list($call, $priority)) {
-            call_user_func_array($call, $args);
+            $rets[] = call_user_func_array($call, $args);
         }
+        return $rets;
     }
 
     /**
