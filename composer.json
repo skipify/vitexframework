@@ -1,7 +1,7 @@
 {
     "name": "skipify/vitex",
-    "version":"0.12.0",
-    "description": "A Tiny Framework.轻量级的php resetful框架.",
+    "version":"1.0.0",
+    "description": "A Tiny Framework.轻量级的php resetful框架 for php7.",
     "keywords": ["framework", "vitex","phpframework"],
     "license": "MIT",
     "homepage": "http://ifanybug.com",
@@ -19,7 +19,7 @@
         "vitex/ext/Init.php"
     ],
     "require": {
-        "php": ">=5.5.0",
+        "php": ">=7.0.0",
         "ext-openssl": "*",
         "ext-mbstring": "*"
     },
