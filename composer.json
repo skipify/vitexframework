@@ -20,7 +20,7 @@
     ],
     "require": {
         "php": ">=5.5.0",
-        "ext-mcrypt": "*",
+        "ext-openssl": "*",
         "ext-mbstring": "*"
     },
     "autoload": {
