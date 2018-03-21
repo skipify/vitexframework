@@ -26,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.11.3";
+    const VERSION = "0.12.0";
     /**
      * App instance
      */
@@ -569,7 +569,7 @@ class Vitex
      */
     public function isLoadMiddleware($class)
     {
-        return in_array($class,$this->preMiddlewareArr) ? true : false;
+        return in_array($class, $this->preMiddlewareArr) ? true : false;
     }
 
     /**

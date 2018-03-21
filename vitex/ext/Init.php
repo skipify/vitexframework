@@ -156,7 +156,7 @@ class Init
     public function controller()
     {
         $file = $this->dirname . '/' . $this->appname . '/controller/Controller.php';
-        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XENvbnRyb2xsZXI7Cgp1c2UgXHZpdGV4XENvbnRyb2xsZXIgYXMgVmNvbnRyb2xsZXI7CgpjbGFzcyBDb250cm9sbGVyIGV4dGVuZHMgVmNvbnRyb2xsZXIKewoKfQ==';
+        $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XGNvbnRyb2xsZXI7Cgp1c2UgXHZpdGV4XENvbnRyb2xsZXIgYXMgVmNvbnRyb2xsZXI7CgpjbGFzcyBDb250cm9sbGVyIGV4dGVuZHMgVmNvbnRyb2xsZXIKewoKfQ==';
         file_put_contents($file, str_replace('{app}', $this->appname, base64_decode($code)));
         $file = $this->dirname . '/' . $this->appname . '/controller/User.php';
         $code = 'PD9waHAKbmFtZXNwYWNlIHthcHB9XGNvbnRyb2xsZXI7CgpjbGFzcyBVc2VyIGV4dGVuZHMgQ29udHJvbGxlcgp7CiAgICBwdWJsaWMgZnVuY3Rpb24gZ2V0KCkKICAgIHsKICAgICAgICBlY2hvICd1c2VyJzsKICAgIH0KfQ==';
