@@ -20,13 +20,13 @@ use vitex\helper\Utils;
 use vitex\middleware;
 use vitex\View;
 
-if (!Utils::phpVersion('5.5')) {
-    throw new Exception("I am at least PHP version 5.5.0");
+if (!Utils::phpVersion('7.0')) {
+    throw new Exception("I am at least PHP version 7.0.0");
 }
 
 class Vitex
 {
-    const VERSION = "0.12.0";
+    const VERSION = "1.0.0";
     /**
      * App instance
      */
@@ -138,6 +138,11 @@ class Vitex
     public $res;
 
     /**
+     * @var core\Route
+     */
+    public $route;
+
+    /**
      * Vitex constructor.
      * @param mixed $setting
      */
@@ -228,7 +233,7 @@ class Vitex
     public function getInitApps($app)
     {
         if ($app) {
-            return isset($this->initApps[$app]) ? $this->initApps[$app] : null;
+            return $this->initApps[$app] ?? null;
         }
         return $this->initApps;
     }
@@ -276,7 +281,7 @@ class Vitex
         if (isset($this->multiApps[$host])) {
             $apps = $this->multiApps[$host];
         }
-        $defapps = isset($this->multiApps['default']) ? $this->multiApps['default'] : [];
+        $defapps = $this->multiApps['default'] ?? [];
         if (!$apps && !$defapps) {
             throw new Exception("无法找到设置的初始化映射规则");
         }
@@ -349,7 +354,7 @@ class Vitex
     {
         $pathinfo = trim($this->env->getPathinfo(), '/');
         $pathinfos = explode('/', $pathinfo);
-        $group = isset($pathinfos[0]) ? $pathinfos[0] : '';
+        $group = $pathinfos[0] ?? '';
         $_apps = null;
         if (isset($apps[$group])) {
             $_apps = $apps[$group];
@@ -397,7 +402,7 @@ class Vitex
 
             $_map[$skey] = $val;
         }
-        $oldMap = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
+        $oldMap = $this->multiApps[$domain] ?? [];
         $this->multiApps[$domain] = array_merge($oldMap, $_map);
         return $this;
     }
@@ -436,7 +441,7 @@ class Vitex
     public function getConfig($name)
     {
         $setting = $this->settings;
-        return isset($setting[$name]) ? $setting[$name] : null;
+        return $setting[$name] ?? null;
     }
 
     /**
@@ -473,7 +478,7 @@ class Vitex
     {
         $calls = $this->getHooks($name);
         usort($calls, function ($a, $b) {
-            return ($b[1] - $a[1]);
+            return ($b[1] <=> $a[1]);
         });
         $args = func_get_args();
         array_shift($args);
@@ -494,7 +499,7 @@ class Vitex
         if ($name == null) {
             return $this->hooks;
         }
-        return isset($this->hooks[$name]) ? $this->hooks[$name] : array();
+        return $this->hooks[$name] ?? [];
     }
 
     /**

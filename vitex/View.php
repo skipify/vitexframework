@@ -76,7 +76,7 @@ class View
         if ($key === null) {
             return $this->data->all();
         }
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        return $this->data[$key] ?? null;
     }
 
     /**

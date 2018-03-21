@@ -119,9 +119,7 @@ class Controller
         if (!$name) {
             return null;
         }
-        if (isset($this->vitex->{$name})) {
-            return $this->vitex->{$name};
-        }
-        return null;
+        return $this->vitex->{$name} ?? null;
     }
 }
+

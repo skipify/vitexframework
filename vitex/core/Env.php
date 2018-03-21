@@ -69,7 +69,7 @@ class Env implements \ArrayAccess
         if ($key === null) {
             return $this->_env;
         }
-        return isset($this->_env[$key]) ? $this->_env[$key] : '';
+        return $this->_env[$key] ?? '';
     }
 
     /**
@@ -114,7 +114,7 @@ class Env implements \ArrayAccess
             //兼容模式
             $vitex = Vitex::getInstance();
             if ($vitex->getConfig('router.compatible')) {
-                $pathinfo = isset($_GET['u']) ? $_GET['u'] : '';
+                $pathinfo = $_GET['u'] ?? '';
             }
         }
         return $pathinfo;

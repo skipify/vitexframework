@@ -114,7 +114,7 @@ class Router
         if ($name === null) {
             return $this->regexps;
         }
-        return isset($this->regexps[$name]) ? $this->regexps[$name] : '[^/]+';
+        return $this->regexps[$name] ?? '[^/]+';
     }
 
     /**

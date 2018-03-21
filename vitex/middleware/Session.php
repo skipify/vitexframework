@@ -106,7 +106,7 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 
     public function offsetGet($key)
     {
-        return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
+        return $_SESSION[$key] ?? null;
     }
 
     public function offsetUnset($key)

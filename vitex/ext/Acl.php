@@ -160,7 +160,7 @@ class Acl
      */
     public function getGroupRule($alias)
     {
-        return isset($this->group[$alias]) ? $this->group[$alias] : [];
+        return $this->group[$alias] ?? [];
     }
 
     /**

@@ -1,5 +1,8 @@
 # vitexframework
-a Tiny Restful framework base on php5.5+
+
+开发中 暂不适合应用生产环境
+a Tiny Restful framework base on php7.0+
+如果是用 5.5+ 则到<a href="https://github.com/skipify/vitexframework/tree/master">这里</a>查看
 
 - 第一部分
   - [关于](docs/Index.md)

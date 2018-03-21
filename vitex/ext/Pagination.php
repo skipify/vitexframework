@@ -65,7 +65,7 @@ class Pagination
      */
     public function get($wrap = "",$retArr = false)
     {
-        $curpage = intval(isset($_GET[$this->param]) ? $_GET[$this->param] : 1);
+        $curpage = intval($_GET[$this->param] ?? 1);
         $pages   = $this->getLink($this->url, $curpage);
         if ($wrap) {
             foreach ($pages as &$page) {
@@ -80,7 +80,7 @@ class Pagination
      */
     public function getArray()
     {
-        $curpage = intval(isset($_GET[$this->param]) ? $_GET[$this->param] : 1);
+        $curpage = intval($_GET[$this->param] ?? 1);
         return $this->getLink($this->url, $curpage);
     }
     /**

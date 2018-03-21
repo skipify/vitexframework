@@ -188,7 +188,7 @@ class Route
 
         //没有找到分组信息,查询是否有 / 的分组
         if (false === $findGroup) {
-            $rootRouteBundles = isset($this->_routerGroups['/']) ? $this->_routerGroups['/']:null;
+            $rootRouteBundles = $this->_routerGroups['/'] ?? null;
             if ($rootRouteBundles) {
                 $this->groupurl = '/';
                 foreach ($rootRouteBundles as $routeBundle) {

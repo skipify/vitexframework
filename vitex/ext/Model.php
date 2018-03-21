@@ -1383,7 +1383,7 @@ class Model
         $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
-        return isset($info['num']) ? $info['num'] : 0;
+        return $info['num'] ?? 0;
     }
 
     /**
@@ -1458,7 +1458,7 @@ class Model
         $this->sql = $sql;
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
-        return isset($info['info']) ? $info['info'] : 0;
+        return $info['info'] ?? 0;
     }
 
     /**

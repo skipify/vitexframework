@@ -35,7 +35,7 @@ trait SetMethod
 
     public function offsetGet($key)
     {
-        return isset($this->_data[$key]) ? $this->_data[$key] : null;
+        return $this->_data[$key] ?? null;
     }
 
     public function offsetUnset($key)

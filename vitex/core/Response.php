@@ -195,7 +195,7 @@ class Response
         if ($key === null) {
             return $this->headers;
         }
-        return isset($this->headers[$key]) ? $this->headers[$key] : '';
+        return $this->headers[$key] ?? '';
     }
 
     /**
@@ -203,7 +203,7 @@ class Response
      */
     public function sendHeader()
     {
-        $status = isset($this->status_tip[$this->status]) ? $this->status_tip[$this->status] : '';
+        $status = $this->status_tip[$this->status] ?? '';
         header('HTTP/1.1 ' . $this->status.' '.$status);
         foreach ($this->headers as $key => $val) {
             header($key . ':' . $val);
