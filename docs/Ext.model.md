@@ -1110,3 +1110,15 @@ $this->fetchAll("select sum(money) as money from order group by uid");
 ``` 
 $this->execute("delete from order where id=1");
 ```
+
+### setJustSql
+
+设置操作仅仅拼接sql 不会去数据库执行，此方法一般配合 getSql()方法获取拼接的sql
+
+**设置此方法之后仅仅获取sql不会执行**
+```
+    $this->from('user')->where("id","=",1)->setJustSql()->get();
+    $sql = $this->getSql();
+    //sql
+    select * from user where id=1 limit 1;
+```

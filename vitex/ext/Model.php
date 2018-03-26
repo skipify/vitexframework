@@ -100,6 +100,12 @@ class Model
     protected $DB;
 
     /**
+     * 仅仅获取sql，不获取内容
+     * @var bool
+     */
+    private $justSql = false;
+
+    /**
      * 上一次检索时间
      * @var
      */
@@ -234,6 +240,17 @@ class Model
     }
 
     /**
+     * 设置为只获得sql 不查询数据
+     * @param bool $bool
+     * @return $this
+     */
+    public function setJustSql($bool = true)
+    {
+        $this->justSql = $bool;
+        return $this;
+    }
+
+    /**
      * 返回当前对象的实例，一般用于子查询实例化model
      * @param  string $prefix 表名前缀
      * @return self
@@ -257,6 +274,12 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $sql = str_replace('@#_', $this->prefix, $sql);
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         $this->lastQueryAt = time();
         return $this->DB->query($sql);
     }
@@ -921,6 +944,15 @@ class Model
     }
 
     /**
+     * 获取执行的sql
+     */
+    public function getSql()
+    {
+        $this->justSql = false;
+        return $this->sql;
+    }
+
+    /**
      * 设置当前的查询条件配置
      * @return array
      */
@@ -1115,6 +1147,12 @@ class Model
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
         $this->sql = $sql;
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         $sth = $this->pdo->prepare($sql);
         $ret = $sth->execute($arr);
         $this->lastQueryAt = time();
@@ -1156,6 +1194,12 @@ class Model
 
         $sql = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
         $this->sql = $sql;
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         $sth = $this->pdo->prepare($sql);
         $lastid = null;
         !$this->_begintransaction && count($arr) > 1 && $this->pdo->beginTransaction();
@@ -1277,6 +1321,12 @@ class Model
         }
         $sql .= $where;
         $this->sql = $sql;
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         $ret = $this->DB->execute($sql);
         $this->resetCon();
         return $ret;
@@ -1295,6 +1345,12 @@ class Model
         $table = $this->getTable();
         $sql = "truncate table " . $table;
         $this->sql = $sql;
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         return $this->DB->execute($sql);
     }
 
@@ -1361,6 +1417,12 @@ class Model
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
         $this->sql = $sql;
+        /**
+         * 只获取sql
+         */
+        if ($this->justSql) {
+            return true;
+        }
         $ret = $this->DB->execute($sql);
 
         $this->resetCon();
@@ -1381,6 +1443,12 @@ class Model
         }
         $sql = $this->buildSql($column);
         $this->sql = $sql;
+        /**
+         * 仅仅获取sql，不实际执行
+         */
+        if ($this->justSql) {
+            return 0;
+        }
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         return isset($info['num']) ? $info['num'] : 0;
@@ -1456,6 +1524,12 @@ class Model
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
         $sql = $this->limit(1)->buildSql();
         $this->sql = $sql;
+        /**
+         * 仅仅获得sql
+         */
+        if ($this->justSql) {
+            return 0;
+        }
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         return isset($info['info']) ? $info['info'] : 0;
@@ -1464,7 +1538,7 @@ class Model
     /**
      * 查询指定字段的最大值
      * @param  string $field 字段名
-     * @return number 返回最大值
+     * @return number/string 返回最大值
      */
     final public function max($field)
     {
@@ -1474,7 +1548,7 @@ class Model
     /**
      * 查询指定字段的最小值
      * @param  string $field 字段名
-     * @return number 返回最小值
+     * @return number/string 返回最小值
      */
     final public function min($field)
     {
@@ -1484,7 +1558,7 @@ class Model
     /**
      * 查询指定字段的平均值
      * @param  string $field 字段名
-     * @return number 返回平均值
+     * @return number/string 返回平均值
      */
     final public function avg($field)
     {
@@ -1494,7 +1568,7 @@ class Model
     /**
      * 查询指定字段的和值
      * @param  string $field 字段名
-     * @return number 返回和值
+     * @return number/string 返回和值
      */
     final public function sum($field)
     {
@@ -1505,7 +1579,7 @@ class Model
      * 直接按照分页查询相关的信息，包括总页数以及当前分页的内容
      * @param  integer $page 当前要查询的页码
      * @param  integer $num 每页的信息条数 默认10条
-     * @return array   $info 返回值，第一个元素是包含的信息，第二个元素是总的行数
+     * @return array/string   $info 返回值，第一个元素是包含的信息，第二个元素是总的行数
      */
     final public function page($page = 1, $num = 10)
     {
@@ -1514,6 +1588,7 @@ class Model
         $this->limit($num, $start);
         $bak = $this->_sql;
         $infos = $this->_getAll();
+
         $this->_sql = $bak;
         $querySql = $this->sql;
         $total = $this->count();
@@ -1575,7 +1650,7 @@ class Model
     /**
      * 从数据库读取表结构元数据
      * @throws Exception
-     * @return array
+     * @return array/string
      */
     final public function getMeta()
     {
@@ -1586,6 +1661,13 @@ class Model
             return $tableMetas[$tableName];
         }
         $sql = 'describe ' . $tableName;
+        $this->sql = $sql;
+        /**
+         * 仅仅获得sql
+         */
+        if ($this->justSql) {
+            return [];
+        }
         $this->DB->query($sql);
         $this->lastQueryAt = time();
         $rows = $this->DB->fetchAll(\PDO::FETCH_ASSOC);
@@ -1660,6 +1742,13 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $sql = $this->limit(1)->buildSql();
+        $this->sql = $sql;
+        /**
+         * 仅仅获得sql 不实际执行
+         */
+        if ($this->justSql) {
+            return [];
+        }
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         $this->_post = $info;
@@ -1673,6 +1762,13 @@ class Model
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
         $sql = $this->buildSql();
+        $this->sql = $sql;
+        /**
+         * 仅仅获得sql
+         */
+        if ($this->justSql) {
+            return [];
+        }
         $sth = $this->DB->query($sql);
         $this->lastQueryAt = time();
         return $this->DB->fetchAll(\PDO::FETCH_ASSOC);
