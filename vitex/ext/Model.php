@@ -981,13 +981,11 @@ class Model
             $sql .= 'count(' . $field . ') as num ';
         } else {
             if ($this->_sql['distinct']) {
-                $sql .= 'distinct ' . implode(',', $this->_sql['distinct']) . ' ';
+                $sql .= 'distinct (' . implode(',', $this->_sql['distinct']) . ') ';
             }
 
-            if (!$this->_sql['distinct']) {
-                $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
-                $sql .= $field . ' ';
-            }
+            $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
+            $sql .= $field . ' ';
         }
 
         $sql .= " from " . $this->getTable() . ' ';
