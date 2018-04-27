@@ -65,6 +65,7 @@ class CacheHandler extends SessionHandler implements \SessionHandlerInterface
 
     public function write($session_id, $session_data)
     {
-        return $this->cache->set($session_id,$session_data);
+        $expireMinutes = $this->vitex->getConfig('session.lifetime');
+        return $this->cache->set($session_id,$session_data,$expireMinutes * 60);
     }
 }
