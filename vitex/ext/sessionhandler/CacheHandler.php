@@ -31,7 +31,11 @@ class CacheHandler extends SessionHandler implements \SessionHandlerInterface
         if(!$sessionHandler){
             throw new Exception('您需要传递一个缓存连接的实例',Exception::CODE_PARAM_VALUE_ERROR);
         }
-        $this->cache = $sessionHandler;
+        if(is_callable($sessionHandler)){
+            $this->cache = call_user_func($sessionHandler);
+        } else {
+            $this->cache = $sessionHandler;
+        }
     }
 
     public function close()
@@ -56,11 +60,11 @@ class CacheHandler extends SessionHandler implements \SessionHandlerInterface
 
     public function read($session_id)
     {
-        return $this->cache->get($session_id);
+        return $this->cache->get($session_id) ? (string) $this->cache->get($session_id)  : '';
     }
 
     public function write($session_id, $session_data)
     {
-        $this->cache->set($session_id,$session_data);
+        return $this->cache->set($session_id,$session_data);
     }
 }
