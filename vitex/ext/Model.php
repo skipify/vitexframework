@@ -380,7 +380,7 @@ class Model
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param  string $key 条件列名
      * @param  mixed $val 值
-     * @return Model
+     * @return $this
      * @throws Exception
      * @throws \Error
      */
@@ -603,7 +603,7 @@ class Model
      * @param  string $op 操作符
      * @param  string $val
      * @throws \Error
-     * @return object    错误信息
+     * @return $this    错误信息
      */
     private function _where($method, $key, $op = '', $val = '')
     {
@@ -954,11 +954,35 @@ class Model
 
     /**
      * 设置当前的查询条件配置
-     * @return array
+     * @return $this
      */
     public function setSqlSet(array $set)
     {
         $this->_sql = $set;
+        return $this;
+    }
+
+    /**
+     * 当第一个条件成立时则执行后面的回调方法 回调方法会接受当前控制器的实例为参数
+     * @param $condition
+     * @param callable $call  满足条件时执行
+     * @param callable|null $notCall  不满足条件时执行
+     * @return $this
+     */
+    public function when($condition,callable $call,callable $notCall = null)
+    {
+        if(is_callable($condition)){
+            $result = call_user_func($condition);
+        } else {
+            $result = $condition;
+        }
+        if($result){
+            call_user_func_array($call,[$this]);
+        } else {
+            if($notCall){
+                call_user_func_array($notCall,[$this]);
+            }
+        }
         return $this;
     }
 
