@@ -475,6 +475,29 @@ $this->findInSet('pos','a') //pos字段(a,b,c)中包含一个a元素
   //  =>
     ( name="xx" and age = 100) or name="john"
 ```
+### when()
+
+当满足一定条件时才会执行的条件（版本 > 0.14.0） 
+
+mixed $condition  需要判定的条件是否成立，PHP if 是否成立
+callable $call    条件成立时执行的方法，接受一个参数为当前模型的实例
+callbale $notcall 条件不成立时执行的方法，接受一个参数为当前模型的实例
+```
+    $this->when($age,function($model) use($age){
+        $model->where('age','=',$age);
+    });
+        
+    //如果age为 true类型则相当于  select * from user where age = $age;
+    //如果age为 false 则相当于 select * from user;
+    
+        $this->when($age,function($model) use($age){
+            $model->where('age','=',$age);
+        },function($model) use($age){
+            $model->where("age",">",0);
+        });
+        //如果age为 true类型则相当于  select * from user where age = $age;
+        //如果age为 false 则相当于 select * from user where age > 0;
+```
 
 
 ### having()
