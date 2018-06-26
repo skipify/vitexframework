@@ -459,6 +459,13 @@ class Router
             $matcher = $matcher . $cases;
         } else {
             //替换 *为匹配除了 /分组之外的所有内容
+
+            /**
+             * 防止路由中出现正则表达式特殊字符 例如 - : <> 这样的特殊字符
+             */
+            $matcher = preg_quote($matcher,'|');
+            $matcher = str_replace(['\*','\:','\[','\]','\.'],['*',':','[',']','.'],$matcher);
+
             $matcher = str_replace(['*', '?'], ['([^\/]*)', '([^\/]?)'], $matcher);
             $slices = $this->getSlice($matcher);
             foreach ($slices as list($slice, $reg)) {

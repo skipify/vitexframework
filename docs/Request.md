@@ -172,6 +172,22 @@ string 	$key 	键值
 
 $arr 包含表单名的一个数组
 
+
+### except()
+
+从post数据中获取传递来的值，两个参数 第一个是需要排除的字段，第二个是过滤的方式
+
+`except(mixed fields,$filter)`
+
+
+```
+    //fields 为一个数组 或者 一个字段名字
+    
+    $this->req->except(['__token'],'safe');
+```
+
+
+
 ### get()
 
 获取一个请求来的值，获取的顺序为 params > query > body 即优先从url中获取段的信息，其次获取$_GET变量的信息最后获取$__POST的信息，如果都不存在则会返回第二个参数设置的默认值,可以指定第三个参数作为过滤参数(参考ext/Filter)

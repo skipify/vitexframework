@@ -9,6 +9,7 @@
  * @copyright skipify
  * @license MIT
  */
+
 namespace vitex\core;
 
 use vitex\ext\Filter;
@@ -22,7 +23,7 @@ class Request implements \ArrayAccess, \Iterator
 {
 
     //环境变量
-    public  $uploadError;
+    public $uploadError;
     private $env, $isstrip = false;
     //当前实例
     private static $_instance = null;
@@ -119,7 +120,7 @@ class Request implements \ArrayAccess, \Iterator
         //请求协议
         $protocol = $this->env->get('SERVER_PROTOCOL');
         //设置变量
-        if($protocol){
+        if ($protocol) {
             list($this->protocol, $this->version) = explode('/', $protocol);
             if ($this->protocol == 'https') {
                 $this->secure = true;
@@ -334,6 +335,26 @@ class Request implements \ArrayAccess, \Iterator
     }
 
     /**
+     * 从post中获取内容，排除指定的字段
+     * @param $fields mixed 一个字段或者数组的多个字段
+     * @param null $filter
+     * @return array
+     */
+    public function except($fields, $filter = null)
+    {
+        $fields = !is_array($fields) ? [$fields] : $fields;
+        $bodyData = $this->body->all();
+        $data = [];
+        foreach ($bodyData as $key => $val) {
+            if (in_array($key, $fields)) {
+                continue;
+            }
+            $data[$key] = $filter ? Filter::factory($data[$val], $filter) : $data[$key];
+        }
+        return $data;
+    }
+
+    /**
      * 是否是get请求方法
      * @return bool
      */
@@ -448,7 +469,7 @@ class Request implements \ArrayAccess, \Iterator
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new Exception('Not Method ' . $method . ' Found In Request!',Exception::CODE_NOTFOUND_METHOD);
+            throw new Exception('Not Method ' . $method . ' Found In Request!', Exception::CODE_NOTFOUND_METHOD);
         }
         return call_user_func_array($this->methods[$method], $args);
     }
