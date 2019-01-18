@@ -24,10 +24,10 @@ session保存目前支持三种，一种是自定义的文件存储file，一种
     /**
      * redis memcache数据缓存时候的实例
      */
-    'session.cache.instance' => null,
+    'session.cache.handler' => null,
 ```
 
-**注意** 如果设置 为 `cache`的时候 `session.cache.instance` 需要传递一个连接实例，缓存实例必须要支持 `set`,`get`,`delete`方法
+**注意** 如果设置 为 `cache`的时候 `session.cache.handler` 需要传递一个连接实例，缓存实例必须要支持 `set`,`get`,`delete`方法 或者是个 callable的方法返回一个cache实例
 例如 memcache实例或者redis实例
         
         如果设置为 `file`的时候需要设置 `session.file.path`为保存的文件目录

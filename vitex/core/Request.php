@@ -334,6 +334,26 @@ class Request implements \ArrayAccess, \Iterator
     }
 
     /**
+     * 从post中获取内容，排除指定的字段
+     * @param $fields mixed 一个字段或者数组的多个字段
+     * @param null $filter
+     * @return array
+     */
+    public function except($fields, $filter = null)
+    {
+        $fields = !is_array($fields) ? [$fields] : $fields;
+        $bodyData = $this->body->all();
+        $data = [];
+        foreach ($bodyData as $key => $val) {
+            if (in_array($key, $fields)) {
+                continue;
+            }
+            $data[$key] = $filter ? Filter::factory($data[$val], $filter) : $data[$key];
+        }
+        return $data;
+    }
+
+    /**
      * 是否是get请求方法
      * @return bool
      */

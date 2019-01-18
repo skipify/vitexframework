@@ -12,19 +12,21 @@
 
 namespace vitex;
 
+use DI\Container;
 use vitex\core\Exception;
 use vitex\core\Loader;
 use vitex\core\RouteHandlerInterface;
 use vitex\helper\LogWriter;
 use vitex\helper\Utils;
 use vitex\middleware;
+use vitex\service\event\EventEmitter;
 use vitex\View;
 
 if (!Utils::phpVersion('7.0')) {
     throw new Exception("I am at least PHP version 7.0.0");
 }
 
-class Vitex
+class Vitex extends EventEmitter
 {
     const VERSION = "1.0.0";
     /**
@@ -41,6 +43,12 @@ class Vitex
      * @var array
      */
     private $settings;
+
+    /**
+     * 容器对象
+     * @var Container
+     */
+    protected $container;
 
     /**
      * 已经初始化或者注入的应用
@@ -159,6 +167,12 @@ class Vitex
         $this->settings = $this->defaultSetting;
         $this->setConfig($setting);
 
+        /**
+         * 声明容器
+         */
+        $this->container = new Container();
+
+
         //初始化各种变量
         $this->env = core\Env::getInstance();
         $this->route = new core\Route();
@@ -179,6 +193,8 @@ class Vitex
         //命令行路由
         $this->using(new middleware\Cli());
         date_default_timezone_set('Asia/Shanghai');
+
+
     }
 
     /**
@@ -453,53 +469,6 @@ class Vitex
     public function url($url, $params = [])
     {
         return $this->route->router->url($url, $params);
-    }
-
-    /**
-     * 注册钩子函数
-     * @param  string $name 钩子名称
-     * @param  callable $call 可执行的方法
-     * @param  integer $priority 执行的优先级，数字越大越提前
-     * @return self
-     */
-    public function hook($name, callable $call, $priority = 100)
-    {
-        $priority = intval($priority);
-        $this->hooks[$name][] = array($call, $priority);
-        return $this;
-    }
-
-    /**
-     * 执行钩子方法
-     * @param string $name 钩子名称
-     * @return array
-     */
-    public function applyHook($name)
-    {
-        $calls = $this->getHooks($name);
-        usort($calls, function ($a, $b) {
-            return ($b[1] <=> $a[1]);
-        });
-        $args = func_get_args();
-        array_shift($args);
-        $rets = [];
-        foreach ($calls as list($call, $priority)) {
-            $rets[] = call_user_func_array($call, $args);
-        }
-        return $rets;
-    }
-
-    /**
-     * 获取指定钩子或者所有的hooks
-     * @param  string $name 钩子的名字
-     * @return array
-     */
-    public function getHooks($name = null)
-    {
-        if ($name == null) {
-            return $this->hooks;
-        }
-        return $this->hooks[$name] ?? [];
     }
 
     /**
@@ -897,6 +866,12 @@ class Vitex
         $this->routeDispatch();
 
         restore_error_handler();
+    }
+
+
+    public function __get($name)
+    {
+
     }
 
 }

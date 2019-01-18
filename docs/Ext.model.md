@@ -566,6 +566,30 @@ integer 	$offset 	偏移数值
 `$this->limit(10)->offset(4)` // limit 4,10  
 
 
+### when()
+
+当满足一定条件时才会执行的条件
+
+mixed $condition  需要判定的条件是否成立，PHP if 是否成立
+callable $call    条件成立时执行的方法，接受一个参数为当前模型的实例
+callbale $notcall 条件不成立时执行的方法，接受一个参数为当前模型的实例
+```
+    $this->when($age,function($model) use($age){
+        $model->where('age','=',$age);
+    });
+        
+    //如果age为 true类型则相当于  select * from user where age = $age;
+    //如果age为 false 则相当于 select * from user;
+    
+        $this->when($age,function($model) use($age){
+            $model->where('age','=',$age);
+        },function($model) use($age){
+            $model->where("age",">",0);
+        });
+        //如果age为 true类型则相当于  select * from user where age = $age;
+        //如果age为 false 则相当于 select * from user where age > 0;
+```
+
 
 ### orderBy()
 
@@ -1109,4 +1133,17 @@ $this->fetchAll("select sum(money) as money from order group by uid");
 
 ``` 
 $this->execute("delete from order where id=1");
+```
+
+
+### setJustSql
+
+设置操作仅仅拼接sql 不会去数据库执行，此方法一般配合 getSql()方法获取拼接的sql
+
+**设置此方法之后仅仅获取sql不会执行**
+```
+    $this->from('user')->where("id","=",1)->setJustSql()->get();
+    $sql = $this->getSql();
+    //sql
+    select * from user where id=1 limit 1;
 ```

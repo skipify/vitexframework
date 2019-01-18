@@ -72,7 +72,7 @@ class Controller
      * 设置配置文件
      * @param  string /array $name 键值/数组配置
      * @param  string /null  $val 值
-     * @return self
+     * @return Vitex
      */
     public function setConfig($name, $val = null)
     {

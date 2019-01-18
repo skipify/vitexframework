@@ -142,13 +142,15 @@ class Response
      */
     public function json($arr, $out = true)
     {
+        $this->setHeader('Content-type', 'application/json');
         $res = json_encode($arr, JSON_UNESCAPED_UNICODE);
         if ($out) {
-            echo $res;
+            $this->send($res);
             return "";
         }
         return $res;
     }
+
 
     /**
      * 输出jsonp格式的内容
@@ -218,18 +220,17 @@ class Response
      */
     public function send($str = null)
     {
+        if (is_array($str)) {
+            $this->setHeader('Content-type', 'application/json');
+            $str = json_encode($str, JSON_UNESCAPED_UNICODE);
+        }
         $this->sendHeader();
         if ($str === null) {
             return $this;
         }
-        if (is_array($str)) {
-            $this->json($str);
-        } else {
-            echo $str;
-        }
+        echo $str;
         return $this;
     }
-
     /**
      * 设置状态码
      * @param  mixed  $status 状态码
