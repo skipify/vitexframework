@@ -4,7 +4,7 @@
  * 事件接口
  */
 
-namespace vitex\service\event;
+namespace vitex\core\event;
 
 interface EventEmitterInterface
 {

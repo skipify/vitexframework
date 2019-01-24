@@ -3,7 +3,7 @@
  * 事件基类
  */
 
-namespace vitex\service\event;
+namespace vitex\core\event;
 
 class EventEmitter implements EventEmitterInterface
 {

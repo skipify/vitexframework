@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
@@ -599,18 +599,19 @@ class Router
         $strs = explode('@', $str);
         $class = array_shift($strs);
         $method = strtolower($strs ? array_pop($strs) : $httpmethod);
+        $vitex = Vitex::getInstance();
 
         //完全限定命名空间
         if ($class[0] != '\\') {
             //当前应用
-            $vitex = Vitex::getInstance();
             $app = $appName ?: $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
 
         $this->routeClass = $class;
         $this->routeMethod = $method;
-        $obj = new $class;
+        //$obj = new $class;
+        $obj  = $vitex->container->get($class);
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return null;

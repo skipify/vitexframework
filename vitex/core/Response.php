@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
@@ -296,7 +296,7 @@ class Response
      * @param  string $expires 过期时间
      * @return self
      */
-    public function setCookie($key, $name, $expires = '')
+    public function setCookie($key, $name, $expires = null)
     {
         if (!$this->_cookie) {
             $this->_cookie = new Cookie();

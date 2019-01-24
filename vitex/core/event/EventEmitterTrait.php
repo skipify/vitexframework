@@ -4,7 +4,7 @@
  * 事件trait 方便实现接口
  */
 
-namespace vitex\service\event;
+namespace vitex\core\event;
 
 use Invoker\Invoker;
 use vitex\core\Exception;

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
@@ -12,15 +12,20 @@
 
 namespace vitex;
 
-use DI\Container;
+use Psr\Log\LoggerInterface;
+use vitex\core\Env;
+use vitex\core\event\EventEmitter;
 use vitex\core\Exception;
 use vitex\core\Loader;
+
+use vitex\core\Request;
+use vitex\core\Response;
+use vitex\core\Route;
 use vitex\core\RouteHandlerInterface;
-use vitex\helper\LogWriter;
 use vitex\helper\Utils;
-use vitex\middleware;
-use vitex\service\event\EventEmitter;
-use vitex\View;
+use vitex\service\ConfigProvider;
+use vitex\service\Container;
+
 
 if (!Utils::phpVersion('7.0')) {
     throw new Exception("I am at least PHP version 7.0.0");
@@ -28,7 +33,7 @@ if (!Utils::phpVersion('7.0')) {
 
 class Vitex extends EventEmitter
 {
-    const VERSION = "1.0.0";
+    const VERSION = "1.0.0-alpha1";
     /**
      * App instance
      */
@@ -39,80 +44,23 @@ class Vitex extends EventEmitter
      */
     public $appName = 'app';
     /**
-     * This is a data container;
+     * 配置文件服务
      * @var array
      */
-    private $settings;
+    private $configProvider;
 
     /**
      * 容器对象
      * @var Container
      */
-    protected $container;
+    public $container;
 
     /**
      * 已经初始化或者注入的应用
      * @var array
      */
     private $initApps = [];
-    /**
-     * 默认的系统配置
-     * @var array
-     */
-    private $defaultSetting = array(
-        'debug' => false,
-        // View
-        'templates.path' => './templates', //模板的默认路径
-        'templates.ext' => '.html',//模板文件的默认扩展名，当省略扩展名时会自动添加
-        'view' => '\vitex\View', //view类，可以替换为其他的view层
-        'callback' => 'callback', //jsonp时自动获取的值
-        'csrf.open' => true,
-        'csrf.onmismatch' => null,//一个回调方法 callable，当token不匹配出错的时候回执行
-        'csrf.except' => [], //排除的路由规则
-        'router.grouppath' => '',
-        'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
-        'router.case_sensitive' => false, //是否区分大小写
-        'methodoverride.key' => '__METHOD', //url request method 重写的key
-        'cookies.encrypt' => true, //是否启用cookie加密
-        'cookies.lifetime' => '20 minutes',
-        'cookies.path' => '/',
-        'cookies.domain' => null,
-        'cookies.secure' => false,
-        'cookies.httponly' => false,
-        'cookies.secret_key' => 'Vitex is a micro restfull framework',
-        /**
-         * 会话管理
-         * file  cache native//
-         */
-        'session.driver' => 'native',
-        /**
-         * 会话存活期  分钟
-         */
-        'session.lifetime' => 15,
-        /**
-         * 文件保存配置的时候的路径
-         */
-        'session.file.path' => '',
 
-        /**
-         * redis memcache数据缓存时候的实例
-         */
-        'session.cache.instance' => null,
-
-        /**
-         * 打印到屏幕的日志格式，默认为html格式，可以更改为txt格式
-         * html|text 两种类型
-         */
-        'log.format' => 'html',
-
-        'charset' => 'utf-8',
-    );
-    /**
-     * 两个内置的hooks执行点
-     * before.router
-     * after.router
-     */
-    protected $hooks = [];
     /**
      * 保存debug的一些方便的信息
      */
@@ -154,7 +102,7 @@ class Vitex extends EventEmitter
      * Vitex constructor.
      * @param mixed $setting
      */
-    private function __construct($setting = [])
+    private function __construct()
     {
         $this->execTime();//记录执行开始时间
         //注册加载 加载器
@@ -163,29 +111,22 @@ class Vitex extends EventEmitter
         $this->loader->addNamespace('\vitex', __DIR__);
         $this->loader->register();
 
-        //init app
-        $this->settings = $this->defaultSetting;
-        $this->setConfig($setting);
-
-        /**
-         * 声明容器
-         */
         $this->container = new Container();
 
 
         //初始化各种变量
-        $this->env = core\Env::getInstance();
-        $this->route = new core\Route();
+        $this->env = $this->container->get(Env::class);
+        $this->route = $this->container->get(Route::class);
         //初始化 request response
-        $this->req = core\Request::getInstance();
-        $this->res = core\Response::getInstance();
-        $this->res->url = function ($url, $params = []) {
-            return $this->url($url, $params);
-        };
+        $this->req = $this->container->get(Request::class);
+        $this->res = $this->container->get(Response::class);
+
+        $this->configProvider = $this->container->get(ConfigProvider::class);
+
         //view视图
         $this->view = null;
         //日志
-        $this->log = new Log();
+        $this->log = $this->container->get(LoggerInterface::class);
 
         $this->using(new middleware\Csrf());
         //添加第一个中间件，他总是最后一个执行
@@ -209,7 +150,7 @@ class Vitex extends EventEmitter
     public function errorHandler($errno, $errstr = '', $errfile = '', $errline = '')
     {
         if (!($errno & error_reporting())) {
-            return;
+            return null;
         }
         $this->log->error("Code:{code}\tMsg:{msg}\tFile:{file}\tLine:{line}",
             ['code' => $errno, 'msg' => $errstr, 'file' => $errfile, 'line' => $errline]);
@@ -432,20 +373,7 @@ class Vitex extends EventEmitter
      */
     public function setConfig($name, $val = null)
     {
-        $setting = $this->settings;
-        if (is_array($name)) {
-            $setting = array_merge($setting, $name);
-        } elseif ($val === null) {
-            if (file_exists($name)) {
-                $configs = include $name;
-                $setting = array_merge($setting, $configs);
-            } else {
-                throw new Exception("不存在的配置文件:" . $name);
-            }
-        } else {
-            $setting[$name] = $val;
-        }
-        $this->settings = $setting;
+        $this->configProvider->setConfig($name,$val);
         return $this;
     }
 
@@ -456,8 +384,7 @@ class Vitex extends EventEmitter
      */
     public function getConfig($name)
     {
-        $setting = $this->settings;
-        return $setting[$name] ?? null;
+        return $this->configProvider->getConfig($name);
     }
 
     /**
@@ -843,11 +770,11 @@ class Vitex extends EventEmitter
      */
     public function routeDispatch()
     {
-        $this->applyHook('sys.before.router');
+        $this->emit('sys.before.router');
         //分组
         $this->route->applyGroup();
         $this->route->next();
-        $this->applyHook('sys.after.router');
+        $this->emit('sys.after.router');
         return $this;
     }
 
@@ -859,9 +786,6 @@ class Vitex extends EventEmitter
         //输出指定编码以及格式
         $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
         set_error_handler(array($this, 'errorHandler'));
-        if ($this->getConfig('debug')) {
-            $this->log->setWriter(new LogWriter());
-        }
         $this->runLoadMiddleware();
         $this->routeDispatch();
 

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.3.0
@@ -12,6 +12,7 @@
 
 namespace vitex\core;
 
+use Invoker\Invoker;
 use vitex\Vitex;
 
 /**
@@ -84,7 +85,7 @@ class Route
                 $url = $this->env->getPathinfo();
                 $patterns = $this->router->getPattern();
 
-                if($vitex->getConfig('log.format') == 'html'){
+                if ($vitex->getConfig('log.format') == 'html') {
                     echo '<h2>Router Detail</h2>';
                     echo '<strong>URL</strong>: ' . $url . '<br /><strong>Matcher:</strong>';
                     echo '<ul>';
@@ -314,13 +315,14 @@ class Route
         $vitex = Vitex::getInstance();
         $call = $this->_router->current();
         if (is_callable($call)) {
-            call_user_func($call, $vitex->req, $vitex->res, function () {
-                $this->nextRouter();
-            });
+            if($call instanceof \Closure){
+                $vitex->container->call($call);
+            } else {
+                call_user_func_array($call,[]);
+            }
+
         } else {
-            call_user_func($this->_notfound, $vitex->req, $vitex->res, function () {
-                $this->nextRouter();
-            });
+            call_user_func_array($this->_notfound,[]);
         }
         return $this;
     }

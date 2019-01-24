@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
@@ -9,27 +9,40 @@
  * @copyright skipify
  * @license MIT
  */
+
 namespace vitex\helper;
+
+use vitex\core\event\EventEmitterTrait;
+
 
 /**
  * 用于实现ArrayAccess,Iterator,Countable的接口方法的Trait
  */
 trait SetMethod
 {
+    use EventEmitterTrait;
+
     protected $_data = [];
-    protected $_pos  = 0;
+    protected $_pos = 0;
 
     public function offsetExists($val)
     {
         return isset($this->_data[$val]);
     }
 
+    /**
+     * 会触发添加事件
+     * @param $key
+     * @param $val
+     */
     public function offsetSet($key, $val)
     {
         if (is_null($key)) {
             $this->_data[] = $val;
+            $this->emit('set', $this->_data);
         } else {
             $this->_data[$key] = $val;
+            $this->emit('set', $this->_data);
         }
     }
 
@@ -38,9 +51,16 @@ trait SetMethod
         return $this->_data[$key] ?? null;
     }
 
+    /**
+     * 会触发 remove/unset事件 事件参数为
+     * @param $key
+     */
     public function offsetUnset($key)
     {
+        $val = $this->_data[$key] ?? null;
         unset($this->_data[$key]);
+        $this->emit('remove', [$val]);
+        $this->emit('unset', [$val]);
     }
 
     public function __isset($val)

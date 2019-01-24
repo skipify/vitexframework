@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
  * @version  0.2.0
@@ -10,15 +10,15 @@
  * @license MIT
  */
 
-namespace vitex;
+namespace vitex\service\log;
 
-use vitex\helper\LogWriter;
+use Psr\Log\LoggerInterface;
 
 /**
  * 符合PSR-3标准的日志接口
  * @link( http://www.php-fig.org/psr/psr-3/, psr-3)
  */
-class Log
+class Log implements LoggerInterface
 {
     /**
      * @var String log级别
@@ -35,12 +35,23 @@ class Log
     protected $enabled;
     protected $level = 0;
     /**
-     * @var array|null|LogWriter
+     * @var array
      */
-    protected $writer = [];
-    public function __construct($writer = null)
+    protected $handlers = [];
+
+    /**
+     * 日志的名字
+     * @var
+     */
+    private $name;
+
+    /**
+     * 日志名称
+     * @param string $name
+     */
+    public function __construct($name = '')
     {
-        $this->writer  = $writer;
+        $this->name = $name;
         $this->enabled = true;
     }
 
@@ -49,10 +60,9 @@ class Log
      * @param $writer
      * @return $this
      */
-    public function setWriter($writer)
+    public function pushHandler($handler)
     {
-        $name                = get_class($writer);
-        $this->writer[$name] = $writer;
+        $this->handlers[] = $handler;
         return $this;
     }
 
@@ -61,9 +71,9 @@ class Log
      * 支持多重日志写入
      * @return callable
      */
-    public function getWriter()
+    public function getHandlers()
     {
-        return $this->writer;
+        return $this->handlers;
     }
 
     /**
@@ -199,7 +209,7 @@ class Log
      */
     public function log($level, $message, array $context = array())
     {
-        if ($this->enabled && $this->writer) {
+        if ($this->enabled && $this->handlers) {
             if (is_array($message) || (is_object($message) && !method_exists($message, '__toString'))) {
                 $message = print_r($message, true);
             } else {
@@ -214,13 +224,13 @@ class Log
                 $message = $this->interpolate($message, $context);
             }
             /**
-             * @var $writer Logwriter
+             * @var $handler LogHandlerInterface
              */
-            foreach ($this->writer as $writer) {
-                $writer->write($level, $message);
+            foreach ($this->handlers as $handler) {
+                $handler->write($level, $message);
             }
         } else {
-            return false;
+            return null;
         }
         return null;
     }
