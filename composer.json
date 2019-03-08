@@ -1,6 +1,6 @@
 {
     "name": "skipify/vitex",
-    "version":"0.14.0",
+    "version":"0.15.0",
     "description": "A Tiny Framework.轻量级的php resetful框架.",
     "keywords": ["framework", "vitex","phpframework"],
     "license": "MIT",

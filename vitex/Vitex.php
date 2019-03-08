@@ -26,7 +26,7 @@ if (!Utils::phpVersion('5.5')) {
 
 class Vitex
 {
-    const VERSION = "0.14.0";
+    const VERSION = "0.15.0";
     /**
      * App instance
      */

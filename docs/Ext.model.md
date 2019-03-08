@@ -846,7 +846,8 @@ integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. �
 
 ### count()
 
-统计数量，select count(*) from user            
+统计数量，select count(*) from user 
+**注意** 如果使用distinct查询去重条数 则 count传递的参数失败，具体查看下方示例
 
 **签名**  
 
@@ -861,6 +862,7 @@ integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. �
 `$this->count()` // select count(*) from user   
 
 `$this->from('table')->count('name')`  
+`$this->from('table')->distinct("age")->count()`
 
 ### pluck()
 
