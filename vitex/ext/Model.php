@@ -713,7 +713,13 @@ class Model
         } else {
             $table = $this->table;
         }
-
+        /**
+         * 处理子查询问题
+         * 子查询使用()包裹
+         */
+        if(strpos($table,')') !== false && strpos($table,'(') !== false){
+            return $table;
+        }
         $table = $this->prefix . $table;
         return $this->formatTable($table);
     }
@@ -1003,7 +1009,14 @@ class Model
         if ($iscount) {
             $field = is_bool($iscount) ? '*' : $iscount;
             $field = $this->formatColumn($field);
-            $sql .= 'count(' . $field . ') as num ';
+            if ($this->_sql['distinct']) {
+                if(count($this->_sql['distinct']) > 1){
+                    throw new Exception(Exception::CODE_PARAM_ERROR_MSG.'DISTINCT 用于COUNT只能一个字段',Exception::CODE_PARAM_ERROR);
+                }
+                $sql .= 'count(distinct ' . $this->_sql['distinct'][0] . ') as num ';
+            } else {
+                $sql .= 'count(' . $field . ') as num ';
+            }
         } else {
             if ($this->_sql['distinct']) {
                 $sql .= 'distinct (' . implode(',', $this->_sql['distinct']) . ') ';
