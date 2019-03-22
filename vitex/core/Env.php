@@ -28,6 +28,16 @@ class Env implements \ArrayAccess
     private static $_instance = null;
 
     /**
+     * 系统运行环境  开发环境
+     */
+    const MODE_ENV_DEVELOPMENT = 'development';
+
+    /**
+     * 系统运行环境  生产环境
+     */
+    const MODE_ENV_PRODUCTION = 'production';
+
+    /**
      * 可能会因为设置了分组而重新设置这个pathinfo信息
      */
     protected $_pathinfo = null;
@@ -130,6 +140,27 @@ class Env implements \ArrayAccess
         $this->_pathinfo = $pathinfo;
         return $this;
     }
+
+    /**
+     * 判断为什么模式
+     * 模式为  生产模式和 开发模式
+     * 默认不指定参数会判断是否属于生产模式
+     * @param string $mode
+     * @return bool
+     */
+    public function is($mode = self::MODE_ENV_PRODUCTION)
+    {
+        if(defined('MODE_ENV')){
+            if(MODE_ENV == $mode){
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return $mode == self::MODE_ENV_PRODUCTION;
+        }
+    }
+
 
     /**
      * Array Access
