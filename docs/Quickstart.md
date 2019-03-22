@@ -78,3 +78,15 @@ Vitex定位于中小型项目，主要是API开发。
 也就是vitex推荐的目录布局是在网站访问目录仅仅包含 index.php入口文件（可以多个）
 
 如网站目录为  `/home/www/website`  那么 你使用 vitex初始化工具时填写的路径应该是  `/home/www/website`  那么你的网站根目录为  `/home/www/website/webroot/`
+
+## 如何区分生产模式和开发模式
+
+约定在入口文件的开头定义一个常量 `MODE_ENV`
+
+当此值为 `Env::MODE_DEVELOPMENT` 即字符串'development'时为开发者模式
+当此值为 `Env::MODE_PRODUCTION` 即字符串'production'时为生产模式
+
+可以使用 `$vitex->env->is()` 来判断是否为生产模式
+
+传递参数可以指定是否为指定模式 `$vitex->env->is('development')`
+
