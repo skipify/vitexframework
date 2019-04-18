@@ -19,3 +19,11 @@ Vitex尤其适合编写API型的应用，通过灵活的路由管理可以让你
 	->delete('/user/:id',function(){
 		//删除
 	});
+	
+	
+# 开发模式
+
+可以在入口文件中定义一个常量 `MODE_ENV`	来区分是生产环境还是开发环境，在 `Env`类中有两个常量
+`Env::MODE_ENV_DEVELOPMENT`   `Env::MODE_ENV_PRODUCTION`  来定义开发和非开发环境
+
+可以使用 `$this->env->is($mode)`来判断是什么模式

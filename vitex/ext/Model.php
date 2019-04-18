@@ -995,9 +995,10 @@ class Model
 
     /**
      * 构建sql语句
-     * @param  bool $iscount
-     * @throws \Error
+     * @param bool $iscount
      * @return string
+     * @throws Exception
+     * @throws \Error
      */
     private function buildSql($iscount = false)
     {
@@ -1020,10 +1021,10 @@ class Model
         } else {
             if ($this->_sql['distinct']) {
                 $sql .= 'distinct (' . implode(',', $this->_sql['distinct']) . ') ';
+            } else {
+                $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
+                $sql .= $field . ' ';
             }
-
-            $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
-            $sql .= $field . ' ';
         }
 
         $sql .= " from " . $this->getTable() . ' ';
