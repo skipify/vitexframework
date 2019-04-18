@@ -1019,10 +1019,10 @@ class Model
         } else {
             if ($this->_sql['distinct']) {
                 $sql .= 'distinct (' . implode(',', $this->_sql['distinct']) . ') ';
+            } else {
+                $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
+                $sql .= $field . ' ';
             }
-
-            $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
-            $sql .= $field . ' ';
         }
 
         $sql .= " from " . $this->getTable() . ' ';
