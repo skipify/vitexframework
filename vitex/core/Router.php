@@ -619,7 +619,7 @@ class Router
         /**
          * 返回一个可执行的闭包
          */
-        return function () use ($obj, $method, $routeMethods) {
+        return function () use ($obj, $method, $routeMethods,$vitex) {
             /**
              * 路由前执行的方法
              */
@@ -633,10 +633,10 @@ class Router
              */
             if (isset($routeMethods['wrap'])) {
                 $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method) {
-                    return $obj->{$method}();
+                    return $vitex->container->call([$obj,$method]);
                 }, Request::getInstance(), Response::getInstance(),$beforeData]);
             } else {
-                $result = $obj->{$method}();
+                $result = $vitex->container->call([$obj,$method]);
             }
 
             /**
