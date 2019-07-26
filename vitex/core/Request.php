@@ -142,7 +142,9 @@ class Request implements \ArrayAccess, \Iterator
         $ip = $this->env->get("HTTP_CLIENT_IP");
         $ip = $ip ?: $this->env->get("HTTP_X_FORWARDED_FOR");
         $ip = $ip ?: $this->env->get("REMOTE_ADDR");
-        $ip = long2ip(ip2long($ip));
+        if($ip){
+            $ip = long2ip(ip2long($ip));
+        }
         return $ip;
     }
 
