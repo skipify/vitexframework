@@ -12,6 +12,8 @@
 
 namespace vitex;
 
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use vitex\core\Exception;
 use vitex\core\Loader;
 use vitex\core\RouteHandlerInterface;
@@ -98,6 +100,8 @@ class Vitex
         'log.format' => 'html',
 
         'charset' => 'utf-8',
+        'log.name' => 'app',
+        'log.filepath' => '/tmp/php.log',
     );
     /**
      * 两个内置的hooks执行点
@@ -138,6 +142,11 @@ class Vitex
     public $res;
 
     /**
+     * @var Logger
+     */
+    public $logger;
+
+    /**
      * Vitex constructor.
      * @param mixed $setting
      */
@@ -167,6 +176,14 @@ class Vitex
         $this->view = null;
         //日志
         $this->log = new Log();
+
+        $this->logger = new Logger($this->settings['log.name']);
+        $this->logger->pushHandler(
+            new StreamHandler(
+                $this->settings['log.filepath'],
+                Logger::INFO
+            )
+        );
 
         $this->using(new middleware\Csrf());
         //添加第一个中间件，他总是最后一个执行

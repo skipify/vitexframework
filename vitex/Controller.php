@@ -11,6 +11,7 @@
  */
 namespace vitex;
 
+use Monolog\Logger;
 use vitex\core\Exception;
 
 /**
@@ -43,6 +44,11 @@ class Controller
      */
     public $view;
 
+    /**
+     * @var Logger
+     */
+    public $logger;
+
     //处理一些变量
     public function __construct()
     {
@@ -57,6 +63,8 @@ class Controller
 
         //日志
         $this->log = $this->vitex->log;
+
+        $this->logger = $this->vitex->logger;
     }
 
     /**
