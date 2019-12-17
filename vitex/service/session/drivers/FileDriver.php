@@ -30,7 +30,7 @@ class FileDriver implements SessionDriverInterface
         $this->storePath = $vitex->getConfig('session.file.path');
         $this->lifetime = $vitex->getConfig('session.lifetime');
 
-        if(!$this->storePath){
+        if (!$this->storePath) {
             $this->storePath = sys_get_temp_dir();
         }
     }
@@ -54,6 +54,17 @@ class FileDriver implements SessionDriverInterface
     public function delete($key)
     {
         unlink($this->storePath . '/' . $key);
+    }
+
+    public function gc($maxlifetime)
+    {
+        file_put_contents("/home/www/gc.txt",1);
+        $expireTime = time() - ($maxlifetime * 60);
+        foreach (glob($this->storePath.'/*') as $file) {
+            if (is_file($file) && filemtime($file) < $expireTime) {
+                @unlink($file);
+            }
+        }
     }
 
     /**

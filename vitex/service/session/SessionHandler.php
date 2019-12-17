@@ -51,6 +51,7 @@ class SessionHandler implements \SessionHandlerInterface
 
     public function gc($maxlifetime)
     {
+        $this->driver->gc($maxlifetime);
         return true;
     }
 

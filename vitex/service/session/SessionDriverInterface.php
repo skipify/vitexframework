@@ -36,4 +36,10 @@ interface SessionDriverInterface
      * @return mixed
      */
     public function delete($key);
+
+    /**
+     * 回收文件
+     * @return mixed
+     */
+    public function gc($maxlifetime);
 }
