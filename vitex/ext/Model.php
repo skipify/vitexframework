@@ -1129,6 +1129,9 @@ class Model
                     case 'is':
                         $sql .= $column . ' ' . $op . ' null ';
                         break;
+                    case 'find_in_set':
+                        $sql .= " find_in_set('$val',$column) ";
+                        break;
                     default:
                         if (!is_numeric($val) || $val > 65535) {
                             $val = "'" . $val . "'";
