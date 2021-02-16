@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
  * @package vitex
@@ -12,10 +12,9 @@
 
 namespace vitex\middleware;
 
-use vitex\ext\sessionhandler\CacheHandler;
-use vitex\ext\sessionhandler\FileHandler;
 use vitex\helper\SetMethod;
 use vitex\Middleware;
+use vitex\service\session\SessionHandler;
 use vitex\Vitex;
 
 /**
@@ -24,6 +23,7 @@ use vitex\Vitex;
 class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 {
     use SetMethod;
+
     public function __construct($sid = '')
     {
 
@@ -51,21 +51,14 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
     private function setSessionHandler()
     {
         $vitex = Vitex::getInstance();
-        $driver = $vitex->getConfig('session.driver');
-        switch ($driver){
-            case 'cache':
-                session_set_save_handler(new CacheHandler(),true);
-                break;
-            case 'file':
-                session_set_save_handler(new FileHandler(),true);
-                break;
-        }
+        $instance = $vitex->container->get(SessionHandler::class);
+        session_set_save_handler($instance, true);
     }
 
     /**
      * 设置session的值
-     * @param  mixed   $key session键名，如果为数组时则为包含键值的一个关联数组
-     * @param  mixed   $val session值，如果第一个参数是数组的时候此参数不需要指定
+     * @param  mixed $key session键名，如果为数组时则为包含键值的一个关联数组
+     * @param  mixed $val session值，如果第一个参数是数组的时候此参数不需要指定
      * @return $this
      */
     public function set($key, $val = null)
@@ -77,9 +70,10 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
         }
         return $this;
     }
+
     /**
      * 获取指定键名的session值，如果不指定则返回整个session
-     * @param  mixed $key           键名
+     * @param  mixed $key 键名
      * @return mixed 返回的值
      */
     public function get($key = null)
@@ -90,6 +84,7 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
             return $_SESSION;
         }
     }
+
     public function offsetExists($val)
     {
         return isset($_SESSION[$val]);
@@ -106,7 +101,7 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 
     public function offsetGet($key)
     {
-        return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
+        return $_SESSION[$key] ?? null;
     }
 
     public function offsetUnset($key)

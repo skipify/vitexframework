@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * 命令行执行时支持路由
  *  php index.php /home/user

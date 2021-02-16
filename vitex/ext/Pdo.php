@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
  * @package vitex
@@ -35,8 +35,8 @@ class Pdo extends Middleware
         if (is_resource($setting)) {
             $this->pdo = $setting;
         } else if (is_array($setting)) {
-            $username = $username ?: (isset($setting['username']) ? $setting['username'] : '');
-            $password = $password ?: (isset($setting['password']) ? $setting['password'] : '');
+            $username = $username ?: ($setting['username'] ?? '');
+            $password = $password ?: ($setting['password'] ?? '');
             try {
                 $this->pdo = new \Pdo($this->getDsn($setting), $username, $password);
             } catch (\PDOException $e) {
@@ -61,8 +61,8 @@ class Pdo extends Middleware
      */
     public function getDsn($p)
     {
-        $this->engine = isset($p['engine']) ? $p['engine'] : $this->engine;
-        return $this->engine . ':dbname=' . $p['database'] . ';host=' . $p['host'] . ';charset=' . (isset($p['charset']) ? $p['charset'] : 'utf8');
+        $this->engine = $p['engine'] ?? $this->engine;
+        return $this->engine . ':dbname=' . $p['database'] . ';host=' . $p['host'] . ';charset=' . ($p['charset'] ?? 'utf8');
     }
 
     /**

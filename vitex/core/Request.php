@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
  * @package vitex
@@ -9,7 +9,6 @@
  * @copyright skipify
  * @license MIT
  */
-
 namespace vitex\core;
 
 use vitex\ext\Filter;
@@ -23,7 +22,7 @@ class Request implements \ArrayAccess, \Iterator
 {
 
     //环境变量
-    public $uploadError;
+    public  $uploadError;
     private $env, $isstrip = false;
     //当前实例
     private static $_instance = null;
@@ -120,7 +119,7 @@ class Request implements \ArrayAccess, \Iterator
         //请求协议
         $protocol = $this->env->get('SERVER_PROTOCOL');
         //设置变量
-        if ($protocol) {
+        if($protocol){
             list($this->protocol, $this->version) = explode('/', $protocol);
             if ($this->protocol == 'https') {
                 $this->secure = true;
@@ -143,9 +142,15 @@ class Request implements \ArrayAccess, \Iterator
         $ip = $this->env->get("HTTP_CLIENT_IP");
         $ip = $ip ?: $this->env->get("HTTP_X_FORWARDED_FOR");
         $ip = $ip ?: $this->env->get("REMOTE_ADDR");
-        $ip = long2ip(ip2long($ip));
+        if($ip){
+            $ipInt = ip2long($ip);
+            if(is_integer($ipInt)){
+                $ip = long2ip($ipInt);
+            }
+        }
         return $ip;
     }
+
 
     /**
      *
@@ -469,7 +474,7 @@ class Request implements \ArrayAccess, \Iterator
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new Exception('Not Method ' . $method . ' Found In Request!', Exception::CODE_NOTFOUND_METHOD);
+            throw new Exception('Not Method ' . $method . ' Found In Request!',Exception::CODE_NOTFOUND_METHOD);
         }
         return call_user_func_array($this->methods[$method], $args);
     }

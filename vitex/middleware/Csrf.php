@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * 跨站防御
  * User: skipify
@@ -95,7 +95,7 @@ class Csrf extends Middleware
             $token = $this->vitex->req->session['_csrf_token'];
         }
         $this->saveScrefToken($token);
-        $this->vitex->applyHook("sys.after.generate_csrf_token",$token);
+        $this->vitex->emit("sys.after.generate_csrf_token",[$token]);
         return $token;
     }
 

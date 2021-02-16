@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
  * @package vitex
@@ -12,12 +12,14 @@
 namespace vitex;
 
 use vitex\core\Exception;
+use vitex\service\event\EventEmitterInterface;
+use vitex\service\event\EventEmitterTrait;
 
 /**
  * Vitex开发基类
  * @package Vitex
  * @method hook(string $name, callable $call, int $priority = 100)
- * @method applyHook(string $name)
+ * @method emit(string $name)
  * @method getHooks(string $name)
  * @method runMiddleware(Middleware $middleware)
  * @method execTime(string $symbol)
@@ -43,6 +45,11 @@ class Controller
      */
     public $view;
 
+    /**
+     * @var
+     */
+    public $container;
+
     //处理一些变量
     public function __construct()
     {
@@ -57,6 +64,8 @@ class Controller
 
         //日志
         $this->log = $this->vitex->log;
+
+        $this->container = $this->vitex->container;
     }
 
     /**
@@ -72,7 +81,7 @@ class Controller
      * 设置配置文件
      * @param  string /array $name 键值/数组配置
      * @param  string /null  $val 值
-     * @return self
+     * @return Vitex
      */
     public function setConfig($name, $val = null)
     {
@@ -119,9 +128,7 @@ class Controller
         if (!$name) {
             return null;
         }
-        if (isset($this->vitex->{$name})) {
-            return $this->vitex->{$name};
-        }
-        return null;
+        return $this->vitex->{$name} ?? null;
     }
 }
+

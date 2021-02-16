@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.2.0
  *
  * @package vitex
@@ -106,6 +106,12 @@ class Model
     private $justSql = false;
 
     /**
+     * PDO执行的statement句柄
+     * @var
+     */
+    private $sth;
+
+    /**
      * 上一次检索时间
      * @var
      */
@@ -173,7 +179,7 @@ class Model
      */
     public function __get($key)
     {
-        return isset($this->_post[$key]) ? $this->_post[$key] : null;
+        return $this->_post[$key] ?? null;
     }
 
     public function __set($key, $val)
@@ -380,7 +386,7 @@ class Model
      * 基本的whereIn查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
      * @param mixed $val 值
-     * @return $this
+     * @return Model
      * @throws Exception
      * @throws \Error
      */
@@ -968,6 +974,7 @@ class Model
         return $this;
     }
 
+
     /**
      * 当第一个条件成立时则执行后面的回调方法 回调方法会接受当前控制器的实例为参数
      * @param $condition
@@ -996,6 +1003,7 @@ class Model
      * 构建sql语句
      * @param bool $iscount
      * @return string
+     * @throws Exception
      * @throws \Error
      */
     private function buildSql($iscount = false)
@@ -1191,11 +1199,11 @@ class Model
         if ($this->justSql) {
             return true;
         }
-        $sth = $this->pdo->prepare($sql);
-        $ret = $sth->execute($arr);
+        $this->sth = $this->pdo->prepare($sql);
+        $ret = $this->sth->execute($arr);
         $this->lastQueryAt = time();
         $this->resetCon();
-        return $ret ? $sth->rowCount() : $ret;
+        return $ret ? $this->sth->rowCount() : $ret;
     }
 
     /**
@@ -1489,7 +1497,7 @@ class Model
         }
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
-        return isset($info['num']) ? $info['num'] : 0;
+        return $info['num'] ?? 0;
     }
 
     /**
@@ -1570,7 +1578,7 @@ class Model
         }
         $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
-        return isset($info['info']) ? $info['info'] : 0;
+        return $info['info'] ?? 0;
     }
 
     /**

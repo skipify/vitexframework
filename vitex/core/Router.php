@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
  * @package vitex
@@ -114,7 +114,7 @@ class Router
         if ($name === null) {
             return $this->regexps;
         }
-        return isset($this->regexps[$name]) ? $this->regexps[$name] : '[^/]+';
+        return $this->regexps[$name] ?? '[^/]+';
     }
 
     /**
@@ -459,7 +459,6 @@ class Router
             $matcher = $matcher . $cases;
         } else {
             //替换 *为匹配除了 /分组之外的所有内容
-
             /**
              * 防止路由中出现正则表达式特殊字符 例如 - : <> 这样的特殊字符
              */
@@ -600,18 +599,19 @@ class Router
         $strs = explode('@', $str);
         $class = array_shift($strs);
         $method = strtolower($strs ? array_pop($strs) : $httpmethod);
+        $vitex = Vitex::getInstance();
 
         //完全限定命名空间
         if ($class[0] != '\\') {
             //当前应用
-            $vitex = Vitex::getInstance();
             $app = $appName ?: $vitex->appName;
             $class = '\\' . $app . '\\controller\\' . $class;
         }
 
         $this->routeClass = $class;
         $this->routeMethod = $method;
-        $obj = new $class;
+        //$obj = new $class;
+        $obj  = $vitex->container->get($class);
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return null;
@@ -619,7 +619,7 @@ class Router
         /**
          * 返回一个可执行的闭包
          */
-        return function () use ($obj, $method, $routeMethods) {
+        return function () use ($obj, $method, $routeMethods,$vitex) {
             /**
              * 路由前执行的方法
              */
@@ -632,11 +632,11 @@ class Router
              * 包裹路由执行
              */
             if (isset($routeMethods['wrap'])) {
-                $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method) {
-                    return $obj->{$method}();
+                $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method,$vitex) {
+                    return $vitex->container->call([$obj,$method]);
                 }, Request::getInstance(), Response::getInstance(),$beforeData]);
             } else {
-                $result = $obj->{$method}();
+                $result = $vitex->container->call([$obj,$method]);
             }
 
             /**

@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Vitex 一个基于php5.5开发的 快速开发restful API的微型框架
+ * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
  * @version  0.3.0
  *
  * @package vitex
@@ -12,21 +12,28 @@
 
 namespace vitex;
 
+use Psr\Log\LoggerInterface;
+use vitex\core\Env;
+use vitex\core\event\EventEmitter;
 use vitex\core\Exception;
 use vitex\core\Loader;
-use vitex\core\RouteHandlerInterface;
-use vitex\helper\LogWriter;
-use vitex\helper\Utils;
-use vitex\middleware;
-use vitex\View;
 
-if (!Utils::phpVersion('5.5')) {
-    throw new Exception("I am at least PHP version 5.5.0");
+use vitex\core\Request;
+use vitex\core\Response;
+use vitex\core\Route;
+use vitex\core\RouteHandlerInterface;
+use vitex\helper\Utils;
+use vitex\service\ConfigProvider;
+use vitex\service\Container;
+
+
+if (!Utils::phpVersion('7.0')) {
+    throw new Exception("I am at least PHP version 7.0.0");
 }
 
-class Vitex
+class Vitex extends EventEmitter
 {
-    const VERSION = "0.15.0";
+    const VERSION = "1.0.0-alpha1";
     /**
      * App instance
      */
@@ -37,74 +44,23 @@ class Vitex
      */
     public $appName = 'app';
     /**
-     * This is a data container;
+     * 配置文件服务
      * @var array
      */
-    private $settings;
+    private $configProvider;
+
+    /**
+     * 容器对象
+     * @var Container
+     */
+    public $container;
 
     /**
      * 已经初始化或者注入的应用
      * @var array
      */
     private $initApps = [];
-    /**
-     * 默认的系统配置
-     * @var array
-     */
-    private $defaultSetting = array(
-        'debug' => false,
-        // View
-        'templates.path' => './templates', //模板的默认路径
-        'templates.ext' => '.html',//模板文件的默认扩展名，当省略扩展名时会自动添加
-        'view' => '\vitex\View', //view类，可以替换为其他的view层
-        'callback' => 'callback', //jsonp时自动获取的值
-        'csrf.open' => true,
-        'csrf.onmismatch' => null,//一个回调方法 callable，当token不匹配出错的时候回执行
-        'csrf.except' => [], //排除的路由规则
-        'router.grouppath' => '',
-        'router.compatible' => false, //路由兼容模式，不支持pathinfo的路由开启
-        'router.case_sensitive' => false, //是否区分大小写
-        'methodoverride.key' => '__METHOD', //url request method 重写的key
-        'cookies.encrypt' => true, //是否启用cookie加密
-        'cookies.lifetime' => '20 minutes',
-        'cookies.path' => '/',
-        'cookies.domain' => null,
-        'cookies.secure' => false,
-        'cookies.httponly' => false,
-        'cookies.secret_key' => 'Vitex is a micro restfull framework',
-        /**
-         * 会话管理
-         * file  cache native//
-         */
-        'session.driver' => 'native',
-        /**
-         * 会话存活期  分钟
-         */
-        'session.lifetime' => 15,
-        /**
-         * 文件保存配置的时候的路径
-         */
-        'session.file.path' => '',
 
-        /**
-         * redis memcache数据缓存时候的实例
-         */
-        'session.cache.instance' => null,
-
-        /**
-         * 打印到屏幕的日志格式，默认为html格式，可以更改为txt格式
-         * html|text 两种类型
-         */
-        'log.format' => 'html',
-
-        'charset' => 'utf-8',
-    );
-    /**
-     * 两个内置的hooks执行点
-     * before.router
-     * after.router
-     */
-    protected $hooks = [];
     /**
      * 保存debug的一些方便的信息
      */
@@ -138,10 +94,15 @@ class Vitex
     public $res;
 
     /**
+     * @var core\Route
+     */
+    public $route;
+
+    /**
      * Vitex constructor.
      * @param mixed $setting
      */
-    private function __construct($setting = [])
+    private function __construct()
     {
         $this->execTime();//记录执行开始时间
         //注册加载 加载器
@@ -150,23 +111,22 @@ class Vitex
         $this->loader->addNamespace('\vitex', __DIR__);
         $this->loader->register();
 
-        //init app
-        $this->settings = $this->defaultSetting;
-        $this->setConfig($setting);
+        $this->container = new Container();
+
 
         //初始化各种变量
-        $this->env = core\Env::getInstance();
-        $this->route = new core\Route();
+        $this->env = $this->container->get(Env::class);
+        $this->route = $this->container->get(Route::class);
         //初始化 request response
-        $this->req = core\Request::getInstance();
-        $this->res = core\Response::getInstance();
-        $this->res->url = function ($url, $params = []) {
-            return $this->url($url, $params);
-        };
+        $this->req = $this->container->get(Request::class);
+        $this->res = $this->container->get(Response::class);
+
+        $this->configProvider = $this->container->get(ConfigProvider::class);
+
         //view视图
         $this->view = null;
         //日志
-        $this->log = new Log();
+        $this->log = $this->container->get(LoggerInterface::class);
 
         $this->using(new middleware\Csrf());
         //添加第一个中间件，他总是最后一个执行
@@ -174,6 +134,8 @@ class Vitex
         //命令行路由
         $this->using(new middleware\Cli());
         date_default_timezone_set('Asia/Shanghai');
+
+
     }
 
     /**
@@ -188,7 +150,7 @@ class Vitex
     public function errorHandler($errno, $errstr = '', $errfile = '', $errline = '')
     {
         if (!($errno & error_reporting())) {
-            return;
+            return null;
         }
         $this->log->error("Code:{code}\tMsg:{msg}\tFile:{file}\tLine:{line}",
             ['code' => $errno, 'msg' => $errstr, 'file' => $errfile, 'line' => $errline]);
@@ -228,7 +190,7 @@ class Vitex
     public function getInitApps($app)
     {
         if ($app) {
-            return isset($this->initApps[$app]) ? $this->initApps[$app] : null;
+            return $this->initApps[$app] ?? null;
         }
         return $this->initApps;
     }
@@ -276,7 +238,7 @@ class Vitex
         if (isset($this->multiApps[$host])) {
             $apps = $this->multiApps[$host];
         }
-        $defapps = isset($this->multiApps['default']) ? $this->multiApps['default'] : [];
+        $defapps = $this->multiApps['default'] ?? [];
         if (!$apps && !$defapps) {
             throw new Exception("无法找到设置的初始化映射规则");
         }
@@ -349,7 +311,7 @@ class Vitex
     {
         $pathinfo = trim($this->env->getPathinfo(), '/');
         $pathinfos = explode('/', $pathinfo);
-        $group = isset($pathinfos[0]) ? $pathinfos[0] : '';
+        $group = $pathinfos[0] ?? '';
         $_apps = null;
         if (isset($apps[$group])) {
             $_apps = $apps[$group];
@@ -397,7 +359,7 @@ class Vitex
 
             $_map[$skey] = $val;
         }
-        $oldMap = isset($this->multiApps[$domain]) ? $this->multiApps[$domain] : [];
+        $oldMap = $this->multiApps[$domain] ?? [];
         $this->multiApps[$domain] = array_merge($oldMap, $_map);
         return $this;
     }
@@ -411,20 +373,7 @@ class Vitex
      */
     public function setConfig($name, $val = null)
     {
-        $setting = $this->settings;
-        if (is_array($name)) {
-            $setting = array_merge($setting, $name);
-        } elseif ($val === null) {
-            if (file_exists($name)) {
-                $configs = include $name;
-                $setting = array_merge($setting, $configs);
-            } else {
-                throw new Exception("不存在的配置文件:" . $name);
-            }
-        } else {
-            $setting[$name] = $val;
-        }
-        $this->settings = $setting;
+        $this->configProvider->setConfig($name,$val);
         return $this;
     }
 
@@ -435,8 +384,7 @@ class Vitex
      */
     public function getConfig($name)
     {
-        $setting = $this->settings;
-        return isset($setting[$name]) ? $setting[$name] : null;
+        return $this->configProvider->getConfig($name);
     }
 
     /**
@@ -448,53 +396,6 @@ class Vitex
     public function url($url, $params = [])
     {
         return $this->route->router->url($url, $params);
-    }
-
-    /**
-     * 注册钩子函数
-     * @param  string $name 钩子名称
-     * @param  callable $call 可执行的方法
-     * @param  integer $priority 执行的优先级，数字越大越提前
-     * @return self
-     */
-    public function hook($name, callable $call, $priority = 100)
-    {
-        $priority = intval($priority);
-        $this->hooks[$name][] = array($call, $priority);
-        return $this;
-    }
-
-    /**
-     * 执行钩子方法
-     * @param string $name 钩子名称
-     * @return array
-     */
-    public function applyHook($name)
-    {
-        $calls = $this->getHooks($name);
-        usort($calls, function ($a, $b) {
-            return ($b[1] - $a[1]);
-        });
-        $args = func_get_args();
-        array_shift($args);
-        $rets = [];
-        foreach ($calls as list($call, $priority)) {
-            $rets[] = call_user_func_array($call, $args);
-        }
-        return $rets;
-    }
-
-    /**
-     * 获取指定钩子或者所有的hooks
-     * @param  string $name 钩子的名字
-     * @return array
-     */
-    public function getHooks($name = null)
-    {
-        if ($name == null) {
-            return $this->hooks;
-        }
-        return isset($this->hooks[$name]) ? $this->hooks[$name] : array();
     }
 
     /**
@@ -869,11 +770,11 @@ class Vitex
      */
     public function routeDispatch()
     {
-        $this->applyHook('sys.before.router');
+        $this->emit('sys.before.router');
         //分组
         $this->route->applyGroup();
         $this->route->next();
-        $this->applyHook('sys.after.router');
+        $this->emit('sys.after.router');
         return $this;
     }
 
@@ -885,13 +786,16 @@ class Vitex
         //输出指定编码以及格式
         $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
         set_error_handler(array($this, 'errorHandler'));
-        if ($this->getConfig('debug')) {
-            $this->log->setWriter(new LogWriter());
-        }
         $this->runLoadMiddleware();
         $this->routeDispatch();
 
         restore_error_handler();
+    }
+
+
+    public function __get($name)
+    {
+
     }
 
 }
