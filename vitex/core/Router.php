@@ -594,7 +594,7 @@ class Router
      * @param string $appName 路由注册的应用
      * @return callable 可执行的方法
      */
-    public function getCallable($str, $httpmethod, $appName = '', $routeMethods)
+    public function getCallable($str, $httpmethod, $appName = '', $routeMethods = [])
     {
         $strs = explode('@', $str);
         $class = array_shift($strs);
