@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace vitex\ext;
 
 
@@ -10,7 +11,7 @@ class Pagination
      * 显示的页码数量
      * @var integer
      */
-    protected $linknum   = 10;
+    protected $linknum = 10;
     protected $totalpage = null;
     /**
      * 信息总记录行数
@@ -28,9 +29,9 @@ class Pagination
      */
     protected $label = [
         'first' => '首页',
-        'last'  => '末页',
-        'prev'  => '上一页',
-        'next'  => '下一页',
+        'last' => '末页',
+        'prev' => '上一页',
+        'next' => '下一页',
     ];
     /**
      * 链接地址
@@ -49,10 +50,10 @@ class Pagination
             $this->{$key} = $val;
         }
         if (!$this->url) {
-            throw new Exception('请指定分页的URL',Exception::CODE_PARAM_NUM_ERROR);
+            throw new Exception('请指定分页的URL', Exception::CODE_PARAM_NUM_ERROR);
         }
         if ($this->totalpage === null && $this->totalrows === null) {
-            throw new Exception('总页数totalpage或者信息总条数totalrows至少要设置一个',Exception::CODE_PARAM_NUM_ERROR);
+            throw new Exception('总页数totalpage或者信息总条数totalrows至少要设置一个', Exception::CODE_PARAM_NUM_ERROR);
         }
         $this->totalpage = $this->totalpage ?: ceil($this->totalrows / $this->perpage);
     }
@@ -63,10 +64,10 @@ class Pagination
      * @param bool $retArr
      * @return string 返回的分页html
      */
-    public function get($wrap = "",$retArr = false)
+    public function get($wrap = "", $retArr = false)
     {
         $curpage = intval($_GET[$this->param] ?? 1);
-        $pages   = $this->getLink($this->url, $curpage);
+        $pages = $this->getLink($this->url, $curpage);
         if ($wrap) {
             foreach ($pages as &$page) {
                 $page = '<' . $wrap . '>' . $page . '</' . $wrap . '>';
@@ -74,6 +75,7 @@ class Pagination
         }
         return $retArr ? $pages : implode('', $pages);
     }
+
     /**
      * 获取分页数组
      * @return array 返回分页的数组，每个元素为一个页码
@@ -83,18 +85,19 @@ class Pagination
         $curpage = intval($_GET[$this->param] ?? 1);
         return $this->getLink($this->url, $curpage);
     }
+
     /**
      * 构造分页内容
-     * @param  string $url           链接url
-     * @param  int    $curpage       当前页码
+     * @param string $url 链接url
+     * @param int $curpage 当前页码
      * @return array  分页信息
      */
     protected function getLink($url, $curpage)
     {
-        $url               = strpos($url, '?') === false ? $url . '?' . $this->param . '=' : $url . '&' . $this->param . '=';
+        $url = strpos($url, '?') === false ? $url . '?' . $this->param . '=' : $url . '&' . $this->param . '=';
         list($start, $end) = $this->getPageBound($curpage);
 
-        $links   = [];
+        $links = [];
         $links[] = '<a href="' . $url . '1" class="firstpage">' . $this->label['first'] . '</a>';
         $links[] = '<a href="' . $this->getPrevUrl($curpage, $url) . '" class="prevpage">' . $this->label['prev'] . '</a>';
         for ($i = $start; $i <= $end; $i++) {
@@ -108,10 +111,11 @@ class Pagination
         $links[] = '<a href="' . $url . $this->totalpage . '" class="lastpage">' . $this->label['last'] . '</a>';
         return $links;
     }
+
     /**
      * 获取上一页的链接地址
-     * @param  int    $curpage       当前页码
-     * @param  string $url           当前链接地址
+     * @param int $curpage 当前页码
+     * @param string $url 当前链接地址
      * @return string 链接地址
      */
     public function getPrevUrl($curpage, $url)
@@ -122,10 +126,11 @@ class Pagination
         $pagenum = max(1, $curpage - 1);
         return $url . $pagenum;
     }
+
     /**
      * 获取上一页的链接地址
-     * @param  int    $curpage       当前页码
-     * @param  string $url           当前链接地址
+     * @param int $curpage 当前页码
+     * @param string $url 当前链接地址
      * @return string 链接地址
      */
     public function getNextUrl($curpage, $url)
@@ -136,20 +141,21 @@ class Pagination
         $pagenum = min($this->totalpage, $curpage + 1);
         return $url . $pagenum;
     }
+
     /**
      * 获取当前要展示的页面数
-     * @param  int   $curpage                         当前页码
+     * @param int $curpage 当前页码
      * @return array 要显示的页码开始结束
      */
     protected function getPageBound($curpage)
     {
         if ($this->totalpage <= $this->linknum) {
             $start = 1;
-            $end   = $this->totalpage;
+            $end = $this->totalpage;
         } else {
             $preNum = ceil($this->linknum / 2);
-            $start  = max(1, $curpage - $preNum);
-            $end    = min($this->totalpage, ($curpage + $preNum));
+            $start = max(1, $curpage - $preNum);
+            $end = min($this->totalpage, ($curpage + $preNum));
         }
         return [$start, $end];
     }

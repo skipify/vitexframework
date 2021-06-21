@@ -15,16 +15,19 @@
             "email": "skipify@qq.com"
         }
     ],
-    "bin": [
-        "vitex/ext/Init.php"
-    ],
     "require": {
-        "php": ">=7.0.0",
+        "php": ">=8.0.0",
         "ext-openssl": "*",
         "ext-mbstring": "*",
-        "php-di/php-di":"6.3.0"
+        "ext-pdo": "*",
+        "php-di/php-di":"^6.0",
+        "psr/log": "1.1.0",
+        "guzzlehttp/psr7": "^1.6.1",
+        "guzzlehttp/streams": "^3.0",
+        "monolog/monolog": "^2.2",
+        "doctrine/cache": "^1.10"
     },
     "autoload": {
-        "psr-4": {"vitex\\": "vitex"}
+        "psr-4": {"vitex\\": "vitex","vitex\\tests\\": "tests"}
     }
 }

@@ -2,6 +2,9 @@
 
 namespace vitex\service\session\drivers;
 
+use Doctrine\Common\Cache\FilesystemCache;
+use vitex\service\cache\CacheUtil;
+use vitex\service\session\SessionConfig;
 use vitex\service\session\SessionDriverInterface;
 use vitex\Vitex;
 
@@ -27,8 +30,9 @@ class FileDriver implements SessionDriverInterface
     public function __construct()
     {
         $vitex = Vitex::getInstance();
-        $this->storePath = $vitex->getConfig('session.file.path');
-        $this->lifetime = $vitex->getConfig('session.lifetime');
+        $sessionConfig = SessionConfig::fromArray($vitex->getConfig('session'));
+        $this->storePath = $sessionConfig->getPath();
+        $this->lifetime = $sessionConfig->getLifetime() * 60;
 
         if (!$this->storePath) {
             $this->storePath = sys_get_temp_dir();
@@ -58,7 +62,6 @@ class FileDriver implements SessionDriverInterface
 
     public function gc($maxlifetime)
     {
-        file_put_contents("/home/www/gc.txt",1);
         $expireTime = time() - ($maxlifetime * 60);
         foreach (glob($this->storePath.'/*') as $file) {
             if (is_file($file) && filemtime($file) < $expireTime) {

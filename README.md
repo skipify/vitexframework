@@ -1,5 +1,5 @@
 # vitexframework
-a Tiny Restful framework base on php7.0+
+a Tiny Restful framework base on php8+
 
 - 第一部分
   - [关于](docs/Index.md)

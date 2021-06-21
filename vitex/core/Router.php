@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.3.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -12,7 +12,13 @@
 
 namespace vitex\core;
 
+use vitex\core\attribute\parameter\RequestBody;
+use vitex\core\attribute\parameter\RequestParam;
+use vitex\helper\attribute\parsedata\ParameterData;
+use vitex\helper\attribute\parser\AttributeTool;
+use vitex\helper\attribute\parser\parameter\RequestBodyParser;
 use vitex\helper\Set;
+use vitex\service\http\MultipartFile;
 use vitex\Vitex;
 
 /**
@@ -34,6 +40,13 @@ class Router
      * @var array
      */
     private $_patterns = [];
+
+    /**
+     * 对于异常的统一处理handler
+     * @var array
+     */
+    private $_exceptionHandler = [];
+
     /**
      * 环境变量实例
      * @var Env
@@ -79,7 +92,6 @@ class Router
 
     public function __construct()
     {
-        $this->env = Env::getInstance();
         $this->setRegexp([
             'alphadigit' => '[0-9a-zA-Z]+',
             'digit' => '[0-9]+',
@@ -90,8 +102,8 @@ class Router
 
     /**
      * 设置预支的正则表达式
-     * @param  mixed $name 名称/或者关联数组
-     * @param  string $regexp 正则
+     * @param mixed $name 名称/或者关联数组
+     * @param string $regexp 正则
      * @return self
      */
     public function setRegexp($name, $regexp = null)
@@ -106,7 +118,7 @@ class Router
 
     /**
      * 获取指定的正则表达式值
-     * @param  string $name 名字
+     * @param string $name 名字
      * @return mixed 值
      */
     public function getRegexp($name = null)
@@ -119,8 +131,8 @@ class Router
 
     /**
      * 根据指定的参数生成url地址
-     * @param  string $url 路有段，如果是个有效的Url则会直接返回
-     * @param  array $params 参数段，会被转为 querystring
+     * @param string $url 路有段，如果是个有效的Url则会直接返回
+     * @param array $params 参数段，会被转为 querystring
      * @return string 返回的链接地址
      */
     public function url($url, $params = [])
@@ -143,7 +155,7 @@ class Router
      */
     /**
      * 判断当前字符是否复合参数的命名规则
-     * @param  String $letter 字符
+     * @param String $letter 字符
      * @return boolean
      */
     public function isValid($letter)
@@ -157,7 +169,7 @@ class Router
 
     /**
      * 提取出匹配路径中的分组信息
-     * @param  string $matcher 分组路径
+     * @param string $matcher 分组路径
      * @return array  匹配的分组
      */
     public function getSlice($matcher)
@@ -269,9 +281,9 @@ class Router
 
     /**
      * 注册映射一个请求参数
-     * @param  string $method 请求方法
-     * @param  string $pattern 匹配参数
-     * @param  mixed $call 执行的方法
+     * @param string $method 请求方法
+     * @param string $pattern 匹配参数
+     * @param mixed $call 执行的方法
      * @return self
      */
 
@@ -295,6 +307,29 @@ class Router
          */
         $this->_patterns[] = [$method, $matcher, $call, $pattern, $this->getRouteApp(), '', []];
         return $this;
+    }
+
+    /**
+     * 设置异常的统一处理逻辑，如果你的异常没有捕获，并且设置了此捕获条件则会直接执行此异常处理
+     * handler 可以是一个callable
+     * @param string $exceptionClass
+     * @param callable $handler
+     * @return $this
+     */
+    public function setExceptionHandler(string $exceptionClass, callable $handler)
+    {
+        $this->_exceptionHandler[$exceptionClass] = $handler;
+        return $this;
+    }
+
+    /**
+     * 获取异常处理器
+     * @param string $exceptionClass
+     * @return mixed|null
+     */
+    public function getExceptionHandler(string $exceptionClass)
+    {
+        return $this->_exceptionHandler[$exceptionClass] ?? null;
     }
 
     /**
@@ -462,8 +497,8 @@ class Router
             /**
              * 防止路由中出现正则表达式特殊字符 例如 - : <> 这样的特殊字符
              */
-            $matcher = preg_quote($matcher,'|');
-            $matcher = str_replace(['\*','\:','\[','\]','\.'],['*',':','[',']','.'],$matcher);
+            $matcher = preg_quote($matcher, '|');
+            $matcher = str_replace(['\*', '\:', '\[', '\]', '\.'], ['*', ':', '[', ']', '.'], $matcher);
 
             $matcher = str_replace(['*', '?'], ['([^\/]*)', '([^\/]?)'], $matcher);
             $slices = $this->getSlice($matcher);
@@ -481,12 +516,14 @@ class Router
 
     /**
      * 获取匹配的路由结果
-     * @return \Generator [description]
+     * @param $method string 请求方式
+     * @param $url string 链接
+     * @return \Generator
      */
-    public function getRouter()
+    public function getRouter($method, $url)
     {
-        $method = strtoupper($this->env->method());
-        $url = $this->env->getPathinfo();
+//        $method = strtoupper($this->env->method());
+//        $url = $this->env->getPathinfo();
         //默认首页
         $url = rtrim($url, '/');
         $url = $url ? $url : '/';
@@ -571,6 +608,7 @@ class Router
             $req->route['matchUrl'] = $pattern;
             $req->route['matchMethod'] = $method;
             $req->route['matchPattern'] = $oriPattern;
+
             if (preg_match($pattern, $url, $matches)) {
                 //设置url匹配的分段信息
                 $vitex->req->params = $this->_parseParams($matches);
@@ -589,61 +627,68 @@ class Router
 
     /**
      * 根据路由信息实例化相应的控制器类来返回函数方法对象
-     * @param  string $str 字符串
-     * @param  string $httpmethod http请求的方法
+     * @param string $str 字符串
+     * @param string $httpmethod http请求的方法
      * @param string $appName 路由注册的应用
+     * @param array $routeMethods 路由方法
      * @return callable 可执行的方法
      */
     public function getCallable($str, $httpmethod, $appName = '', $routeMethods = [])
     {
         $strs = explode('@', $str);
         $class = array_shift($strs);
-        $method = strtolower($strs ? array_pop($strs) : $httpmethod);
+        $method = $strs ? array_pop($strs) : strtolower($httpmethod);
         $vitex = Vitex::getInstance();
 
         //完全限定命名空间
-        if ($class[0] != '\\') {
+        if ($class[0] != '\\' && !strpos($class, 'controller\\')) {
             //当前应用
             $app = $appName ?: $vitex->appName;
-            $class = '\\' . $app . '\\controller\\' . $class;
+            $class = $app . '\\controller\\' . $class;
         }
 
         $this->routeClass = $class;
         $this->routeMethod = $method;
         //$obj = new $class;
-        $obj  = $vitex->container->get($class);
+        $obj = $vitex->container->get($class);
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');
             return null;
         }
+
+        /**
+         * 注入的参数数组
+         */
+        $parameterData = $this->parseInjectParameter($vitex, $class, $method);
+        $parameterData = array_merge($parameterData, $this->parseInjectBuildInParameter($vitex, $class, $method));
         /**
          * 返回一个可执行的闭包
          */
-        return function () use ($obj, $method, $routeMethods,$vitex) {
+        return function () use ($obj, $method, $routeMethods, $vitex, $parameterData) {
             /**
              * 路由前执行的方法
              */
             $beforeData = null;
             if (isset($routeMethods['before'])) {
-                $beforeData = call_user_func_array($routeMethods['before'], [Request::getInstance(), Response::getInstance()]);
+                $beforeData = call_user_func_array($routeMethods['before'], [$vitex->req, $vitex->res]);
             }
 
             /**
              * 包裹路由执行
              */
             if (isset($routeMethods['wrap'])) {
-                $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method,$vitex) {
-                    return $vitex->container->call([$obj,$method]);
-                }, Request::getInstance(), Response::getInstance(),$beforeData]);
+                $result = call_user_func_array($routeMethods['wrap'], [function () use ($obj, $method, $vitex, $parameterData) {
+                    $vitex->container->call([$obj, $method], $parameterData);
+                }, $vitex->req, $vitex->res, $beforeData]);
             } else {
-                $result = $vitex->container->call([$obj,$method]);
+                $result = $vitex->container->call([$obj, $method], $parameterData);
             }
 
             /**
              * 路由后执行的方法
              */
             if (isset($routeMethods['after'])) {
-                call_user_func_array($routeMethods['after'], [Request::getInstance(), Response::getInstance(),$result]);
+                call_user_func_array($routeMethods['after'], [Request::getInstance(), Response::getInstance(), $result]);
             }
             return $result;
         };
@@ -651,11 +696,11 @@ class Router
 
     /**
      * 匹配URL匹配信息
-     * @internal param array $params 匹配的URL段
-     * @param  array $matches
+     * @param array $matches
      * @return object
+     * @internal param array $params 匹配的URL段
      */
-    public function _parseParams(array $matches)
+    private function _parseParams(array $matches)
     {
         $params = array();
         foreach ($matches as $k => $v) {
@@ -671,4 +716,109 @@ class Router
         return new Set($params);
     }
 
+    /**
+     * 解析RequestBody注解的一些注入的参数
+     * @param $vitex Vitex
+     * @param $class
+     * @param $method
+     * @return array
+     * @throws \vitex\helper\attribute\exception\NotFoundClassException
+     */
+    private function parseInjectParameter($vitex, $class, $method)
+    {
+
+        $requestBody = $vitex->attributes[RequestBody::class];
+        $requestBodyParameters = $requestBody[$class]['parameter'][$method] ?? [];
+
+        /**
+         * 注入的参数数组
+         */
+        $parameterData = [];
+
+        /**
+         * 错误信息
+         */
+        $errorTip = [];
+
+        if ($requestBodyParameters) {
+            /**
+             * 属性注解列表  $propertyAttributes
+             {
+                "classname":{
+                    "property1":{
+                        "attributename1":"parser1",
+                        "attributename2":"parser2"
+                    },
+                    "property2":{
+                        "attributename1":"parser1",
+                        "attributename2":"parser2"
+                    }
+                }
+             }
+             */
+            $propertyAttributes = AttributeTool::getValidateAttribute();
+            /**
+             * @var $requestBodyParameter ParameterData
+             */
+            foreach ($requestBodyParameters as $requestBodyParameter) {
+                /**
+                 * @var $parser RequestBodyParser
+                 */
+                $parser = $requestBodyParameter->getParse();
+                $parameterData[$requestBodyParameter->getParameterName()] = $parser->toData($requestBodyParameter->getParameterType(), $propertyAttributes);
+
+            }
+        }
+        return $parameterData;
+    }
+
+    /**
+     * 注解注入单个的参数
+     * @param $vitex
+     * @param $class
+     * @param $method
+     * @return array
+     * @throws \vitex\helper\attribute\exception\NotFoundClassException
+     */
+    private function parseInjectBuildInParameter($vitex, $class, $method)
+    {
+
+        $requestParam = $vitex->attributes[RequestParam::class];
+        $requestParameters = $requestParam[$class]['parameter'][$method] ?? [];
+        /**
+         * 注入的参数数组
+         */
+        $parameterData = [];
+
+
+        if ($requestParameters) {
+
+            /**
+             * @var $requestParameter ParameterData
+             */
+            foreach ($requestParameters as $requestParameter) {
+
+                /**
+                 * @var $instance \ReflectionParameter
+                 */
+                $instance = $requestParameter->getTarget();
+                /**
+                 * @var $type \ReflectionNamedType
+                 */
+                $type = $instance->getType();
+
+                $parameterData[$instance->getName()] = AttributeTool::defVal($type->getName());
+                /**
+                 * @var $parser RequestBodyParser
+                 */
+                $parser = $requestParameter->getParse();
+                //getName 保留了参数名字  getParameterName 可能会转为用户传递的key值
+                $val = $parser->toData($requestParameter->getParameterName());
+                if ($val !== null) {
+                    $parameterData[$instance->getName()] = $val;
+                }
+            }
+        }
+        return $parameterData;
+    }
 }

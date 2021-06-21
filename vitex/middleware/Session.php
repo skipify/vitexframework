@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -12,7 +12,7 @@
 
 namespace vitex\middleware;
 
-use vitex\helper\SetMethod;
+use vitex\helper\traits\SetTrait;
 use vitex\Middleware;
 use vitex\service\session\SessionHandler;
 use vitex\Vitex;
@@ -22,11 +22,11 @@ use vitex\Vitex;
  */
 class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
 {
-    use SetMethod;
+    use SetTrait;
 
     public function __construct($sid = '')
     {
-
+        parent::__construct();
         $this->setSessionHandler();
         if (!isset($_SESSION)) {
             if (session_id() == '') {

@@ -9,6 +9,7 @@
 namespace vitex\middleware;
 
 
+use vitex\constant\RequestMethod;
 use vitex\Middleware;
 
 class Cli extends Middleware
@@ -39,6 +40,11 @@ class Cli extends Middleware
             list($pathinfo, $queryString) = explode('?', $pathinfo);
         }
         $this->vitex->env->setPathinfo($pathinfo);
+
+        /**
+         * 命令行只接受GET方式
+         */
+        $this->vitex->env->method(RequestMethod::GET);
         //设置查询字符串
         if ($queryString) {
             parse_str($queryString, $get);

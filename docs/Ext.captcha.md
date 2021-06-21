@@ -1,5 +1,7 @@
 # 验证码使用
 
+**2.0版本已经标记为不推荐使用**
+
 验证码类支持两种渲染模式，一种使用传统PHP的GD库渲染，另一种使用ImageMagick来渲染。第一种不需要前置的安装，编译PHP时一般都带有GD扩展，第二种方式效率更高但是需要安装额外的软件：[ImageMagick](http://www.imagemagick.org/script/index.php),然后安装相应的PHP扩展imagick。
 
 此类在使用时如果不指定渲染模式则会自动判断，imagick扩展的优先级大于GD扩展的优先级。
