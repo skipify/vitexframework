@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -13,6 +13,7 @@
 namespace vitex\helper;
 
 use vitex\core\event\EventEmitterInterface;
+use vitex\helper\traits\SetTrait;
 
 
 /**
@@ -22,6 +23,7 @@ use vitex\core\event\EventEmitterInterface;
  */
 class Set implements \ArrayAccess, \Iterator, \Countable, EventEmitterInterface
 {
+    use SetTrait;
 
     /**
      * 初始化数组
@@ -85,5 +87,8 @@ class Set implements \ArrayAccess, \Iterator, \Countable, EventEmitterInterface
         return $this->_data;
     }
 
-    use SetMethod;
+
+    public function __tostring(){
+
+    }
 }

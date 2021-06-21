@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -9,11 +9,15 @@
  * @copyright skipify
  * @license MIT
  */
+
 namespace vitex\core;
+
 
 use vitex\ext\Filter;
 use vitex\helper\Set;
-use vitex\helper\SetMethod;
+use vitex\helper\traits\SetTrait;
+use vitex\service\http\MultipartFile;
+use vitex\Vitex;
 
 /**
  * 所有请求方法的类对象，包含所有的Query string POST DATA Cookie等
@@ -22,7 +26,7 @@ class Request implements \ArrayAccess, \Iterator
 {
 
     //环境变量
-    public  $uploadError;
+    public $uploadError;
     private $env, $isstrip = false;
     //当前实例
     private static $_instance = null;
@@ -32,7 +36,6 @@ class Request implements \ArrayAccess, \Iterator
      *
      */
     public $route = [];
-    use SetMethod;
     private $methods = []; //扩展的方法
 
     /**
@@ -48,9 +51,17 @@ class Request implements \ArrayAccess, \Iterator
      */
     public $query;
     /**
+     * @deprecated
      * @var Set 上传的文件信息 $_FILES
      */
     public $files;
+
+    /**
+     * 上传文件的新的封装
+     * @var $ufile array[File]
+     */
+    public $ufile;
+
     /**
      * @var Set cookie信息 $_COOKIE
      */
@@ -82,9 +93,24 @@ class Request implements \ArrayAccess, \Iterator
      */
     public $protocol, $version, $secure;
 
-    private function __construct()
+    /**
+     * SetTrait
+     */
+    use SetTrait;
+
+
+    public function __construct()
     {
         $this->env = Env::getInstance();
+        //初始化数据
+        $this->initData();
+    }
+
+    /**
+     * 初始化所有的request数据
+     */
+    public function initData()
+    {
         //初始化数据
         $this->queryData()
             ->postData()
@@ -92,18 +118,22 @@ class Request implements \ArrayAccess, \Iterator
             ->parseReq();
         $this->isAjax = $this->isAjax();
         $this->isXhr = $this->isAjax;
+        return $this;
     }
 
     /**
      * 获取实例的单例
      * @return self
+     * @deprecated
      */
     public static function getInstance()
     {
-        if (!(self::$_instance instanceof self)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
+//        if (!(self::$_instance instanceof self)) {
+//            self::$_instance = new self();
+//        }
+//        return self::$_instance;
+        $vitex = Vitex::getInstance();
+        return $vitex->req;
     }
 
     /**
@@ -119,7 +149,7 @@ class Request implements \ArrayAccess, \Iterator
         //请求协议
         $protocol = $this->env->get('SERVER_PROTOCOL');
         //设置变量
-        if($protocol){
+        if ($protocol) {
             list($this->protocol, $this->version) = explode('/', $protocol);
             if ($this->protocol == 'https') {
                 $this->secure = true;
@@ -142,9 +172,9 @@ class Request implements \ArrayAccess, \Iterator
         $ip = $this->env->get("HTTP_CLIENT_IP");
         $ip = $ip ?: $this->env->get("HTTP_X_FORWARDED_FOR");
         $ip = $ip ?: $this->env->get("REMOTE_ADDR");
-        if($ip){
+        if ($ip) {
             $ipInt = ip2long($ip);
-            if(is_integer($ipInt)){
+            if (is_integer($ipInt)) {
                 $ip = long2ip($ipInt);
             }
         }
@@ -211,7 +241,7 @@ class Request implements \ArrayAccess, \Iterator
     private function queryData()
     {
         $data = $_GET;
-        $this->query = new Set($data);
+        $this->query = new Set($data ?? []);
         return $this;
     }
 
@@ -229,7 +259,7 @@ class Request implements \ArrayAccess, \Iterator
             $_POST = array_merge($bodys, $_POST);
         }
         $data = $_POST;
-        $this->body = new Set($data);
+        $this->body = new Set($data ?? []);
         return $this;
     }
 
@@ -239,7 +269,20 @@ class Request implements \ArrayAccess, \Iterator
      */
     private function fileData()
     {
-        $this->files = new Set($_FILES);
+        $this->files = new Set($_FILES ?? []);
+
+        $fileInfo = [];
+        foreach ($_FILES as $field => $_file){
+            $file = new MultipartFile($_file['tmp_name']);
+            $file->setMime($_file['type']);
+            $file->setOrginName($_file['name']);
+            $fileInfo[$field] = $file;
+        }
+        /**
+         * ufile
+         */
+        $this->ufile = $fileInfo;
+
         return $this;
     }
 
@@ -256,8 +299,8 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 获取单个请求值，获取的顺序为  params > query > body
-     * @param  string $key 要获取的键值
-     * @param  string $def 当此值获取不存在时的返回值
+     * @param string $key 要获取的键值
+     * @param string $def 当此值获取不存在时的返回值
      * @param string $filter 过滤方法
      * @return mixed  返回值
      */
@@ -323,8 +366,8 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 根据数组获取相应的内容
-     * @param  array $arr 数组值，每个值都是一个表单元素
-     * @param  string $filter 过滤方式
+     * @param array $arr 数组值，每个值都是一个表单元素
+     * @param string $filter 过滤方式
      * @return array 返回值
      */
     public function getData(array $arr, $filter = null)
@@ -444,8 +487,8 @@ class Request implements \ArrayAccess, \Iterator
      * 扩展方法,扩展的如果是类方法必须至少包含一个参数,第一个参数总是当前这个类的实例
      * 例如 function($obj){$obj->extend('a','1');}//第一个参数即为当前类的实例
      *
-     * @param  mixed $pro 扩展的属性名或者方法名,或者一个关联数组
-     * @param  string /null $data 属性值或者一个callable的方法
+     * @param mixed $pro 扩展的属性名或者方法名,或者一个关联数组
+     * @param string /null $data 属性值或者一个callable的方法
      * @return self
      */
     public function extend($pro, $data = null)
@@ -466,16 +509,21 @@ class Request implements \ArrayAccess, \Iterator
 
     /**
      * 执行调用扩展的方法
-     * @param  string $method 扩展的方法名
-     * @param  mixed $args 参数名
-     * @throws Exception
+     * @param string $method 扩展的方法名
+     * @param mixed $args 参数名
      * @return self
+     * @throws Exception
      */
     public function __call($method, $args)
     {
         if (!isset($this->methods[$method])) {
-            throw new Exception('Not Method ' . $method . ' Found In Request!',Exception::CODE_NOTFOUND_METHOD);
+            throw new Exception('Not Method ' . $method . ' Found In Request!', Exception::CODE_NOTFOUND_METHOD);
         }
         return call_user_func_array($this->methods[$method], $args);
+    }
+
+    public function __clone()
+    {
+        $this->initData();
     }
 }

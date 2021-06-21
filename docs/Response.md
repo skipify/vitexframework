@@ -87,6 +87,11 @@ string 	$name 	cookie值
 其他的cooke参数，直接使用系统设置中的参数  
 **示例**  
 
+
+### addCookie
+设置cookie的形式，更加面向对象的方式
+参考 [Cookie](http.cookie.md)
+
 ### clearCookie()
 删除指定名字的cookie，如果不指定参数那么就会清空所有cookie  
 **签名**  

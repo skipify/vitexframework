@@ -75,8 +75,27 @@ $vitex->get('/user/:id/:status',function($req){
 `
 
 ### file
-
+    2.0版本已经废弃 请使用 ufile
 	$_FILES的封装
+
+### ufile
+2.0新增，上传的文件封装为一个 service\http\File 实例
+
+```
+$files = $this->req->ufile;
+/**
+ * @var $file File
+ */
+foreach ($files as $file){
+    $file->writeToFile(WEBROOT . "/a.zip");
+    echo $file->getOrginName() ."\n";
+    echo $file->getMime();
+}
+```
+
+具体API参考 [File](http.file.md)
+
+
 
 ### ip
 
@@ -172,7 +191,6 @@ string 	$key 	键值
 
 $arr 包含表单名的一个数组
 
-
 ### except()
 
 从post数据中获取传递来的值，两个参数 第一个是需要排除的字段，第二个是过滤的方式
@@ -185,7 +203,6 @@ $arr 包含表单名的一个数组
     
     $this->req->except(['__token'],'safe');
 ```
-
 
 
 ### get()

@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -9,7 +9,9 @@
  * @copyright skipify
  * @license MIT
  */
+
 namespace vitex\core;
+
 use vitex\Vitex;
 
 /**
@@ -42,62 +44,73 @@ class Env implements \ArrayAccess
      */
     protected $_pathinfo = null;
 
-    private function __construct()
+    public function __construct()
+    {
+        $this->initData();
+    }
+
+    private function initData()
     {
         //默认配置
         $default = [
             'REQUEST_METHOD' => 'GET',
-            'SCRIPT_NAME'    => '',
-            'PATH_INFO'      => '',
-            'QUERY_STRING'   => '',
-            'SERVER_NAME'    => 'localhost',
-            'SERVER_PORT'    => 80,
-            'vitex.params'   => array(),
+            'SCRIPT_NAME' => '',
+            'PATH_INFO' => '',
+            'QUERY_STRING' => '',
+            'SERVER_NAME' => 'localhost',
+            'SERVER_PORT' => 80,
+            'VITEX.PARAMS' => array(),
         ];
-        $this->_env = array_merge($default, $_SERVER);
+        foreach ($_SERVER as $key => $val) {
+            $this->_env[strtoupper($key)] = $val;
+        }
     }
 
     /**
      * 单例，获取环境变量
      * @return self
+     * @deprecated
      */
     public static function getInstance()
     {
-        if (!(self::$_instance instanceof self)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
+//        if (!(self::$_instance instanceof self)) {
+//            self::$_instance = new self();
+//        }
+//        return self::$_instance;
+        $vitex = Vitex::getInstance();
+        return $vitex->env;
     }
 
     /**
      * 获取变量配置
-     * @param  string       $key        键值
-     * @return array/string 返回值
+     * @param string $key 键值
+     * @return array|string 返回值
      */
     public function get($key = null)
     {
         if ($key === null) {
             return $this->_env;
         }
+        $key = strtoupper($key);
         return $this->_env[$key] ?? '';
     }
 
     /**
      * 修改环境变量
-     * @param  string $key 键值
-     * @param  string $val 键名
+     * @param string $key 键值
+     * @param string $val 键名
      * @return self
      */
     public function set($key, $val)
     {
-        $this->_env[$key] = $val;
+        $this->_env[strtoupper($key)] = $val;
         return $this;
     }
 
     /**
      * 设置获取请求方法
-     * @param  string/null $method     请求方法
-     * @return self        返回值
+     * @param string|null $method     请求方法
+     * @return self|string        返回值
      */
     public function method($method = null)
     {
@@ -150,8 +163,8 @@ class Env implements \ArrayAccess
      */
     public function is($mode = self::MODE_ENV_PRODUCTION)
     {
-        if(defined('MODE_ENV')){
-            if(MODE_ENV == $mode){
+        if (defined('MODE_ENV')) {
+            if (MODE_ENV == $mode) {
                 return true;
             } else {
                 return false;
@@ -182,7 +195,7 @@ class Env implements \ArrayAccess
 
     public function offsetSet($offset, $value)
     {
-        $offset              = strtoupper($offset);
+        $offset = strtoupper($offset);
         $this->_env[$offset] = $value;
     }
 
@@ -190,6 +203,11 @@ class Env implements \ArrayAccess
     {
         $offset = strtoupper($offset);
         unset($this->_env[$offset]);
+    }
+
+    public function __clone(): void
+    {
+        $this->initData();
     }
 
 }

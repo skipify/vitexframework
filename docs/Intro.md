@@ -1,6 +1,6 @@
 # 简介
 
-Vitex是一个基于php7.0+的微型Restful的框架。
+Vitex是一个基于php5.5+的微型Restful的框架。
 本框架严格区分命名空间，使用闭包匿名函数来绑定不同的请求。
 通过使用应用中间件和路由中间件来实现通用的一些功能。   
 Vitex中没有大量的各种工具、类库，如果你需要大量的工具，请在 packagist中查找优秀的开源项目。    
@@ -19,3 +19,11 @@ Vitex尤其适合编写API型的应用，通过灵活的路由管理可以让你
 	->delete('/user/:id',function(){
 		//删除
 	});
+	
+	
+# 开发模式
+
+可以在入口文件中定义一个常量 `MODE_ENV`	来区分是生产环境还是开发环境，在 `Env`类中有两个常量
+`Env::MODE_ENV_DEVELOPMENT`   `Env::MODE_ENV_PRODUCTION`  来定义开发和非开发环境
+
+可以使用 `$this->env->is($mode)`来判断是什么模式

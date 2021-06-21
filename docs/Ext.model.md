@@ -3,8 +3,40 @@
 ## 前置条件
 
 使用此类之前必须要加载 PDO类库，设置好数据库链接等。 
-0.9.1 之后版本以不再强制需要调用Model类之前链接数据库.,您可以在您继承Model类的子类中手工链接数据库,这样可以避免有些请求不需要链接数据库而造成资源浪费
 
+## 链接配置
+链接数据库配置比较简单
+系统可以提供一个 主从数据库配置，对于读取相关的操作从从数据库读取，写操作从主数据库读取
+
+如果不使用主从数据库可以使用 `默认数据库`配置,默认数据库使用 `db`键值
+
+支持只设置 `master`配置
+
+```
+    'database' => [
+        'master' => [
+            'host' => '127.0.0.1',
+            'database' => 'test',
+            'username' => 'root',
+            'password' => 'root',
+            'charset' => 'utf8'
+        ],
+        'slaver' => [
+            'host' => '127.0.0.1',
+            'database' => 'test',
+            'username' => 'root',
+            'password' => 'root',
+            'charset' => 'utf8'
+        ],
+        'db' => [
+            'host' => '127.0.0.1',
+            'database' => 'test',
+            'username' => 'root',
+            'password' => 'root',
+            'charset' => 'utf8'
+        ]
+    ],
+```
 
 ```
 class MyModel extends Model
@@ -12,13 +44,6 @@ class MyModel extends Model
     public function __construct()
     {
         parent::__construct();
-        $this->init([
-            'username' => 'root',
-            'password'=>'root'
-            'host'     => 'localhost',
-            'database' => 'test',
-            'charset'  => 'utf8',
-        ]);
     }
 }
 
@@ -30,13 +55,6 @@ class MyModel extends Model
     public function __construct()
     {
         parent::__construct();
-        $this->init([
-            'username' => 'root',
-            'password'=>'root'
-            'host'     => 'localhost',
-            'database' => 'test',
-            'charset'  => 'utf8',
-        ]);
         $this->changeDatabase(/*other setting*/);
     }
 }
@@ -113,15 +131,17 @@ $this->init([
 ### changeDatabase
 切换数据库链接，用于程序中动态改变链接其他的数据库，应用的范围是该模型层
 
+
 **签名**
 
 ``` 
-changeDatabase(array $setting):object
+changeDatabase(array|string $setting):object
 ```
 
 **参数**
 
-array $setting 数据库配置，参考 PDO类
+- array $setting 数据库配置，参考 PDO类
+- string 可以为配置文件 database键值下面的一个配置比如 `master` `slaver`
 
 ``` 
     "host"     => '数据库服务器',
@@ -148,10 +168,8 @@ $this->changeDatabase([
 如果您执行了 changeDatabase 方法后又想要恢复原来的数据库链接,则可以使用:
 
 ```
-$this->DB  = $this->vitex->pdo;
-$this->pdo = $this->DB->pdo;
+$this->changeDatabase("master");
 ```
-来恢复使用中间件执行的数据库连接
 
 ### def()
 
@@ -475,29 +493,6 @@ $this->findInSet('pos','a') //pos字段(a,b,c)中包含一个a元素
   //  =>
     ( name="xx" and age = 100) or name="john"
 ```
-### when()
-
-当满足一定条件时才会执行的条件（版本 > 0.14.0） 
-
-mixed $condition  需要判定的条件是否成立，PHP if 是否成立
-callable $call    条件成立时执行的方法，接受一个参数为当前模型的实例
-callbale $notcall 条件不成立时执行的方法，接受一个参数为当前模型的实例
-```
-    $this->when($age,function($model) use($age){
-        $model->where('age','=',$age);
-    });
-        
-    //如果age为 true类型则相当于  select * from user where age = $age;
-    //如果age为 false 则相当于 select * from user;
-    
-        $this->when($age,function($model) use($age){
-            $model->where('age','=',$age);
-        },function($model) use($age){
-            $model->where("age",">",0);
-        });
-        //如果age为 true类型则相当于  select * from user where age = $age;
-        //如果age为 false 则相当于 select * from user where age > 0;
-```
 
 
 ### having()
@@ -588,6 +583,30 @@ integer 	$offset 	偏移数值
 
 `$this->limit(10)->offset(4)` // limit 4,10  
 
+
+### when()
+
+当满足一定条件时才会执行的条件
+
+mixed $condition  需要判定的条件是否成立，PHP if 是否成立
+callable $call    条件成立时执行的方法，接受一个参数为当前模型的实例
+callbale $notcall 条件不成立时执行的方法，接受一个参数为当前模型的实例
+```
+    $this->when($age,function($model) use($age){
+        $model->where('age','=',$age);
+    });
+        
+    //如果age为 true类型则相当于  select * from user where age = $age;
+    //如果age为 false 则相当于 select * from user;
+    
+        $this->when($age,function($model) use($age){
+            $model->where('age','=',$age);
+        },function($model) use($age){
+            $model->where("age",">",0);
+        });
+        //如果age为 true类型则相当于  select * from user where age = $age;
+        //如果age为 false 则相当于 select * from user where age > 0;
+```
 
 
 ### orderBy()
@@ -846,8 +865,7 @@ integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. �
 
 ### count()
 
-统计数量，select count(*) from user 
-**注意** 如果使用distinct查询去重条数 则 count传递的参数失败，具体查看下方示例
+统计数量，select count(*) from user            
 
 **签名**  
 
@@ -862,7 +880,6 @@ integer $amount 自减的数制默认为1,  当$column为数组的时候则 1. �
 `$this->count()` // select count(*) from user   
 
 `$this->from('table')->count('name')`  
-`$this->from('table')->distinct("age")->count()`
 
 ### pluck()
 
@@ -1136,6 +1153,7 @@ $this->fetchAll("select sum(money) as money from order group by uid");
 $this->execute("delete from order where id=1");
 ```
 
+
 ### setJustSql
 
 设置操作仅仅拼接sql 不会去数据库执行，此方法一般配合 getSql()方法获取拼接的sql
@@ -1146,4 +1164,10 @@ $this->execute("delete from order where id=1");
     $sql = $this->getSql();
     //sql
     select * from user where id=1 limit 1;
+```
+
+### 输出调试信息
+
+```
+$this->debugDumpParams();
 ```

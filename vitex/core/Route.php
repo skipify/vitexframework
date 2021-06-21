@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.3.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -74,9 +74,17 @@ class Route
 
     public function __construct()
     {
-        $this->env = Env::getInstance();
-        $this->themethod = $this->env->method();
         $this->router = new Router;
+    }
+
+    /**
+     * 初始化路由
+     * @param Env $env
+     */
+    public function init(Env $env)
+    {
+        $this->env = $env;
+        $this->_router = null;
         $this->_notfound = function () {
             echo "<h1>404 Not Found</h1>\n";
             $vitex = Vitex::getInstance();
@@ -107,8 +115,8 @@ class Route
 
     /**
      * 路由分组
-     * @param  string $pattern 分组标识
-     * @param  mixed $class 分组文件名或者一个包含注册路由的callable
+     * @param string $pattern 分组标识
+     * @param mixed $class 分组文件名或者一个包含注册路由的callable
      * @param string $appName 指定分组的路由文件
      * @return self
      */
@@ -122,7 +130,7 @@ class Route
 
     /**
      * 设置 分组的默认路径
-     * @param  string $path 路径
+     * @param string $path 路径
      * @return self
      */
     public function setGroupPath($path)
@@ -205,7 +213,7 @@ class Route
 
     /**
      * 解析分组的内容
-     * @param  string $g 可执行的方法或者一个文件
+     * @param string $g 可执行的方法或者一个文件
      * @param string $appName 指定的应用名称
      * @throws Exception
      */
@@ -256,9 +264,9 @@ class Route
 
     /**
      * 注册路由信息
-     * @param  string $method 路由匹配方法
-     * @param  string $pattern 路由匹配
-     * @param  mixed $callable 执行的方法
+     * @param string $method 路由匹配方法
+     * @param string $pattern 路由匹配
+     * @param mixed $callable 执行的方法
      * @return self
      */
     public function register($method, $pattern, $callable)
@@ -276,8 +284,19 @@ class Route
     }
 
     /**
+     * @param string $exceptionClass
+     * @param callable $callable
+     * @return $this
+     */
+    public function exceptionHandler(string $exceptionClass, callable $callable)
+    {
+        $this->router->setExceptionHandler($exceptionClass, $callable);
+        return $this;
+    }
+
+    /**
      * 404页面
-     * @param  callable $call 404执行的方法
+     * @param callable $call 404执行的方法
      * @return self
      */
     public function notFound(callable $call = null)
@@ -309,20 +328,37 @@ class Route
     public function next()
     {
         if (!$this->_router) {
-            $this->_router = $this->router->getRouter();
+            $this->_router = $this->router->getRouter($this->env->method(), $this->env->getPathinfo());
         }
-
         $vitex = Vitex::getInstance();
-        $call = $this->_router->current();
-        if (is_callable($call)) {
-            if($call instanceof \Closure){
-                $vitex->container->call($call);
+        try {
+            $call = $this->_router->current();
+            if (is_callable($call)) {
+                if ($call instanceof \Closure) {
+                    $vitex->container->call($call);
+                } else {
+                    call_user_func_array($call, []);
+                }
             } else {
-                call_user_func_array($call,[]);
+                call_user_func_array($this->_notfound, []);
+            }
+        } catch (\Exception $e) {
+            //有未捕获的异常输出的时候的处理逻辑
+            // 获取三个异常
+            $exceptionClassList = [get_class($e), Exception::class, \Exception::class];
+            foreach ($exceptionClassList as $exceptionClass) {
+                $call = $this->router->getExceptionHandler($exceptionClass);
+                if ($call) {
+                    break;
+                }
             }
 
-        } else {
-            call_user_func_array($this->_notfound,[]);
+            if ($call) {
+                call_user_func_array($call, [$e]);
+            } else {
+                //无处理逻辑则直接抛出异常
+                throw $e;
+            }
         }
         return $this;
     }

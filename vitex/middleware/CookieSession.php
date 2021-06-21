@@ -7,6 +7,7 @@ namespace vitex\middleware;
 
 
 use vitex\helper\SetMethod;
+use vitex\helper\traits\SetTrait;
 use vitex\helper\Utils;
 use vitex\Middleware;
 use vitex\service\session\SessionHandler;
@@ -14,7 +15,7 @@ use vitex\Vitex;
 
 class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Countable
 {
-    use SetMethod;
+    use SetTrait;
 
     private $cookieData;
 

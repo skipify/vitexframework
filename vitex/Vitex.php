@@ -1,7 +1,10 @@
 <?php declare(strict_types=1);
+
+namespace vitex;
+
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.3.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -10,9 +13,9 @@
  * @license MIT
  */
 
-namespace vitex;
 
 use Psr\Log\LoggerInterface;
+use vitex\core\Context;
 use vitex\core\Env;
 use vitex\core\event\EventEmitter;
 use vitex\core\Exception;
@@ -22,18 +25,26 @@ use vitex\core\Request;
 use vitex\core\Response;
 use vitex\core\Route;
 use vitex\core\RouteHandlerInterface;
+use vitex\ext\Pdo;
+use vitex\helper\attribute\ParseAttribute;
 use vitex\helper\Utils;
+use vitex\middleware\Cookie;
 use vitex\service\ConfigProvider;
 use vitex\service\Container;
+use vitex\service\log\Log;
 
 
-if (!Utils::phpVersion('7.0')) {
-    throw new Exception("I am at least PHP version 7.0.0");
+if (!Utils::phpVersion('8.0')) {
+    throw new Exception("I am at least PHP version 8.0.0");
 }
+/**
+ * 框架根目录
+ */
+define("VITEX_BASE_PATH", __DIR__);
 
 class Vitex extends EventEmitter
 {
-    const VERSION = "1.0.0-alpha1";
+    const VERSION = "2.0.0";
     /**
      * App instance
      */
@@ -45,7 +56,7 @@ class Vitex extends EventEmitter
     public $appName = 'app';
     /**
      * 配置文件服务
-     * @var array
+     * @var ConfigProvider
      */
     private $configProvider;
 
@@ -99,34 +110,71 @@ class Vitex extends EventEmitter
     public $route;
 
     /**
-     * Vitex constructor.
-     * @param mixed $setting
+     *
+     * @var Pdo
      */
-    private function __construct()
+    public $DB;
+
+    /**
+     * @var \PDO
+     */
+    public $pdo;
+
+    /**
+     * 上下文管理
+     * @var Context
+     */
+    private Context $context;
+    /**
+     * 请求ID
+     * @var string
+     */
+    public string $requestId;
+
+    /**
+     * Vitex constructor.
+     * @param array $setting
+     */
+    private function __construct(array $setting = [])
     {
         $this->execTime();//记录执行开始时间
         //注册加载 加载器
-        require __DIR__ . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . "Loader.php";
         $this->loader = new Loader();
         $this->loader->addNamespace('\vitex', __DIR__);
         $this->loader->register();
+        $this->context = new Context();
+        $this->requestId = $this->context->getRequestId();
+        $this->route = new Route();
 
-        $this->container = new Container();
+        $this->configProvider = new ConfigProvider();
+        $this->configProvider->setConfig($setting);
+    }
 
-
+    /**
+     * 初始化所需要的各种工具
+     * @param array $setting
+     * @throws Exception
+     */
+    private function boostrap()
+    {
+        $this->requestId = $this->context->getRequestId();
+        $this->offAll();
+        $this->container = $this->context->getContainer();
         //初始化各种变量
-        $this->env = $this->container->get(Env::class);
-        $this->route = $this->container->get(Route::class);
+        $this->env = $this->context->getEnv();
         //初始化 request response
-        $this->req = $this->container->get(Request::class);
-        $this->res = $this->container->get(Response::class);
-
-        $this->configProvider = $this->container->get(ConfigProvider::class);
+        $this->req = $this->context->getRequest();
+        $this->res = $this->context->getResponse();
 
         //view视图
         $this->view = null;
         //日志
-        $this->log = $this->container->get(LoggerInterface::class);
+        $this->log = $this->container->get(Log::class);
+
+        /**
+         * 初始化路由
+         */
+        $this->route->init($this->env);
 
         $this->using(new middleware\Csrf());
         //添加第一个中间件，他总是最后一个执行
@@ -135,16 +183,16 @@ class Vitex extends EventEmitter
         $this->using(new middleware\Cli());
         date_default_timezone_set('Asia/Shanghai');
 
-
+        $this->execTime('__start', true);
     }
 
     /**
      * 捕获处理异常
      *
-     * @param  int $errno 错误代码
-     * @param  string $errstr 错误提示
-     * @param  string $errfile 错误文件
-     * @param  int|string $errline 错误行
+     * @param int $errno 错误代码
+     * @param string $errstr 错误提示
+     * @param string $errfile 错误文件
+     * @param int|string $errline 错误行
      * @return bool
      */
     public function errorHandler($errno, $errstr = '', $errfile = '', $errline = '')
@@ -166,6 +214,7 @@ class Vitex extends EventEmitter
     {
         if (!(self::$_instance instanceof self)) {
             self::$_instance = new self($setting);
+            self::$_instance->boostrap($setting);
         }
         return self::$_instance;
     }
@@ -197,10 +246,10 @@ class Vitex extends EventEmitter
 
     /**
      * 初始化一个应用,包括设置各种路径添加加载命名空间等
-     * @param  string $app 应用的名称
-     * @param  string $dir 应用的路径
-     * @param  array|string $setting 批量设置配置
-     * @param  array $middleware
+     * @param string $app 应用的名称
+     * @param string $dir 应用的路径
+     * @param array|string $setting 批量设置配置
+     * @param array $middleware
      * @return $this
      */
 
@@ -227,8 +276,8 @@ class Vitex extends EventEmitter
 
     /**
      * 多级应用处理
-     * @throws core\Exception
      * @return string           当前路由到得应用名称
+     * @throws core\Exception
      */
     public function multiInit()
     {
@@ -304,7 +353,7 @@ class Vitex extends EventEmitter
 
     /**
      * 获取分组配置信息
-     * @param  array $apps 配置数组
+     * @param array $apps 配置数组
      * @return array 配置
      */
     private function getAppConfig($apps)
@@ -330,10 +379,10 @@ class Vitex extends EventEmitter
      * [
      *     'symbol' => [appname,dirname,setting,middleware] //后两个参数可以省略
      * ]
-     * @param  array $map 一个映射的方式
-     * @param  string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
-     * @throws core\Exception
+     * @param array $map 一个映射的方式
+     * @param string $domain 一个域名，表示当前的所有操作都是在当前域名下得绑定，如果不指定则会适用于所有域名
      * @return self
+     * @throws core\Exception
      */
     public function setAppMap(array $map, $domain = "default")
     {
@@ -367,19 +416,19 @@ class Vitex extends EventEmitter
     /**
      * 设置配置文件
      * @param  $name
-     * @param  null $val
-     * @throws Exception
+     * @param null $val
      * @return self
+     * @throws Exception
      */
     public function setConfig($name, $val = null)
     {
-        $this->configProvider->setConfig($name,$val);
+        $this->configProvider->setConfig($name, $val);
         return $this;
     }
 
     /**
      * 获取配置
-     * @param  string $name 配置名
+     * @param string $name 配置名
      * @return mixed
      */
     public function getConfig($name)
@@ -389,8 +438,8 @@ class Vitex extends EventEmitter
 
     /**
      * 构造URL
-     * @param  string $url url或者一个路由段
-     * @param  array $params 关联数组转为querystring
+     * @param string $url url或者一个路由段
+     * @param array $params 关联数组转为querystring
      * @return string 最终的url
      */
     public function url($url, $params = [])
@@ -430,15 +479,16 @@ class Vitex extends EventEmitter
 
     /**
      * 预处理中间件
-     * @param  Middleware $call
-     * @throws core\Exception
+     * @param Middleware $call
      * @return self
+     * @throws core\Exception
      */
     private function preUse(Middleware $call)
     {
         $class = get_class($call);
         if (in_array($class, $this->preMiddlewareArr)) {
-            throw new Exception($class . ' Pre-Middleware has loaded');
+            //throw new Exception($class . ' Pre-Middleware has loaded');
+            return $this;
         }
         $this->preMiddlewareArr[] = $class;
         if ($this->preMiddleware) {
@@ -451,8 +501,8 @@ class Vitex extends EventEmitter
 
     /**
      * 注册中间件，所有的中间件都是通过using调用
-     * @param  string /array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
-     * @param  callable /null           $call 执行的方法
+     * @param string /array/callable $pattern 匹配的url规则,多个匹配规则时可以传递一个数组或者中间件实例
+     * @param callable /null           $call 执行的方法
      * @return self
      */
     public function using($pattern, $call = null)
@@ -485,8 +535,8 @@ class Vitex extends EventEmitter
     /**
      * 直接执行中间件
      * @param  $middleware Middleware
-     * @throws Exception
      * @return $this
+     * @throws Exception
      */
     public function runMiddleware($middleware)
     {
@@ -527,7 +577,7 @@ class Vitex extends EventEmitter
      * $this->get('/:user@username',function(){})
      * 可以匹配 /asdtc  但是不可以匹配 /asd
      *
-     * @param  string /array $name 名称
+     * @param string /array $name 名称
      * @param  [mixed $val   正则值
      * @return self
      */
@@ -539,9 +589,9 @@ class Vitex extends EventEmitter
 
     /**
      * 路由分组
-     * @param  string $pattern 分组标识 url的一部分
-     * @param  mixed $class 分组对应的类的名字
-     * @param  string $appName 多个应用时可以指定应用名字用于加载指定应用下的路由文件
+     * @param string $pattern 分组标识 url的一部分
+     * @param mixed $class 分组对应的类的名字
+     * @param string $appName 多个应用时可以指定应用名字用于加载指定应用下的路由文件
      * @return self
      */
     public function group($pattern, $class, $appName = '')
@@ -559,8 +609,8 @@ class Vitex extends EventEmitter
     /**
      * 注册中间件，所有的中间件都是通过invoke调用
      * 中间件方法其实是一个特殊的请求
-     * @param  string /array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
-     * @param  callable $call 执行的方法
+     * @param string /array $pattern 匹配的url规则,多个匹配规则时可以传递一个数组
+     * @param callable $call 执行的方法
      * @return self
      */
     private function invoke($pattern, callable $call)
@@ -732,15 +782,20 @@ class Vitex extends EventEmitter
     /**
      * 页面执行时间
      *
-     * @author skipify
      * @param string $symbol 记录时间的标示
+     * @param bool $reset 重置时间计算
      * @return int
+     * @author skipify
      */
-    public function execTime($symbol = '__start')
+    public function execTime($symbol = '__start', $reset = false)
     {
         static $_time_stamp = [];
         $now = microtime(true) * 1000;//当前毫秒
         if (isset($_time_stamp[$symbol])) {
+            if ($reset) {
+                $_time_stamp[$symbol] = $now;
+                return 0;
+            }
             return $now - $_time_stamp[$symbol];
         } else {
             $_time_stamp[$symbol] = $now;
@@ -755,7 +810,9 @@ class Vitex extends EventEmitter
     public function runLoadMiddleware()
     {
         //预处理中间件
-        $this->using(new middleware\Cookie());
+        if (!$this->isLoadMiddleware(Cookie::class)) {
+            $this->using(new middleware\Cookie());
+        }
         //预处理中间件执行
         if ($this->preMiddleware) {
             $this->preMiddleware->call();
@@ -785,11 +842,43 @@ class Vitex extends EventEmitter
     {
         //输出指定编码以及格式
         $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
-        set_error_handler(array($this, 'errorHandler'));
+        set_error_handler([$this, 'errorHandler']);
         $this->runLoadMiddleware();
+        /**
+         * 解析注解
+         */
+        $parseAttribute = new ParseAttribute();
+        $this->attributes = $parseAttribute->parse();
+
         $this->routeDispatch();
 
         restore_error_handler();
+    }
+
+    public function ready()
+    {
+        $this->context = clone $this->context;
+        $this->boostrap();
+        //输出指定编码以及格式
+        $this->res->setHeader("Content-Type", "text/html;charset=" . $this->getConfig("charset"))->sendHeader();
+        set_error_handler([$this, 'errorHandler']);
+        $this->runLoadMiddleware();
+        /**
+         * 解析注解
+         */
+        $parseAttribute = new ParseAttribute();
+        $this->attributes = $parseAttribute->parse();
+        $this->route->applyGroup();
+    }
+
+    /**
+     * 克隆的时候相当于清理一些请求相关的数据
+     * @throws Exception
+     */
+    public function __clone()
+    {
+        $this->context = clone $this->context;
+        $this->boostrap();
     }
 
 

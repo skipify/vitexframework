@@ -2,13 +2,13 @@
 
 ### 实例
 
-	
-
 	`$vitex = \vitex\Vitex::getInstance()`
 
 创建vitex的实例。
 
 ### 配置
+
+[配置文件详情点击查看](condfig.md)
 
 setConfig/getConfig  
 

@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.3.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -12,8 +12,8 @@
 namespace vitex;
 
 use vitex\core\Exception;
-use vitex\service\event\EventEmitterInterface;
-use vitex\service\event\EventEmitterTrait;
+use vitex\core\event\EventEmitterInterface;
+use vitex\core\event\EventEmitterTrait;
 
 /**
  * Vitex开发基类
@@ -22,7 +22,7 @@ use vitex\service\event\EventEmitterTrait;
  * @method emit(string $name)
  * @method getHooks(string $name)
  * @method runMiddleware(Middleware $middleware)
- * @method execTime(string $symbol)
+ * @method execTime(string $symbol = '__start')
  * @method url(string $url,array $params = [])
  * @method notFound(callable $call = null)
  * */

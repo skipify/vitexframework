@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -12,7 +12,7 @@
 namespace vitex\core;
 
 use vitex\helper\Set;
-use vitex\middleware\Cookie;
+use vitex\service\http\Cookie;
 use vitex\Vitex;
 
 /**
@@ -94,7 +94,7 @@ class Response
     /**
      * Response constructor.
      */
-    private function __construct()
+    public function __construct()
     {
         $this->locals = new Set();
     }
@@ -102,13 +102,16 @@ class Response
     /**
      * 获取实例的单例
      * @return self
+     * @deprecated
      */
     public static function getInstance()
     {
-        if (!(self::$_instance instanceof self)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
+//        if (!(self::$_instance instanceof self)) {
+//            self::$_instance = new self();
+//        }
+//        return self::$_instance;
+        $vitex = Vitex::getInstance();
+        return $vitex->res;
     }
 
     /**
@@ -190,7 +193,7 @@ class Response
     /**
      * 获取请求头信息
      * @param  string         $key 键值
-     * @return array/string
+     * @return array|string
      */
     public function getHeader($key = null)
     {
@@ -290,19 +293,29 @@ class Response
     }
 
     /**
+     * 发送一些cookie
+     * @param Cookie $cookie
+     */
+    public function addCookie(Cookie $cookie)
+    {
+       $cookie->send();
+    }
+
+    /**
      * 设置cookie
      * @param  string $key     cookie键名
      * @param  string $name    cookie值
      * @param  string $expires 过期时间
+     * @deprecated
      * @return self
      */
     public function setCookie($key, $name, $expires = null)
     {
-        if (!$this->_cookie) {
-            $this->_cookie = new Cookie();
-            $this->_cookie->setVitex(Vitex::getInstance());
+        $cookie = new Cookie($key,$name);
+        if($expires){
+            $cookie->setMaxAge(is_string($expires) ? strtotime($expires) : $expires);
         }
-        $this->_cookie->setCookie($key, $name, $expires);
+        $cookie->send();
         return $this;
     }
 
@@ -313,11 +326,13 @@ class Response
      */
     public function clearCookie($key = null)
     {
-        if (!$this->_cookie) {
-            $this->_cookie = new Cookie();
-            $this->_cookie->setVitex(Vitex::getInstance());
+        if ($key) {
+            setcookie($key, '', time() - 3600);
+        } else {
+            foreach ($_COOKIE as $key => $val) {
+                $this->clearCookie($key);
+            }
         }
-        $this->_cookie->clearCookie($key);
         return $this;
     }
 
@@ -385,5 +400,10 @@ class Response
         }
         array_unshift($args, $this);
         return call_user_func_array($this->methods[$method], $args);
+    }
+
+    public function __clone()
+    {
+        $this->locals = new Set();
     }
 }

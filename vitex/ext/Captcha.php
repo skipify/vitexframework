@@ -1,6 +1,12 @@
 <?php declare(strict_types=1);
 namespace vitex\ext;
 
+/**
+ * 验证码建议不要使用此类了
+ * 再下一个版本会删除
+ * @deprecated
+ * @package vitex\ext
+ */
 class Captcha
 {
     //配置
@@ -93,7 +99,7 @@ class Captcha
         $answer = $_SESSION['vitex.captcha.answer'];
 
         $_SESSION['vitex.captcha.answer'] = null;
-        if ($answer == $code) {
+        if ($code  && $answer == $code) {
             return true;
         }
         return false;

@@ -3,6 +3,8 @@
 namespace vitex\service;
 
 use DI\ContainerBuilder;
+use vitex\ext\Model;
+use vitex\helper\attribute\AttributeTemporaryStore;
 use function DI\create;
 use function DI\factory;
 use Psr\Container\ContainerInterface;
@@ -35,13 +37,13 @@ class Container implements ContainerInterface
             /**
              * 系统单例注入
              */
-            Request::class => factory([Request::class, 'getInstance']),
-            Response::class => factory([Response::class, 'getInstance']),
-            Env::class => factory([Env::class, 'getInstance']),
+//            Request::class => factory([Request::class, 'getInstance']),
+//            Response::class => factory([Response::class, 'getInstance']),
+//            Env::class => factory([Env::class, 'getInstance']),
             /**
              * session 内容
              */
-            SessionDriverInterface::class => create(FileDriver::class),
+            //SessionDriverInterface::class => create(FileDriver::class),
             /**
              * 日志记录  如果需要改为其他引擎则做好映射即可
              */
@@ -57,7 +59,25 @@ class Container implements ContainerInterface
      */
     public function get($name)
     {
-        return $this->phpDi->get($name);
+
+        $instance = $this->phpDi->get($name);
+
+        if ($instance) {
+            $attributeStore = AttributeTemporaryStore::instance();
+            /**
+             * 初始化模型类
+             */
+            $attributeMode = $attributeStore->get(AttributeTemporaryStore::TABLE);
+            if (isset($attributeMode[$name])) {
+                /**
+                 * @var $instance Model
+                 */
+                $instance->setPk($attributeMode[$name]['primaryKey']);
+                $instance->setTable($attributeMode[$name]['tableName']);
+            }
+        }
+
+        return $instance;
     }
 
     /**
