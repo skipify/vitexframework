@@ -86,6 +86,7 @@ class Route
         $this->env = $env;
         $this->_router = null;
         $this->_notfound = function () {
+            header('HTTP/1.1 404 NOT FOUND');
             echo "<h1>404 Not Found</h1>\n";
             $vitex = Vitex::getInstance();
             if ($vitex->getConfig('debug')) {

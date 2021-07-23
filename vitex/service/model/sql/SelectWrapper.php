@@ -31,7 +31,7 @@ class SelectWrapper extends Wrapper
         foreach ($args as $arg) {
             if (is_array($arg)) {
                 $this->select(...$arg);
-            } elseif (str_contains($arg, ',') && !str_contains($arg,'(') && !str_contains($arg,')')) {
+            } elseif (str_contains($arg, ',') && !str_contains($arg, '(') && !str_contains($arg, ')')) {
                 $_args = explode(',', $arg);
                 $this->select(...$_args);
             } else {
@@ -90,6 +90,50 @@ class SelectWrapper extends Wrapper
         } else {
             return sprintf('count(%s) as num', SqlUtil::wrapSelectColumn($field));
         }
+    }
+
+    /**
+     * sum 统计结果
+     * select sum(field) from table where xxx
+     * @param string $field
+     * @return string
+     */
+    public function sum(string $field)
+    {
+        return sprintf('sum(%s) as info', SqlUtil::wrapColumn($field));
+    }
+
+    /**
+     * avg 统计结果
+     * select avg(field) from table where xxx
+     * @param string $field
+     * @return string
+     */
+    public function avg(string $field)
+    {
+        return sprintf('avg(%s) as info', SqlUtil::wrapColumn($field));
+    }
+
+    /**
+     * min 统计结果
+     * select min(field) from table where xxx
+     * @param string $field
+     * @return string
+     */
+    public function min(string $field)
+    {
+        return sprintf('min(%s) as info', SqlUtil::wrapColumn($field));
+    }
+
+    /**
+     * max 统计结果
+     * select max(field) from table where xxx
+     * @param string $field
+     * @return string
+     */
+    public function max(string $field)
+    {
+        return sprintf('max(%s) as info', SqlUtil::wrapColumn($field));
     }
 
     /**
