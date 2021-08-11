@@ -1479,6 +1479,7 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        $bak = $this->_sql;
         $sql = $this->buildSql($column);
         $this->sql = $sql;
         /**
@@ -1487,9 +1488,18 @@ class Model
         if ($this->justSql) {
             return 0;
         }
-        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+
+        $total = 0;
+        if (count($bak['group']) > 0) {
+            $info = $this->DB->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+            $total = count($info);
+        } else {
+            $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+            $total = isset($info['num']) ? $info['num'] : 0;
+        }
+
         $this->lastQueryAt = time();
-        return isset($info['num']) ? $info['num'] : 0;
+        return $total;
     }
 
     /**
