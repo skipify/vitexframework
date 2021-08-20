@@ -1746,7 +1746,7 @@ class Model
         $tmp = '';
         if (strpos($type, '(') !== false) {
             for ($i = 0; $i < strlen($type); $i++) {
-                $str = $type{$i};
+                $str = $type[$i];
                 if ($str == '(') {
                     $dataType = $tmp;
                     $tmp = '';
