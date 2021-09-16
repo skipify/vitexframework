@@ -44,15 +44,17 @@ class MultipartFile extends \SplFileObject
     /**
      * 写入到指定的目录 会自动生成文件名
      * @param $basePath
+     * @return string 返回写入的文件名
      */
-    public function writeToPath($basePath): void
+    public function writeToPath($basePath): string
     {
         if (!is_dir($basePath)) {
             throw new Exception($basePath . ' must be a directory');
         }
-
+        @mkdir($basePath,0777,true);
         $fileName = $this->generateFileName($basePath);
         $this->writeToFile($fileName);
+        return $fileName;
     }
 
     /**
@@ -67,6 +69,17 @@ class MultipartFile extends \SplFileObject
         } else {
             return $filename;
         }
+    }
+
+    /**
+     * 返回用户上传文件的扩展名
+     * @return string|void
+     */
+    public function getExtension()
+    {
+        $fileName = $this->getOrginName();
+        $fs = explode('.', $fileName);
+        return end($fs);
     }
 
     /**

@@ -1366,6 +1366,13 @@ class Model
     private function stepField($column, $amount, $positive = true)
     {
         if (is_array($column)) {
+            if (!is_array($amount)) {
+                $_amount = [];
+                foreach ($column as $k) {
+                    $_amount[] = $amount;
+                }
+                $amount = $_amount;
+            }
             if (is_array($amount) && count($amount) != count($column)) {
                 throw new Exception("传递的字段与自增值无法对应，请查看数量", Exception::CODE_PARAM_NUM_ERROR);
             }
@@ -1488,9 +1495,25 @@ class Model
 
     private function _maxMinSumAvg($method, $field)
     {
-        $field = $this->formatColumn($field);
-        $this->_sql['select'] = [$method . "(" . $field . ") as info"];
-        $sql = $this->limit(1)->buildSql();
+        if (!in_array($method, ['sum', 'avg', 'min', 'max'])) {
+            throw new \Error('暂不支持的查询方法 只允许 sum/avg/min/max');
+        }
+        if (!$this->getTable()) {
+            throw new \Error('您还没有指定要查询的表名');
+        }
+        $sql = "select ";
+
+        $sql .= $this->selectWrapper->$method($field);
+
+        $sql .= " from " . $this->getTable() . ' ';
+        //union
+        if ($this->_sql['union']) {
+            foreach ($this->_sql['union'] as $union) {
+                $sql .= ' union (' . $union . ') ';
+            }
+        }
+        $sql .= $this->buildWhere();
+        $this->selectWrapper->setBuildType(Wrapper::BUILD_TYPE_COMMON);
         $this->sql = $sql;
         /**
          * 仅仅获得sql

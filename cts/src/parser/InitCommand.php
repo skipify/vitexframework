@@ -28,7 +28,7 @@ class InitCommand implements CommandInterface
     public function __construct($args = [])
     {
         $this->appname = $args['app'] ?? 'app';
-        $this->dirname = rtrim($args['dir']??'', '/') ?? '.';
+        $this->dirname = rtrim($args['dirname']??'', '/') ?? '.';
         $this->inname = $args['index'] ?? 'index.php';
         $this->args = $args;
     }
