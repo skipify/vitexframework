@@ -19,7 +19,7 @@ use vitex\core\Exception;
  */
 class Utils
 {
-    const CRYPT_DEFAULT = ['cipher' => 'aes-256-cbc', 'options' => OPENSSL_RAW_DATA,'iv'=>'0000000000000000'];
+    const CRYPT_DEFAULT = ['cipher' => 'aes-256-cbc', 'options' => \OPENSSL_RAW_DATA,'iv'=>'0000000000000000'];
 
     /**
      * 加密数据
