@@ -547,7 +547,7 @@ class Wrapper
         /**
          * 排序
          */
-        if ($this->data['order']) {
+        if ($this->data['order'] && $this->buildType != self::BUILD_TYPE_COUNT) {
             $orderArr = [];
             foreach ($this->data['order'] as list($column, $direct)) {
                 $orderArr[] = $column . ' ' . $direct;
@@ -559,7 +559,7 @@ class Wrapper
         /**
          * having
          */
-        if ($this->data['having']) {
+        if ($this->data['having'] && $this->buildType != self::BUILD_TYPE_COUNT) {
             $whereStr .= ' HAVING ' . implode(',', $this->data['having']);
         }
         if ($this->buildType == self::BUILD_TYPE_COMMON) {
