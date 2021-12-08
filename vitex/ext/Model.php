@@ -1059,7 +1059,7 @@ class Model
             }
         }
         //orderby
-        if ($this->_sql['order']) {
+        if ($this->_sql['order'] && !$iscount) {
             $sql .= ' order by ';
             $_order = [];
             foreach ($this->_sql['order'] as list($column, $way)) {
