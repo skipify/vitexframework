@@ -101,6 +101,13 @@ class Model
     protected $currentConnect = null;
 
     /**
+     * 是否强制从主库查询
+     * 如果存在读写分离的配置，则可能出现需要强制从主库查询的情况可以设置此参数
+     * @var bool
+     */
+    private $forceMaster = false;
+
+    /**
      * 仅仅获取sql，不获取内容
      * @var bool
      */
@@ -152,7 +159,6 @@ class Model
     {
         $this->connectPool['default'] = PdoUtil::instance()->getByConfig($setting);
         $this->currentConnect = $this->connectPool['default'];
-        $this->currentConnect = $this->connectPool['default'];
         //兼容老版本
         $this->DB = $this->currentConnect;
         $this->pdo = $this->currentConnect->pdo;
@@ -170,6 +176,7 @@ class Model
         $alias = $alias ? $alias : (is_string($setting) ? $setting : md5(serialize($setting)));
 
         if (isset($this->connectPool[$alias])) {
+            $this->currentConnect = $this->connectPool[$alias];
             return $this;
         }
         if (is_string($setting)) {
@@ -182,7 +189,7 @@ class Model
     }
 
     /**
-     * 获得当前链接
+     * 获得当前链接，如果currentConnect 已经指定则会忽略Key参数的设置
      * @return model|Pdo|null
      */
     public function getConnect(string $key = '')
@@ -193,10 +200,38 @@ class Model
         if (empty($key)) {
             throw new Exception("Not Specify a database config `key`");
         }
+        /**
+         * 如果是强制使用主库则会在此强制
+         */
+        if ($key == self::SLAVER && $this->forceMaster) {
+            $key = self::MASTER;
+        }
+
         if (isset($this->connectPool[$key])) {
             return $this->connectPool[$key];
         }
         return PdoUtil::instance()->getByConfigKey($key);
+    }
+
+    /**
+     * 清除一个当前链接 ，清楚currentConnect的指向
+     * @return $this
+     */
+    public function clearCurrentConnect()
+    {
+        $this->currentConnect = null;
+        return $this;
+    }
+
+    /**
+     * 强制后面的查询使用主库查询
+     * @param bool $bool
+     * @return $this
+     */
+    public function forceMaster($bool = true)
+    {
+        $this->forceMaster = $bool;
+        return $this;
     }
 
 

@@ -154,11 +154,12 @@ class GenerateStore
         if (isset($config['instance'])) {
             $redis = $config['instance'];
         } elseif (isset($config['sentinel'])) {
+            //哨兵模式
             $redisSentinel = new RedisSentinel();
             foreach ($config['sentinel']['nodes'] as $node) {
                 $redisSentinel->addSentinel($node['host'], $node['port']);
             }
-            $redis = $redisSentinel->getRedis($config['sentinel']['master']);
+            $redis = $redisSentinel->getRedis($config['sentinel']['master'], $config['sentinelCache'] ?? []);
 
             if ($config['password']) {
                 $redis->auth($config['password']);
@@ -169,6 +170,7 @@ class GenerateStore
             }
 
         } else {
+            //单机模式
             $redis = new \Redis();
             $redis->connect($config['host'], $config['port']);
             if (!empty($config['password'])) {

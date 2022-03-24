@@ -34,7 +34,7 @@
                 "host" => '192.168.0.3',
                 'port' => 17003
             ],
-            ]
+            ]    
         ]
     ],
     CacheStore::SQLLITE3 => [

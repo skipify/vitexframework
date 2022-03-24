@@ -117,10 +117,12 @@ class RedisSentinel
      */
     public function addSentinel(string $host, int $port, $password = null, $databaseId = null)
     {
-        $sentinel = new RedisSentinel();
-        if ($sentinel->connect($host, $port, $password, $databaseId)) {
-            $this->sentinels[] = $sentinel;
-        }
+        $this->sentinels[] = [
+            'host' => $host,
+            'port' => $port,
+            'password' => $password,
+            'databaseId' => $databaseId
+        ];
         return $this;
     }
 
@@ -128,6 +130,7 @@ class RedisSentinel
      * 根据masterName获得redis实例
      *
      * @param $masterName
+     * @param array $cacheConfig 哨兵缓存配置
      * @return \Redis
      * @throws \RedisException
      */
@@ -251,10 +254,16 @@ class RedisSentinel
         /**
          * @var $sentinel RedisSentinel
          */
-        foreach ($this->sentinels as $sentinel) {
+        foreach ($this->sentinels as $sentinelConfig) {
             try {
+                $sentinel = new RedisSentinel();
+                if (!$sentinel->connect($sentinelConfig['host'], $sentinelConfig['port'], $sentinelConfig['password'], $sentinelConfig['databaseId'])) {
+                    continue;
+                }
                 $this->currentSentinel = $sentinel;
-                return $sentinel->getMasterAddrByName($masterName);
+                $data = $sentinel->getMasterAddrByName($masterName);
+                $data['time'] = time();
+                return $data;
             } catch (\Exception $e) {
                 continue;
             }

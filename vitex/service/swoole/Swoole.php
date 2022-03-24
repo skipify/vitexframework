@@ -8,6 +8,10 @@ namespace vitex\service\swoole;
 use Swoole\Http\Request;
 use vitex\Vitex;
 
+/**
+ * 不可使用
+ * @deprecated
+ */
 class Swoole
 {
 

@@ -171,6 +171,25 @@ $this->changeDatabase([
 $this->changeDatabase("master");
 ```
 
+### forceMaster
+是否强制使用主库查询，在配有读写分离的配置时，如果希望可以直接从主库查询则可以使用此参数。来指定查询
+
+**签名**
+`forceMaster(bool $val = true):Model`
+
+**参数**
+
+- $val 是否强制，true（默认） 强制，false不强制
+
+### clearCurrentConnect
+系统会创建一个默认的链接(init/changeDatabase)，当一般查询时会直接调用直接获取这个链接
+此处可以清除这个链接
+
+**签名**
+
+```clearCurrentConnect()```
+
+
 ### def()
 
 定义一个新的模型数据，也就是说初始化一条记录，这条记录的字段应该是与数据库对应的,支持链式操作        

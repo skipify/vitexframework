@@ -169,7 +169,8 @@ class Request implements \ArrayAccess, \Iterator
      */
     private function getIp()
     {
-        $ip = $this->env->get("HTTP_CLIENT_IP");
+        $ip = $this->env->get("HTTP_CDN_IP");
+        $ip = $ip ?: $this->env->get("HTTP_CLIENT_IP");
         $ip = $ip ?: $this->env->get("HTTP_X_FORWARDED_FOR");
         $ip = $ip ?: $this->env->get("REMOTE_ADDR");
         if ($ip) {
