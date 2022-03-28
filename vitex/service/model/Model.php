@@ -504,6 +504,10 @@ class Model
     public function whereTuple($obj)
     {
         $where = $obj->buildWhere();
+        //去除多余的where
+        if(str_starts_with($where,' WHERE ')){
+            $where = substr($where,6);
+        }
         $mode = $this->selectWrapper->getMode();
         $this->selectWrapper->and();
         $this->selectWrapper->sql('(' . $where . ')');
