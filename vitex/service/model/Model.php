@@ -505,8 +505,8 @@ class Model
     {
         $where = $obj->buildWhere();
         //去除多余的where
-        if(str_starts_with($where,' WHERE ')){
-            $where = substr($where,6);
+        if(str_starts_with($where,'  WHERE')){
+            $where = substr($where,7);
         }
         $mode = $this->selectWrapper->getMode();
         $this->selectWrapper->and();
