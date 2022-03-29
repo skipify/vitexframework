@@ -20,21 +20,27 @@
         'password' => '',
         'databaseId' => 0,
         'sentinel' => [
-        'master' => 'T1',
-        'nodes' => [
-            [
-                "host" => '192.168.0.1',
-                'port' => 17001
+            'master' => 'T1',
+            'nodes' => [
+                [
+                    "host" => '192.168.0.1',
+                    'port' => 17001
+                ],
+                [
+                    "host" => '192.168.0.2',
+                    'port' => 17002
+                ],
+                [
+                    "host" => '192.168.0.3',
+                    'port' => 17003
+                ],
             ],
-            [
-                "host" => '192.168.0.2',
-                'port' => 17002
-            ],
-            [
-                "host" => '192.168.0.3',
-                'port' => 17003
-            ],
-            ]    
+            /*哨兵 主服务器缓存  可选 file缓存 或者apcu缓存*/
+            'cache' => [
+                "driver" => "file",
+                "cacheName" => "/dev/shm/sentinel.php",
+                "expire" => 10
+             ]    
         ]
     ],
     CacheStore::SQLLITE3 => [

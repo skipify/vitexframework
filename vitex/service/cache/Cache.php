@@ -18,12 +18,23 @@ use Psr\SimpleCache\CacheInterface;
 class Cache implements CacheInterface
 {
     /**
+     * 使用了 连接实例连接
+     */
+    const INSTANCE_CONNECT = "instance_connect";
+    /**
      * 缓存驱动
      * @var CacheProvider
      */
     private CacheProvider $cache;
 
-    public function __construct(){
+    /**
+     * 缓存类型
+     * @var string
+     */
+    private string $store = "";
+
+    public function __construct()
+    {
 
     }
 
@@ -33,29 +44,42 @@ class Cache implements CacheInterface
      * @param string | CacheProvider $store
      * @return $this
      */
-    public function store(string | CacheProvider $store) : Cache{
-        if(is_string($store)){
+    public function store(string|CacheProvider $store): Cache
+    {
+        if (is_string($store)) {
             $generateStore = new GenerateStore();
             $this->cache = $generateStore->get($store);
+            $this->store = $store;
         } else {
             $this->cache = $store;
+            $this->store = self::INSTANCE_CONNECT;
         }
         return $this;
     }
-    
+
+    /**
+     * 获取当前的缓存类型
+     * @return string
+     */
+    public function getCurrentStore(): string
+    {
+        return $this->store;
+    }
+
     /**
      * 设置ID前缀
      * @param $prefix
      * @return $this
      */
-    public function setPrefix($prefix){
+    public function setPrefix($prefix)
+    {
         $this->cache->setNamespace($prefix);
         return $this;
     }
 
     public function get($key, $default = null)
     {
-        if(!is_string($key)){
+        if (!is_string($key)) {
             throw new InvalidArgumentException();
         }
         $val = $this->cache->fetch($key);
@@ -64,15 +88,15 @@ class Cache implements CacheInterface
 
     public function set($key, $value, $ttl = null)
     {
-        if(!is_string($key)){
+        if (!is_string($key)) {
             throw new InvalidArgumentException();
         }
-        return $this->cache->save($key,$value,$ttl);
+        return $this->cache->save($key, $value, $ttl);
     }
 
     public function delete($key)
     {
-        if(!is_string($key)){
+        if (!is_string($key)) {
             throw new InvalidArgumentException();
         }
         return $this->cache->delete($key);
@@ -92,12 +116,12 @@ class Cache implements CacheInterface
      */
     public function getMultiple($keys, $default = null)
     {
-        if(!is_array($keys)){
+        if (!is_array($keys)) {
             throw new InvalidArgumentException();
         }
         $values = $this->cache->fetchMultiple($keys);
-        foreach ($keys as $key){
-            if(!isset($values[$key])){
+        foreach ($keys as $key) {
+            if (!isset($values[$key])) {
                 $values[$key] = $default;
             }
         }
@@ -106,16 +130,16 @@ class Cache implements CacheInterface
 
     public function setMultiple($values, $ttl = null)
     {
-        if(!is_array($values)){
+        if (!is_array($values)) {
             throw new InvalidArgumentException();
         }
-        return $this->cache->saveMultiple($values,$ttl);
+        return $this->cache->saveMultiple($values, $ttl);
     }
 
 
     public function deleteMultiple($keys)
     {
-        if(!is_array($keys)){
+        if (!is_array($keys)) {
             throw new InvalidArgumentException();
         }
         return $this->cache->deleteMultiple($keys);
@@ -123,7 +147,7 @@ class Cache implements CacheInterface
 
     public function has($key)
     {
-        if(!is_string($key)){
+        if (!is_string($key)) {
             throw new InvalidArgumentException();
         }
         return $this->cache->contains($key);
@@ -133,7 +157,8 @@ class Cache implements CacheInterface
      * 获取元信息
      * @return array|null
      */
-    public function getStats(){
+    public function getStats()
+    {
         return $this->cache->getStats();
     }
 }

@@ -327,7 +327,7 @@ class Response
     public function clearCookie($key = null)
     {
         if ($key) {
-            setcookie($key, '', time() - 3600);
+            setcookie($key, '', VITEX_NOW - 3600);
         } else {
             foreach ($_COOKIE as $key => $val) {
                 $this->clearCookie($key);

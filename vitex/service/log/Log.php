@@ -25,8 +25,12 @@ class Log implements LoggerInterface
             $log = $vitex->getConfig('log');
             if ($log && $log instanceof LoggerInterface) {
                 $this->logger = $log;
-            } else {
+            } elseif($vitex->openLog){
+                //使用默认logger记录
                 $this->logger = (new DefaultLogger())->getLogger();
+            } else {
+                //不记录使用空logger记录
+                $this->logger = new Logger("vitex");
             }
         } else {
             $this->logger = $logger;

@@ -56,6 +56,8 @@ class ConfigProvider
             'router.case_sensitive' => false, //是否区分大小写
             'methodoverride.key' => '__METHOD', //url request method 重写的key
 
+            'cookies.encrypt' => true,
+            'cookies.secret_key' => 'Vitex is a micro restfull framework',
             /* 请使用新的cookie配置*/
             'cookie' => (CookieConfig::fromArray([]))->toArray(),
             /**
@@ -63,7 +65,6 @@ class ConfigProvider
              * file  cache memcached redis sqlite native//
              */
             'session' => (SessionConfig::fromArray([]))->toArray(),
-
 
             /**
              * 打印到屏幕的日志格式，默认为html格式，可以更改为txt格式

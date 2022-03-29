@@ -58,7 +58,7 @@ class Upload extends Middleware
      */
     public function rename($fieldName, $filename, $ext)
     {
-        $filename = md5(time() . $fieldName . $filename . rand(1, 999)) . '.' . $ext;
+        $filename = md5(VITEX_NOW . $fieldName . $filename . rand(1, 999)) . '.' . $ext;
         return $filename;
     }
 

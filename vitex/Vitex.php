@@ -42,9 +42,14 @@ if (!Utils::phpVersion('8.0')) {
  */
 define("VITEX_BASE_PATH", __DIR__);
 
+/**
+ * 当前时间
+ */
+define("VITEX_NOW",time());
+
 class Vitex extends EventEmitter
 {
-    const VERSION = "2.0.0";
+    const VERSION = "2.1.0";
     /**
      * App instance
      */
@@ -132,12 +137,20 @@ class Vitex extends EventEmitter
     public string $requestId;
 
     /**
+     * 是否开启日志记录
+     * @var bool
+     */
+    public bool $openLog = false;
+
+    /**
      * Vitex constructor.
      * @param array $setting
+     * @param bool 是否开启log记录，默认关闭
      */
-    private function __construct(array $setting = [])
+    private function __construct(array $setting = [],$openLog = false)
     {
         $this->execTime();//记录执行开始时间
+        $this->openLog = $openLog;
         //注册加载 加载器
         $this->loader = new Loader();
         $this->loader->addNamespace('\vitex', __DIR__);
@@ -197,6 +210,9 @@ class Vitex extends EventEmitter
      */
     public function errorHandler($errno, $errstr = '', $errfile = '', $errline = '')
     {
+        if(!$this->openLog){
+            return null;
+        }
         if (!($errno & error_reporting())) {
             return null;
         }

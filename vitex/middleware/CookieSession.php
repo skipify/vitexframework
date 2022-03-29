@@ -42,7 +42,7 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
         $this->cookieData = array_merge($this->cookieData,$value);
         $this->vitex->req->session = $this;
         $value = Utils::encrypt(json_encode($this->cookieData,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret_key);
-        setcookie('v', $value, time() + 15 * 60, '/', '', false, true);
+        setcookie('v', $value, VITEX_NOW + 15 * 60, '/', '', false, true);
     }
 
     /**

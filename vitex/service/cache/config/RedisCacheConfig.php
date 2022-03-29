@@ -35,6 +35,15 @@ class RedisCacheConfig implements ConfigInterface
     private array $nodes = [];
 
     /**
+     * 为了增加性能 增加一个哨兵主的缓存实现
+     * driver =>  apcu/file
+     * cacheName => "vitex" 存储名字,文件存储的话为一个文件路径，文件建议直接使用 php文件，缓存，会直接写入一个数组
+     * expire => 10s 缓存有效期
+     * @var array
+     */
+    private array $sentinelCache = [];
+
+    /**
      * 超时时间
      * @var int
      */
@@ -176,6 +185,40 @@ class RedisCacheConfig implements ConfigInterface
     {
         $this->nodes[] = $node;
     }
+
+    /**
+     * @return array
+     */
+    public function getSentinelCache(): array
+    {
+        return $this->sentinelCache;
+    }
+
+    /**
+     * @param array $sentinelCache
+     */
+    public function setSentinelCache(array $sentinelCache): void
+    {
+        $this->sentinelCache = $sentinelCache;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTimeout(): int
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * @param int $timeout
+     */
+    public function setTimeout(int $timeout): void
+    {
+        $this->timeout = $timeout;
+    }
+
+
 
     public function toArray(): array
     {

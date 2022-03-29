@@ -42,7 +42,7 @@ class FileDriver implements SessionDriverInterface
     public function get($key)
     {
         if (file_exists($path = $this->storePath . '/' . $key)) {
-            $expireTime = time() - ($this->lifetime * 60);
+            $expireTime = VITEX_NOW - ($this->lifetime * 60);
             if (filemtime($path) >= $expireTime) {
                 return $this->getContents($path);
             }
@@ -62,7 +62,7 @@ class FileDriver implements SessionDriverInterface
 
     public function gc($maxlifetime)
     {
-        $expireTime = time() - ($maxlifetime * 60);
+        $expireTime = VITEX_NOW - ($maxlifetime * 60);
         foreach (glob($this->storePath.'/*') as $file) {
             if (is_file($file) && filemtime($file) < $expireTime) {
                 @unlink($file);

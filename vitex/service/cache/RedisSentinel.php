@@ -69,7 +69,8 @@ class RedisSentinel
     public function connect(string $host, int $port = 26379, $password = null, $databaseId = null)
     {
         try {
-            $this->redis->connect($host, $port, $this->timeout);
+            //$this->redis->connect($host, $port, $this->timeout);
+            $this->redis->pconnect($host, $port, $this->timeout);
         } catch (\RedisException $e) {
             throw new CacheException("Cant Connect host:{$host} port:{$port}");
         }
@@ -81,6 +82,18 @@ class RedisSentinel
             $this->databaseId = $databaseId;
         }
         return true;
+    }
+
+    /**
+     * 关闭redis连接
+     * @return void
+     */
+    public function close()
+    {
+        try {
+            $this->redis->close();
+        } catch (\Exception $e) {
+        }
     }
 
     /**
@@ -134,11 +147,11 @@ class RedisSentinel
      * @return \Redis
      * @throws \RedisException
      */
-    public function getRedis($masterName)
+    public function getRedis($masterName, array $cacheConfig = [])
     {
-        $address = $this->getMasterAddrByNameFromPoll($masterName);
+        $address = $this->getMasterAddrByNameFromPoll($masterName, $cacheConfig);
         $redis = new \Redis();
-        if (!$redis->connect($address['ip'], $address['port'], $this->currentSentinel->getTimeout())) {
+        if (!$redis->pconnect($address['ip'], $address['port'], $this->timeout ?? 30)) {
             throw new \RedisException("connect to redis failed");
         }
         return $redis;
@@ -248,9 +261,18 @@ class RedisSentinel
     /**
      * 从哨兵池中获得master
      * @param $masterName
+     * @param $cacheConfig
      */
-    public function getMasterAddrByNameFromPoll($masterName)
+    public function getMasterAddrByNameFromPoll($masterName, array $cacheConfig)
     {
+        if (!empty($cacheConfig)) {
+            $master = $cacheConfig['driver'] == 'file' ? include($cacheConfig['cacheName']) : apcu_fetch($cacheConfig['cacheName']);
+            if ($master && ($master['time'] + $cacheConfig['expire']) <= VITEX_NOW) {
+                $this->timeout = $master['timeout'];
+                return $master;
+            }
+        }
+
         /**
          * @var $sentinel RedisSentinel
          */
@@ -262,7 +284,15 @@ class RedisSentinel
                 }
                 $this->currentSentinel = $sentinel;
                 $data = $sentinel->getMasterAddrByName($masterName);
-                $data['time'] = time();
+                $sentinel->close();
+                $data['timeout'] = $sentinel->getTimeout();
+                $data['time'] = VITEX_NOW;
+                $this->timeout = $sentinel->getTimeout();
+                if (!empty($cacheConfig)) {
+                    $cacheConfig['driver'] == 'file' ?
+                        file_put_contents($cacheConfig['cacheName'], '<' . '?php return ' . var_export($data, true) . ';') :
+                        apcu_store($cacheConfig['cacheName'], $data);
+                }
                 return $data;
             } catch (\Exception $e) {
                 continue;

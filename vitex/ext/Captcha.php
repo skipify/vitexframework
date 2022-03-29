@@ -112,7 +112,7 @@ class Captcha
     {
         $answer = '';
         if ($this->type == "1") {
-            $code   = md5(time());
+            $code   = md5(uniqid());
             $code   = substr($code, rand(3, 5), $this->length);
             $code   = str_replace(['2', '0', 'o', '1', 'i'], ['Z', '9', '8', 'L', 'A'], $code);
             $code   = strtoupper($code);
@@ -152,7 +152,7 @@ class Captcha
     protected function gdDrawText($image, $text)
     {
         //干扰字符
-        $code  = md5(time());
+        $code  = md5(uniqid());
         $color = imagecolorallocate($image, rand(180, 200), rand(180, 200), rand(180, 200));
         imagettftext($image, $this->height * 0.8, 3, $this->width * 0.05 + 1, $this->height * 0.8 + 2, $color, $this->font, $code);
         //实际验证码

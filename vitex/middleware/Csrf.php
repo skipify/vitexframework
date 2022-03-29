@@ -89,7 +89,7 @@ class Csrf extends Middleware
     private function getCsrfToken()
     {
         if(!isset($this->vitex->req->session['_csrf_token'])){
-            $token = md5(rand(0,999).time());
+            $token = md5(rand(0,999).VITEX_NOW);
             $this->vitex->req->session['_csrf_token'] = $token;
         } else {
             $token = $this->vitex->req->session['_csrf_token'];

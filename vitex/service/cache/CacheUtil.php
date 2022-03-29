@@ -17,7 +17,7 @@ class CacheUtil
     /**
      * @var Cache
      */
-    private static  $_instance;
+    private static $_instance;
 
     private function __construct()
     {
@@ -26,16 +26,22 @@ class CacheUtil
 
     /**
      * 获取单例示例
+     * 当 store是Null的时候会获取上次连接的store字段
      * @param string | CacheProvider $store
      * @return Cache
      */
-    public static function instance(string | CacheProvider $store)
+    public static function instance(string|CacheProvider|null $store)
     {
         if (self::$_instance == null) {
             $cache = new Cache();
             self::$_instance = $cache;
         }
-        self::$_instance->store($store);
+        if ($store && self::$_instance->getCurrentStore() != $store) {
+            self::$_instance->store($store);
+        }
+        if (!self::$_instance->getCurrentStore()) {
+            throw new CacheException(CacheException::CODE_PARAM_VALUE_ERROR_MSG . " 没有指定缓存Driver");
+        }
         return self::$_instance;
     }
 

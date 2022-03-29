@@ -86,10 +86,17 @@ string 	$name 	配置名
 `$this->getConfig('debug')`  
 
 ### getInstance
+**参数**
+array $setting  配置
+bool  $openLog  是否开启日志记录，默认是 false
 
 这是一个静态方法，用于获取Vitex的实例（单例对象）。  
 
 `$vitex = \vitex\Vitex::getInstance()`  
+
+```
+$vitex = \vitex\Vitex::getInstance([],false);
+```
 
 ### init
 

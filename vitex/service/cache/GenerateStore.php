@@ -159,7 +159,7 @@ class GenerateStore
             foreach ($config['sentinel']['nodes'] as $node) {
                 $redisSentinel->addSentinel($node['host'], $node['port']);
             }
-            $redis = $redisSentinel->getRedis($config['sentinel']['master'], $config['sentinelCache'] ?? []);
+            $redis = $redisSentinel->getRedis($config['sentinel']['master'], $config['sentinel']['cache'] ?? []);
 
             if ($config['password']) {
                 $redis->auth($config['password']);

@@ -112,7 +112,7 @@ class Message implements MessageInterface
     public function extractAttributes(): array
     {
         if (empty($this->attributes['timestamp'])) {
-            $this->attributes['timestamp'] = time();
+            $this->attributes['timestamp'] = VITEX_NOW;
         }
         $this->attributes['headers'] = $this->headers;
         $ret = $this->attributes;
@@ -148,7 +148,7 @@ class Message implements MessageInterface
             'app_id' => null,
             'delivery_mode' => null,
             'priority' => null,
-            'timestamp' => time(),
+            'timestamp' => VITEX_NOW,
             'expiration' => null,
             'type' => null,
             'reply_to' => null,
