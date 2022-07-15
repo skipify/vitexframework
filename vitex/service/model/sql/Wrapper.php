@@ -545,6 +545,13 @@ class Wrapper
         }
 
         /**
+         * having
+         */
+        if ($this->data['having'] && $this->buildType != self::BUILD_TYPE_COUNT) {
+            $whereStr .= ' HAVING ' . implode(',', $this->data['having']);
+        }
+
+        /**
          * 排序
          */
         if ($this->data['order'] && $this->buildType != self::BUILD_TYPE_COUNT) {
@@ -556,12 +563,7 @@ class Wrapper
             $whereStr .= $orderStr;
         }
 
-        /**
-         * having
-         */
-        if ($this->data['having'] && $this->buildType != self::BUILD_TYPE_COUNT) {
-            $whereStr .= ' HAVING ' . implode(',', $this->data['having']);
-        }
+
         if ($this->buildType == self::BUILD_TYPE_COMMON) {
             //拼接limit参数
             $whereStr .= $this->limit;
