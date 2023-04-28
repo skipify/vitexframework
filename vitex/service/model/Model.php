@@ -389,6 +389,22 @@ class Model
     {
         return $this->buildSql();
     }
+    
+    /**
+     * 获取查询构造器
+     * @return SelectWrapper
+     */
+    public function getSelectWrapper(): SelectWrapper{
+        return $this->selectWrapper;
+    }
+
+    /**
+     * 获取更新构造器
+     * @return UpdateWrapper
+     */
+    public function getUpdateWrapper(): UpdateWrapper{
+        return $this->updateWrapper;
+    }
 
     /**
      * 选择要查询的字段名
