@@ -123,9 +123,9 @@ class Model
      * Sql查询包装器
      * @var SelectWrapper
      */
-    private SelectWrapper $selectWrapper;
+    protected SelectWrapper $selectWrapper;
 
-    private UpdateWrapper $updateWrapper;
+    protected UpdateWrapper $updateWrapper;
 
     /**
      * @var $DB PDO
