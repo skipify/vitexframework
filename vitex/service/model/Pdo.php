@@ -57,6 +57,18 @@ class Pdo
      */
     public function getDsn($p)
     {
+        // see：pgsql:dbname=database;host=localhost;port=5866
+        if (!empty($p['dsn']) && is_string($p['dsn'])){
+
+            $this->engine = substr($p['dsn'],0, strpos($p['dsn'], ":"));
+
+            if(empty($this->engine)){
+                throw new \PdoException("The database connection is configured in DSN mode, but the connection mode is incorrectly configured. see 'pgsql:dbname=database;host=localhost;port=5866'");
+            }
+
+            return $p['dsn'];
+        }
+
         $this->engine = $p['engine'] ?? $this->engine;
         return $this->engine . ':dbname=' . $p['database'] . ';host=' . $p['host'] . ';charset=' . ($p['charset'] ?? 'utf8');
     }
