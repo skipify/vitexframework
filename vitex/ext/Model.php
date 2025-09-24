@@ -211,7 +211,7 @@ class Model
     {
         //getby
         if (substr($method, 0, 5) == 'getBy') {
-            $field = str_replace('getBy', '', $method);
+            $field = strtolower(str_replace('getBy', '', $method));
             $val = array_shift($args);
             $this->where($field, '=', $val);
             return $this->_get();
@@ -219,7 +219,7 @@ class Model
         //getAllBy
         //
         if (substr($method, 0, 8) == 'getAllBy') {
-            $field = str_replace('getAllBy', '', $method);
+            $field = strtolower(str_replace('getAllBy', '', $method));
             $val = array_shift($args);
             $this->where($field, '=', $val);
             return $this->_getAll();
