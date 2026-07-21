@@ -4,7 +4,7 @@
     "description": "A Tiny Framework.轻量级的php resetful框架 for php8.",
     "keywords": ["framework", "vitex","phpframework"],
     "license": "MIT",
-    "homepage": "http://ifanybug.com",
+    "homepage": "https://github.com/skipify/vitexframework",
     "support": {
         "issues": "https://github.com/skipify/vitexframework/issues",
         "source": "https://github.com/skipify/vitexframework"
