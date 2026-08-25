@@ -116,7 +116,9 @@ class Pdo
             }
             $this->sth->execute($data);
         } catch (\PDOException $e) {
-            $this->sth->debugDumpParams();
+            if (Vitex::getInstance()->getConfig('debug')) {
+                $this->sth->debugDumpParams();
+            }
             $this->errorInfo($sql, "RunSql:" . $this->debugSql . "Error:" . $e->getMessage());
             throw $e;
         }
@@ -198,14 +200,13 @@ class Pdo
     public function errorInfo($sql, $error)
     {
         $vitex = Vitex::getInstance();
-        if ($vitex->getConfig('debug')) {
-
-            $msg = "<p style='color:red;font-weight:bold'>" . $sql . "<p>";
-            $msg .= "<p>" . $error . "</p>";
-        } else {
-            $msg = 'SQL:' . $sql . '  Error: ' . $error;
-            LogUtil::instance()->error($msg);
+        if (!$vitex->getConfig('debug')) {
+            return;
         }
+
+        $msg = "<p style='color:red;font-weight:bold'>" . $sql . "<p>";
+        $msg .= "<p>" . $error . "</p>";
+        LogUtil::instance()->error($msg);
     }
 
     public function __destruct()
