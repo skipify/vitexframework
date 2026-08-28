@@ -170,13 +170,12 @@ class Pdo extends Middleware
      */
     public function errorInfo($sql, $error)
     {
-        if ($this->vitex->getConfig('debug')) {
-
-            $msg = "<p style='color:red;font-weight:bold'>" . $sql . "<p>";
-            $msg .= "<p>" . $error . "</p>";
-        } else {
-            $msg = 'SQL:' . $sql . '  Error: ' . $error;
+        if (!$this->vitex->getConfig('debug')) {
+            return;
         }
+
+        $msg = "<p style='color:red;font-weight:bold'>" . $sql . "<p>";
+        $msg .= "<p>" . $error . "</p>";
         $this->error = $msg;
         $this->vitex->log->error($msg);
     }
