@@ -17,6 +17,11 @@ use vitex\Middleware;
 
 class Pdo extends Middleware
 {
+    /**
+     * 兜底安全校验的危险模式(与 Model 的组合式构建块统一维护)
+     */
+    private const GUARD_PATTERN = '/(' . Model::RE_TERMINATORS . '|' . Model::RE_DANGER_FUNCS . ')/i';
+
     public $engine = 'mysql';
     public $pdo    = null;
     public $sql    = '';
@@ -73,6 +78,8 @@ class Pdo extends Middleware
      */
     public function execute($sql, $arr = [])
     {
+        //Pdo层兜底校验：拦截注释/分号堆叠/时间与文件/信息泄露函数(覆盖绕过Model层校验的直连路径)
+        $this->guardSql($sql);
         $this->sql = $sql;
         $sth       = $this->pdo->prepare($sql);
         try {
@@ -94,6 +101,8 @@ class Pdo extends Middleware
      */
     public function query($sql, $arr = [])
     {
+        //Pdo层兜底校验
+        $this->guardSql($sql);
         $this->sql = $sql;
         $this->sth = $this->pdo->prepare($sql);
         try {
@@ -176,6 +185,19 @@ class Pdo extends Middleware
         }
         $this->error = $msg;
         $this->vitex->log->error($msg);
+    }
+
+    /**
+     * Pdo层兜底SQL校验
+     * @param string $sql
+     * @return void
+     * @throws Exception
+     */
+    private function guardSql($sql)
+    {
+        if (is_string($sql) && preg_match(self::GUARD_PATTERN, $sql)) {
+            throw new Exception('不安全的SQL语句: ' . substr($sql, 0, 100), Exception::CODE_PARAM_VALUE_ERROR);
+        }
     }
 
     public function call()

@@ -117,6 +117,19 @@ class Model
      */
     public $lastQueryAt;
 
+    /**
+     * where条件的预处理绑定参数
+     * 条件存入_sql时生成占位符并记录参数，执行时统一使用prepare绑定
+     * @var array
+     */
+    private $_bindParams = [];
+
+    /**
+     * 绑定参数的自增序号
+     * @var int
+     */
+    private $_bindParamSeq = 0;
+
     public function __construct($table = '')
     {
         $this->vitex = Vitex::getInstance();
@@ -279,6 +292,8 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        //原生SQL统一安全校验(拦截注释/分号/堆叠与危险函数)
+        $this->guardSqlFragment($sql);
         $sql = str_replace('@#_', $this->prefix, $sql);
         /**
          * 只获取sql
@@ -332,13 +347,13 @@ class Model
     private function formatColumn($column)
     {
         $column = trim($column);
-        /*调用系统函数时不处理*/
+        /*调用系统函数时不处理(允许CASE WHEN等表达式，按不含盲注函数族的模式校验)*/
         if (strpos($column, '(') !== false) {
-            return $column;
+            return $this->guardIdentifier($column, false);
         }
         if (strpos($column, '.') !== false) {
             list($table, $column) = explode('.', $column);
-            $table = '`' . $table . '`.';
+            $table = '`' . str_replace('`', '``', $table) . '`.';
         } else {
             $table = '';
         }
@@ -346,7 +361,7 @@ class Model
             return $table . $column;
         }
         if (strpos($column, ' ') === false) {
-            return $table . '`' . $column . '`';
+            return $table . '`' . str_replace('`', '``', $column) . '`';
         }
         $column = preg_replace('/[ ]+/', ' ', $column);
         $columns = explode(' ', $column);
@@ -355,7 +370,167 @@ class Model
         } else {
             list($column, $alias) = $columns;
         }
-        return $table . '`' . $column . '` as `' . $alias . '`';
+        return $table . '`' . str_replace('`', '``', $column) . '` as `' . str_replace('`', '``', $alias) . '`';
+    }
+
+    /**
+     * 严格校验并包裹列名(白名单)
+     * 仅允许 字母/数字/下划线/中划线 以及点号分隔的 table.column 形式，
+     * 禁止空格、制表符、括号、反引号等一切其他字符
+     * 适用于where条件列、orderBy、groupBy、having键、insert/update字段名等纯列名场景
+     * 需要表达式请使用 whereRaw 等显式原生方法
+     * @param string $column 列名
+     * @return string 包裹后的列名
+     * @throws \InvalidArgumentException
+     */
+    private function formatStrictColumn($column)
+    {
+        $column = trim((string)$column);
+        if (!preg_match('/^[A-Za-z0-9_\-]+(\.[A-Za-z0-9_\-]+)*$/', $column)) {
+            throw new \InvalidArgumentException('不安全的列名(仅允许字母数字下划线中划线和点):' . $column);
+        }
+        return $this->formatColumn($column);
+    }
+
+    /**
+     * 校验透传(不包裹反引号)的标识符/表达式片段的安全性
+     * 透传片段会直接进入SQL，禁止注释符、语句分隔符与select等关键字，
+     * 同时禁止 反引号+空格 的组合(防止闭合反引号后拼接额外条件)
+     * 需要子查询的场景请使用 Model::sub() 对象方式传递
+     * @param string $identifier 标识符或表达式
+     * @return string 校验通过的标识符
+     * @throws \InvalidArgumentException
+     */
+    private function guardIdentifier($identifier, bool $withBlind = true)
+    {
+        $identifier = (string)$identifier;
+        if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $identifier)
+            || (str_contains($identifier, '`') && preg_match('/\s/', $identifier))
+        ) {
+            throw new \InvalidArgumentException('不安全的标识符:' . $identifier);
+        }
+        return $identifier;
+    }
+
+    /**
+     * 校验构建期的标识符(已经formatColumn/formatStrictColumn处理过的存储形式)
+     * 完整反引号包裹的形式(含 点号/别名/星号)是安全的字面标识符直接放行，
+     * 其余(函数表达式/透传片段)按guardIdentifier黑名单校验
+     * 用于构建期防线：即使_sql被setSqlSet等方式注入了未校验的数据也会在构建时拦截
+     * @param string $id 已格式化的标识符
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function guardBuiltIdentifier($id, bool $withBlind = true)
+    {
+        $id = (string)$id;
+        if ($id === '*' || preg_match('/^`[^`]+`(\.`[^`]+`)?(\.[*])?( as `[^`]+`)?$/', $id)) {
+            return $id;
+        }
+        //括号配平的函数/聚合表达式(如 max(`id`) as info)：select字段允许CASE WHEN等，其余场景按完整黑名单
+        if (str_contains($id, '(') && substr_count($id, '(') === substr_count($id, ')')) {
+            if ($withBlind) {
+                return $this->guardExpression($id);
+            }
+            if (preg_match(self::SELECT_DANGER_PATTERN, $id)) {
+                throw new \InvalidArgumentException('不安全的表达式:' . $id);
+            }
+            return $id;
+        }
+        return $this->guardIdentifier($id, $withBlind);
+    }
+
+    /**
+     * 校验函数/聚合表达式：按guardIdentifier同款完整黑名单校验，
+     * 但不检查 反引号+空白 规则(合法聚合表达式如 max(`id`) as info 含该形式)
+     * @param string $id 表达式
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function guardExpression($id)
+    {
+        if (preg_match(self::IDENT_DANGER_PATTERN, $id)) {
+            throw new \InvalidArgumentException('不安全的表达式:' . $id);
+        }
+        return $id;
+    }
+
+    /**
+     * 校验构建期的条件值：必须是占位符形式，否则按原生片段(light)校验
+     * @param mixed $val 存储的条件值
+     * @return mixed
+     * @throws \InvalidArgumentException
+     */
+    private function guardBuiltValue($val)
+    {
+        if (is_array($val)) {
+            foreach ($val as $v) {
+                $this->guardBuiltValue($v);
+            }
+            return $val;
+        }
+        $val = (string)$val;
+        if (!preg_match('/^:[A-Za-z0-9_]+$/', $val)) {
+            $this->guardSqlFragment($val, true);
+        }
+        return $val;
+    }
+
+    /**
+     * 危险模式的组合式构建块(统一维护，避免多处正则失同步)
+     */
+    /** 注释符与语句分隔符 */
+    public const RE_TERMINATORS = '--|\/\*|;|#';
+    /** 时间盲注/文件读写/信息泄露函数(词形式，反引号内同样命中) */
+    public const RE_DANGER_FUNCS = '\bsleep\b|\bbenchmark\b|\bextractvalue\b|\bupdatexml\b|\bload_file\b|\boutfile\b|\bdumpfile\b|\bdatabase\b|\bversion\b|\bcurrent_user\b|\bsession_user\b|\bsystem_user\b|\bconnection_id\b|\blast_insert_id\b';
+    /** 子查询关键字(原生片段严格模式/标识符场景使用) */
+    public const RE_SUBQUERY = '\bselect\b|\bunion\b|\bdelete\b|\bupdate\b|\binsert\b|\bdrop\b';
+    /** 盲注函数族(标识符/表达式场景拦截，合法场景如ifnull/nullif经词边界不受影响) */
+    public const RE_BLIND_FUNCS = '\bif\b|\bcase\b|\bascii\b|\bord\b|\bsubstr\b|\bsubstring\b|\bmid\b|\bchar\b|\belt\b';
+
+    /** 原生SQL片段危险模式(注释/分隔符/危险函数，select等由严格模式追加) */
+    private const RAW_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . ')/i';
+    /** 标识符/表达式危险模式(追加子查询关键字与盲注函数族) */
+    private const IDENT_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . '|' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . ')/i';
+    /** select字段危险模式(允许CASE WHEN等表达式，不含盲注函数族) */
+    private const SELECT_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . '|' . self::RE_SUBQUERY . ')/i';
+
+    /**
+     * 校验原生SQL片段的安全性(whereRaw/union/query/execute等入口)
+     * 恒定拦截: 注释符(-- /* #)、语句分隔符(;)、时间盲注/文件/信息泄露函数
+     * allowSelect=false 时额外拦截 select/union/delete/update/insert/drop
+     * 完整语句/子查询场景(select合法)请传 true
+     * @param string $sql SQL片段
+     * @param bool $allowSelect 是否允许select/union等子查询关键字
+     * @return string 校验通过的SQL片段
+     * @throws \InvalidArgumentException
+     */
+    private function guardSqlFragment($sql, bool $allowSelect = true)
+    {
+        $sql = (string)$sql;
+        if (preg_match(self::RAW_DANGER_PATTERN, $sql)) {
+            throw new \InvalidArgumentException('不安全的SQL片段:' . $sql);
+        }
+        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . ')/i', $sql)) {
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询关键字):' . $sql);
+        }
+        return $sql;
+    }
+
+    /**
+     * 校验表名(如from的表，可能携带子查询)的安全性
+     * 表名参数允许携带select子查询(文档化用法)，拦截注释符、语句分隔符与时间/文件/信息泄露函数
+     * @param string $table 表名或子查询
+     * @return string 校验通过的表名
+     * @throws \InvalidArgumentException
+     */
+    private function guardTableIdentifier($table)
+    {
+        $table = (string)$table;
+        if (preg_match(self::RAW_DANGER_PATTERN, $table)) {
+            throw new \InvalidArgumentException('不安全的表名:' . $table);
+        }
+        return $table;
     }
 
     /**
@@ -408,10 +583,13 @@ class Model
      */
     public function whereTuple($obj)
     {
+        $params = ($obj instanceof self) ? $obj->_bindParams : [];
         $where = $obj->buildWhere();
         if ($where) {
-            $where = substr($where, 6);
+            $where = (string)substr($where, 6);
         }
+        //子查询的占位参数重写key后合并到当前查询，执行时统一prepare绑定
+        $where = $this->mergeBindParams($where, $params);
         $this->_sql['wheretuple'][] = [$where, 'and'];
         return $this;
     }
@@ -426,10 +604,13 @@ class Model
      */
     public function orWhereTuple($obj)
     {
+        $params = ($obj instanceof self) ? $obj->_bindParams : [];
         $where = $obj->buildWhere();
         if ($where) {
-            $where = substr($where, 6);
+            $where = (string)substr($where, 6);
         }
+        //子查询的占位参数重写key后合并到当前查询，执行时统一prepare绑定
+        $where = $this->mergeBindParams($where, $params);
         $this->_sql['wheretuple'][] = [$where, 'or'];
         return $this;
     }
@@ -626,11 +807,19 @@ class Model
             return $this;
         }
         if (strpos($method, 'xists') === false) {
+            //where条件列允许函数表达式(如UNIX_TIMESTAMP(...)算术列)
             $key = $this->formatColumn($key);
+            if (is_string($key) && str_contains($key, '(')) {
+                //表达式列按完整黑名单校验(拦截盲注函数族)
+                $this->guardIdentifier($key);
+            }
         }
         //非这俩方法时不需要指定操作符
         if ($method != 'where' && $method != 'orWhere') {
             $val = $op;
+        } else {
+            //普通where操作符白名单校验，防止通过操作符注入SQL
+            $op = $this->checkOp($op);
         }
         //设定操作符和连接符
         $type = strpos($method, 'or') !== false ? ' or ' : ' and ';
@@ -639,10 +828,83 @@ class Model
         if ($op == 'is' || $op == 'is not') {
             $val = 'null';
         }
-        $val = is_array($val) ? $val : (string)$val;
+
+        /**
+         * 值统一使用占位符预处理绑定，不再内联拼接进SQL
+         * exists的值为子查询语句本身，保持原样拼接
+         */
+        if ($op == 'exists' || $op == 'not exists') {
+            //字符串子查询统一安全校验(子查询合法，拦截注释/分号/危险函数)
+            $val = is_array($val) ? $val : $this->guardSqlFragment((string)$val);
+        } elseif ($op == 'is' || $op == 'is not') {
+            $val = 'null';
+        } elseif (is_object($val)) {
+            //子查询对象(如Model::sub()生成的)：构建SQL并合并其中的占位参数，子查询整体内联
+            $subParams = ($val instanceof self) ? $val->_bindParams : [];
+            $val = $this->mergeBindParams((string)$val, $subParams);
+        } elseif (is_array($val)) {
+            //in/not in/between 多个值每个值生成一个占位符
+            foreach ($val as $_k => $_v) {
+                $val[$_k] = $this->addBindParam($_v);
+            }
+        } else {
+            $val = $this->addBindParam($val);
+        }
 
         $this->_sql['where'][] = [$key, $op, $val, $type];
         return $this;
+    }
+
+    /**
+     * 记录一个绑定参数并返回占位符
+     * @param mixed $val 参数值
+     * @return string 占位符 :w_N
+     */
+    private function addBindParam($val)
+    {
+        $this->_bindParamSeq++;
+        $key = 'w_' . $this->_bindParamSeq;
+        $this->_bindParams[$key] = $val;
+        return ':' . $key;
+    }
+
+    /**
+     * 合并一段外部SQL片段(如子查询)中的占位参数
+     * 片段中的占位符会被重写为不冲突的新key后合并进来
+     * @param string $sql 包含 :w_N 形式占位符的SQL片段
+     * @param array $params 占位数据 key=>val (key不含:前缀)
+     * @return string 重写占位符之后的SQL片段
+     */
+    private function mergeBindParams(string $sql, array $params): string
+    {
+        if (!$params) {
+            return $sql;
+        }
+        foreach ($params as $key => $val) {
+            $this->_bindParamSeq++;
+            //使用mw_前缀避免与待合并的w_N旧key同名，防止连环替换
+            $newKey = 'mw_' . $this->_bindParamSeq;
+            //整词匹配占位符，避免误替换相近的key
+            $sql = preg_replace('/:' . preg_quote((string)$key, '/') . '(?![A-Za-z0-9_])/', ':' . $newKey, $sql);
+            $this->_bindParams[$newKey] = $val;
+        }
+        return $sql;
+    }
+
+    /**
+     * 校验操作符是否在白名单内，防止通过操作符注入SQL
+     * @param string $op 操作符 = != <> > < >= <= like
+     * @return string 校验后的操作符
+     * @throws \InvalidArgumentException
+     */
+    private function checkOp($op): string
+    {
+        static $allowedOps = ['=', '!=', '<>', '>', '<', '>=', '<=', 'like'];
+        $op = strtolower(trim((string)$op));
+        if (!in_array($op, $allowedOps, true)) {
+            throw new \InvalidArgumentException('不支持的操作类型:' . $op);
+        }
+        return $op;
     }
 
     /**
@@ -652,7 +914,8 @@ class Model
      */
     public function whereRaw($val)
     {
-        $this->_sql['whereraw'][] = $val;
+        //原生片段统一安全校验(严格模式：拦截注释/分号/堆叠/危险函数与子查询关键字)
+        $this->_sql['whereraw'][] = $this->guardSqlFragment($val, false);
         return $this;
     }
 
@@ -665,7 +928,9 @@ class Model
      */
     public function findInSet($column, $val, $type = 'and')
     {
-        $column = $this->formatColumn($column);
+        $column = $this->formatStrictColumn($column);
+        //值使用占位符预处理绑定
+        $val = $this->addBindParam($val);
         $this->_sql['findinset'][] = [$column, $val, $type];
         return $this;
     }
@@ -691,7 +956,11 @@ class Model
      */
     public function having($key, $op, $val, $type = "AND")
     {
+        //having键支持聚合表达式(如sum(pv))，按表达式级校验(拦危险词)
         $key = $this->formatColumn($key);
+        $op = $this->checkOp($op);
+        //值使用占位符预处理绑定
+        $val = $this->addBindParam($val);
         $this->_sql['having'][] = [$key, $op, $val, $type];
         return $this;
     }
@@ -721,10 +990,10 @@ class Model
         }
         /**
          * 处理子查询问题
-         * 子查询使用()包裹
+         * 子查询使用()包裹，表名允许携带select子查询，仅拦截注释符与分号
          */
         if (strpos($table, ')') !== false && strpos($table, '(') !== false) {
-            return $table;
+            return $this->guardTableIdentifier($table);
         }
         $table = $this->prefix . $table;
         return $this->formatTable($table);
@@ -736,9 +1005,9 @@ class Model
         $alias = '';
         if (strpos($table, ' ') !== false) {
             list($table, $alias) = explode(' ', $table);
-            $alias = ' as `' . $alias . '`';
+            $alias = ' as `' . str_replace('`', '``', $alias) . '`';
         }
-        return '`' . $table . '`' . $alias;
+        return '`' . str_replace('`', '``', $table) . '`' . $alias;
     }
 
     /**
@@ -749,7 +1018,7 @@ class Model
      */
     final public function limit($limit, $offset = 0)
     {
-        $this->_sql['limit'] = $limit;
+        $this->_sql['limit'] = (int)$limit;
         $this->offset($offset);
         return $this;
     }
@@ -761,19 +1030,25 @@ class Model
      */
     final public function offset($offset)
     {
-        $this->_sql['offset'] = $offset;
+        $this->_sql['offset'] = (int)$offset;
         return $this;
     }
 
     /**
      * 排序字段以及排序方式
      * @param string $column 字段
-     * @param string $way 排序方式
+     * @param string $way 排序方式 asc/desc
      * @return self
+     * @throws \InvalidArgumentException
      */
     final public function orderBy($column, $way = "DESC")
     {
-        $column = $this->formatColumn($column);
+        $way = strtoupper(trim((string)$way));
+        if (!in_array($way, ['ASC', 'DESC'], true)) {
+            throw new \InvalidArgumentException('不支持的排序方式，仅允许 asc/desc:' . $way);
+        }
+        //排序字段使用严格白名单，不支持函数与表达式
+        $column = $this->formatStrictColumn($column);
         $this->_sql['order'][] = [$column, $way];
         return $this;
     }
@@ -785,7 +1060,8 @@ class Model
      */
     final public function groupBy($column)
     {
-        $column = $this->formatColumn($column);
+        //分组字段使用严格白名单，不支持函数与表达式
+        $column = $this->formatStrictColumn($column);
         $this->_sql['group'][] = $column;
         return $this;
     }
@@ -818,6 +1094,7 @@ class Model
     {
         $col = $this->formatColumn($col);
         $col2 = $this->formatColumn($col2);
+        $op = $this->checkOp($op);
         $this->_sql['join'][$type][] = [$table, $col, $op, $col2];
         return $this;
     }
@@ -925,7 +1202,14 @@ class Model
      */
     final public function union($str)
     {
-        $str = (string)$str;
+        if (is_object($str)) {
+            //子查询对象：先取占位参数(toString会重置条件)再构建SQL，参数合并到当前查询
+            $subParams = ($str instanceof self) ? $str->_bindParams : [];
+            $str = $this->mergeBindParams((string)$str, $subParams);
+        } else {
+            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数)
+            $str = $this->guardSqlFragment((string)$str);
+        }
         $this->_sql['union'][] = $str;
         return $this;
     }
@@ -1025,10 +1309,11 @@ class Model
                 $sql .= 'count(' . $field . ') as num ';
             }
         } else {
+            //select/distinct字段允许CASE WHEN等表达式(无盲注函数族校验)
             if ($this->_sql['distinct']) {
-                $sql .= 'distinct (' . implode(',', $this->_sql['distinct']) . ') ';
+                $sql .= 'distinct (' . implode(',', array_map(fn($v) => $this->guardBuiltIdentifier($v, false), $this->_sql['distinct'])) . ') ';
             } else {
-                $field = $this->_sql['select'] ? implode(',', $this->_sql['select']) : '*';
+                $field = $this->_sql['select'] ? implode(',', array_map(fn($v) => $this->guardBuiltIdentifier($v, false), $this->_sql['select'])) : '*';
                 $sql .= $field . ' ';
             }
         }
@@ -1036,15 +1321,18 @@ class Model
         $sql .= " from " . $this->getTable() . ' ';
 
         $sql .= $this->buildWhere();
-        //groupby
+        //groupby (构建期校验)
         if ($this->_sql['group']) {
-            $sql .= ' group by ' . implode(',', $this->_sql['group']) . ' ';
+            $sql .= ' group by ' . implode(',', array_map([$this, 'guardBuiltIdentifier'], $this->_sql['group'])) . ' ';
         }
 
-        //having
+        //having (构建期校验)
         if ($this->_sql['having']) {
             $sql .= ' having ';
             foreach ($this->_sql['having'] as $k => list($key, $op, $val, $type)) {
+                $key = $this->guardBuiltIdentifier($key);
+                $op = $this->checkOp($op);
+                $val = $this->guardBuiltValue($val);
                 if ($k != 0) {
                     $sql .= $type . ' ';
                 }
@@ -1052,24 +1340,32 @@ class Model
             }
         }
 
-        //union
+        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . $union . ') ';
+                $sql .= ' union (' . $this->guardSqlFragment((string)$union, true) . ') ';
             }
         }
-        //orderby
+        //orderby (构建期校验)
         if ($this->_sql['order'] && !$iscount) {
             $sql .= ' order by ';
             $_order = [];
             foreach ($this->_sql['order'] as list($column, $way)) {
+                $column = $this->guardBuiltIdentifier($column);
+                $way = strtoupper(trim((string)$way));
+                if (!in_array($way, ['ASC', 'DESC'], true)) {
+                    throw new \InvalidArgumentException('不支持的排序方式，仅允许 asc/desc:' . $way);
+                }
                 $_order[] = $column . ' ' . $way;
             }
             $sql .= implode(',', $_order);
         }
-        //limit
+        //limit (构建期校验:仅允许数字)
         if ($this->_sql['limit'] && !$iscount) {
-            $sql .= ' limit ' . $this->_sql['offset'] . ',' . $this->_sql['limit'];
+            if (!is_numeric($this->_sql['limit']) || !is_numeric($this->_sql['offset'])) {
+                throw new \InvalidArgumentException('不安全的limit/offset值');
+            }
+            $sql .= ' limit ' . (int)$this->_sql['offset'] . ',' . (int)$this->_sql['limit'];
         }
         //重置各种条件
         $this->resetCon();
@@ -1087,9 +1383,17 @@ class Model
         //join
         if ($this->_sql['join']) {
             foreach ($this->_sql['join'] as $key => $join) {
+                //构建期校验:连接类型仅允许已知join关键字
+                if (!preg_match('/^(inner|left|right|left outer|right outer|outer|full outer|cross) join$/i', trim($key))) {
+                    throw new \InvalidArgumentException('不安全的join类型:' . $key);
+                }
                 foreach ($join as list($table, $con1, $op, $con2)) {
                     $table = $this->prefix . $table;
                     $table = $this->formatTable($table);
+                    //构建期校验:连接条件与操作符
+                    $con1 = $this->guardBuiltIdentifier($con1);
+                    $con2 = $this->guardBuiltIdentifier($con2);
+                    $op = $this->checkOp($op);
                     $sql .= $key . ' ' . $table . ' on ' . $con1 . ' ' . $op . ' ' . $con2 . ' ';
                 }
             }
@@ -1103,20 +1407,18 @@ class Model
                 if ($k !== 0) {
                     $sql .= $type . ' ';
                 }
+                //构建期防线：列/操作符/值校验(防setSqlSet等方式注入未校验数据)
+                if ($op != 'exists' && $op != 'not exists') {
+                    $column = $this->guardBuiltIdentifier($column);
+                } else {
+                    $this->guardSqlFragment((string)$column, true);
+                }
                 switch ($op) {
                     case 'in':
                     case 'not in':
-                        if (!is_array($val) && strpos(',', $val) !== false) {
-                            $val = explode(',', $val);
-                        }
+                        //构建期校验:值必须为占位符数组或安全的子查询片段
+                        $val = $this->guardBuiltValue($val);
                         if (is_array($val)) {
-                            $val = array_map(function ($v) {
-                                if (is_numeric($v) && $v < 65535) {
-                                    return $v;
-                                } else {
-                                    return "'" . $v . "'";
-                                }
-                            }, $val);
                             $val = implode(',', $val);
                         }
                         $sql .= $column . ' ' . $op . ' (' . $val . ') ';
@@ -1127,10 +1429,8 @@ class Model
                         break;
                     case 'not between':
                     case 'between':
-                        if (!is_numeric($val[0])) {
-                            $val[0] = "'" . $val[0] . "'";
-                            $val[1] = "'" . $val[1] . "'";
-                        }
+                        //构建期校验
+                        $val = $this->guardBuiltValue($val);
                         $sql .= ' ' . $column . ' ' . $op . ' ' . $val[0] . ' and ' . $val[1];
                         break;
                     case 'is not':
@@ -1138,30 +1438,34 @@ class Model
                         $sql .= $column . ' ' . $op . ' null ';
                         break;
                     case 'find_in_set':
-                        $sql .= " find_in_set('$val',$column) ";
+                        $sql .= " find_in_set(" . $val . ",$column) ";
                         break;
                     default:
-                        if (!is_numeric($val) || $val > 65535) {
-                            $val = "'" . $val . "'";
-                        }
+                        //构建期校验:操作符白名单 + 值必须为占位符或安全的子查询片段
+                        $op = $this->checkOp($op);
+                        $val = $this->guardBuiltValue($val);
                         $sql .= $column . ' ' . $op . ' ' . $val . ' ';
                 }
             }
             //find_in_set值
             foreach ($this->_sql['findinset'] as $k => list($column, $val, $type)) {
+                //构建期校验
+                $column = $this->guardBuiltIdentifier($column);
+                $val = $this->guardBuiltValue($val);
                 if ($haswhere) {
                     $sql .= $type . ' ';
                     $haswhere = true;
                 }
-                $sql .= " find_in_set('$val',$column) ";
+                $sql .= " find_in_set(" . $val . ",$column) ";
             }
-            //where raw
+            //where raw (构建期校验)
             foreach ($this->_sql['whereraw'] as $raw) {
-                $sql .= ' ' . $raw . ' ';
+                $sql .= ' ' . $this->guardSqlFragment($raw, false) . ' ';
                 $haswhere = true;
             }
-            //where tuple
+            //where tuple (构建期校验)
             foreach ($this->_sql['wheretuple'] as list($raw, $type)) {
+                $raw = $this->guardSqlFragment((string)$raw, false);
                 if ($haswhere) {
                     $sql .= $type . ' (' . $raw . ') ';
                 } else {
@@ -1188,7 +1492,8 @@ class Model
         $sql = "update " . $this->getTable() . " set ";
         $sets = [];
         foreach ($arr as $key => $val) {
-            $sets[] = $this->formatColumn($key) . ' = :' . $key;
+            //update字段名使用严格白名单校验
+            $sets[] = $this->formatStrictColumn($key) . ' = :' . $key;
         }
         $sql .= implode(',', $sets);
         $sql .= $this->buildWhere();
@@ -1200,7 +1505,8 @@ class Model
             return true;
         }
         $this->sth = $this->pdo->prepare($sql);
-        $ret = $this->sth->execute($arr);
+        //set数据 + where条件的绑定参数
+        $ret = $this->sth->execute($arr + $this->_bindParams);
         $this->lastQueryAt = time();
         $this->resetCon();
         return $ret ? $this->sth->rowCount() : $ret;
@@ -1234,8 +1540,9 @@ class Model
         $params = array_map(function ($item) {
             return ':' . $item;
         }, $keys);
+        //insert字段名使用严格白名单校验
         $keys = array_map(function ($item) {
-            return $this->formatColumn($item);
+            return $this->formatStrictColumn($item);
         }, $keys);
 
         $sql = "insert into " . $this->getTable() . " (" . implode(',', $keys) . ") values (" . implode(',', $params) . ")";
@@ -1373,7 +1680,7 @@ class Model
         if ($this->justSql) {
             return true;
         }
-        $ret = $this->DB->execute($sql);
+        $ret = $this->DB->execute($sql, $this->_bindParams);
         $this->resetCon();
         return $ret;
     }
@@ -1441,6 +1748,16 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        //自增的数值只允许数字，防止拼接注入
+        if (is_array($amount)) {
+            foreach ($amount as $_num) {
+                if (!is_numeric($_num)) {
+                    throw new Exception("自增的数值必须是数字", Exception::CODE_PARAM_VALUE_ERROR);
+                }
+            }
+        } elseif (!is_numeric($amount)) {
+            throw new Exception("自增的数值必须是数字", Exception::CODE_PARAM_VALUE_ERROR);
+        }
         if (is_array($column)) {
             if (is_array($amount) && count($amount) != count($column)) {
                 throw new Exception("传递的字段与自增值无法对应，请查看数量", Exception::CODE_PARAM_NUM_ERROR);
@@ -1457,7 +1774,8 @@ class Model
             } else {
                 $num = $amount;
             }
-            $val = $this->formatColumn($val);
+            //自增字段名使用严格白名单校验
+            $val = $this->formatStrictColumn($val);
             $sets[] = $val . " = (" . $val . " + " . $num . ") ";
         }
         $sql .= implode(',', $sets);
@@ -1469,7 +1787,7 @@ class Model
         if ($this->justSql) {
             return true;
         }
-        $ret = $this->DB->execute($sql);
+        $ret = $this->DB->execute($sql, $this->_bindParams);
 
         $this->resetCon();
         return $ret;
@@ -1487,6 +1805,8 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        //buildSql会重置条件，先快照绑定参数
+        $params = $this->_bindParams;
         $sql = $this->buildSql($column);
         $this->sql = $sql;
         /**
@@ -1495,7 +1815,7 @@ class Model
         if ($this->justSql) {
             return 0;
         }
-        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $info = $this->DB->query($sql, $params)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         return $info['num'] ?? 0;
     }
@@ -1568,6 +1888,8 @@ class Model
         }
         $field = $this->formatColumn($field);
         $this->_sql['select'] = [$method . "(" . $field . ") as info"];
+        //buildSql会重置条件，先快照绑定参数
+        $params = $this->_bindParams;
         $sql = $this->limit(1)->buildSql();
         $this->sql = $sql;
         /**
@@ -1576,7 +1898,7 @@ class Model
         if ($this->justSql) {
             return 0;
         }
-        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $info = $this->DB->query($sql, $params)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         return $info['info'] ?? 0;
     }
@@ -1633,9 +1955,12 @@ class Model
         $start = ($page - 1) * $num;
         $this->limit($num, $start);
         $bak = $this->_sql;
+        $bakParams = $this->_bindParams;
         $infos = $this->_getAll();
 
         $this->_sql = $bak;
+        //执行查询后条件被重置了，此处恢复where条件的绑定参数供count使用
+        $this->_bindParams = $bakParams;
         $querySql = $this->sql;
         $total = $this->count();
         //重新组装两个SQL
@@ -1655,6 +1980,7 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        $this->guardSqlFragment($sql);
         $sth = $this->DB->query($sql);
         $this->lastQueryAt = time();
         return $this->DB->fetchAll($type);
@@ -1672,6 +1998,7 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        $this->guardSqlFragment($sql);
         $info = $this->DB->query($sql)->fetch($type);
         $this->lastQueryAt = time();
         return $info;
@@ -1688,6 +2015,7 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        $this->guardSqlFragment($sql);
         $this->lastQueryAt = time();
         return $this->DB->execute($sql);
     }
@@ -1787,6 +2115,8 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        //buildSql会重置条件，先快照绑定参数
+        $params = $this->_bindParams;
         $sql = $this->limit(1)->buildSql();
         $this->sql = $sql;
         /**
@@ -1795,7 +2125,7 @@ class Model
         if ($this->justSql) {
             return [];
         }
-        $info = $this->DB->query($sql)->fetch(\PDO::FETCH_ASSOC);
+        $info = $this->DB->query($sql, $params)->fetch(\PDO::FETCH_ASSOC);
         $this->lastQueryAt = time();
         $this->_post = $info;
         $this->isfind = true;
@@ -1807,6 +2137,8 @@ class Model
         if (!$this->DB) {
             throw  new Exception('您还没有连接数据库', Exception::CODE_DATABASE_ERROR);
         }
+        //buildSql会重置条件，先快照绑定参数
+        $params = $this->_bindParams;
         $sql = $this->buildSql();
         $this->sql = $sql;
         /**
@@ -1815,7 +2147,7 @@ class Model
         if ($this->justSql) {
             return [];
         }
-        $sth = $this->DB->query($sql);
+        $sth = $this->DB->query($sql, $params);
         $this->lastQueryAt = time();
         return $this->DB->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -1839,10 +2171,11 @@ class Model
             'group' => [],
             'having' => [],
             'union' => [],
-            'on' => [],
             'join' => [],
             'order' => [],
         ];
+        $this->_bindParams = [];
+        $this->_bindParamSeq = 0;
     }
 
     public function __destruct()
