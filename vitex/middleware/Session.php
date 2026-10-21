@@ -85,12 +85,12 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
         }
     }
 
-    public function offsetExists($val)
+    public function offsetExists($val): bool
     {
         return isset($_SESSION[$val]);
     }
 
-    public function offsetSet($key, $val)
+    public function offsetSet($key, $val): void
     {
         if (is_null($key)) {
             $_SESSION[] = $val;
@@ -99,39 +99,39 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
         }
     }
 
-    public function offsetGet($key)
+    public function offsetGet($key): mixed
     {
         return $_SESSION[$key] ?? null;
     }
 
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         unset($_SESSION[$key]);
     }
 
     //Iterator methods
     //
-    public function rewind()
+    public function rewind(): void
     {
         reset($_SESSION);
     }
 
-    public function key()
+    public function key(): mixed
     {
         return key($_SESSION);
     }
 
-    public function next()
+    public function next(): void
     {
-        return next($_SESSION);
+        next($_SESSION);
     }
 
-    public function current()
+    public function current(): mixed
     {
         return current($_SESSION);
     }
 
-    public function count()
+    public function count(): int
     {
         return count($_SESSION);
     }

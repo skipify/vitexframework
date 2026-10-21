@@ -88,12 +88,12 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
         }
     }
 
-    public function offsetExists($val)
+    public function offsetExists($val): bool
     {
         return isset($this->cookieData[$val]);
     }
 
-    public function offsetSet($key, $val)
+    public function offsetSet($key, $val): void
     {
         if (is_null($key)) {
             $this->set($key);
@@ -102,12 +102,12 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
         }
     }
 
-    public function offsetGet($key)
+    public function offsetGet($key): mixed
     {
         return $this->cookieData[$key] ?? null;
     }
 
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         unset($this->cookieData[$key]);
         $this->saveCookie($this->cookieData);
@@ -115,27 +115,27 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
 
     //Iterator methods
     //
-    public function rewind()
+    public function rewind(): void
     {
         reset($this->cookieData);
     }
 
-    public function key()
+    public function key(): mixed
     {
         return key($this->cookieData);
     }
 
-    public function next()
+    public function next(): void
     {
-        return next($this->cookieData);
+        next($this->cookieData);
     }
 
-    public function current()
+    public function current(): mixed
     {
         return current($this->cookieData);
     }
 
-    public function count()
+    public function count(): int
     {
         return count($this->cookieData);
     }

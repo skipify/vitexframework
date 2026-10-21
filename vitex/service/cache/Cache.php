@@ -77,32 +77,23 @@ class Cache implements CacheInterface
         return $this;
     }
 
-    public function get($key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
-        if (!is_string($key)) {
-            throw new InvalidArgumentException();
-        }
         $val = $this->cache->fetch($key);
         return $val === false ? $default : $val;
     }
 
-    public function set($key, $value, $ttl = null)
+    public function set(string $key, mixed $value, null|int|\DateInterval $ttl = null): bool
     {
-        if (!is_string($key)) {
-            throw new InvalidArgumentException();
-        }
         return $this->cache->save($key, $value, $ttl);
     }
 
-    public function delete($key)
+    public function delete(string $key): bool
     {
-        if (!is_string($key)) {
-            throw new InvalidArgumentException();
-        }
         return $this->cache->delete($key);
     }
 
-    public function clear()
+    public function clear(): bool
     {
         return $this->cache->deleteAll();
     }
@@ -110,11 +101,11 @@ class Cache implements CacheInterface
     /**
      * 获取缓存
      * @param iterable $keys
-     * @param null $default
-     * @return array|iterable|mixed[]
+     * @param mixed $default
+     * @return iterable
      * @throws InvalidArgumentException
      */
-    public function getMultiple($keys, $default = null)
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
         if (!is_array($keys)) {
             throw new InvalidArgumentException();
@@ -128,7 +119,7 @@ class Cache implements CacheInterface
         return $values;
     }
 
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool
     {
         if (!is_array($values)) {
             throw new InvalidArgumentException();
@@ -137,7 +128,7 @@ class Cache implements CacheInterface
     }
 
 
-    public function deleteMultiple($keys)
+    public function deleteMultiple(iterable $keys): bool
     {
         if (!is_array($keys)) {
             throw new InvalidArgumentException();
@@ -145,11 +136,8 @@ class Cache implements CacheInterface
         return $this->cache->deleteMultiple($keys);
     }
 
-    public function has($key)
+    public function has(string $key): bool
     {
-        if (!is_string($key)) {
-            throw new InvalidArgumentException();
-        }
         return $this->cache->contains($key);
     }
 

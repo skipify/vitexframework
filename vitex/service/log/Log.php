@@ -3,6 +3,7 @@
 namespace vitex\service\log;
 
 use Monolog\Logger;
+use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use vitex\Vitex;
 
@@ -11,14 +12,14 @@ use vitex\Vitex;
  * 可以自定义logger
  * @package vitex\service\log
  */
-class Log implements LoggerInterface
+class Log extends AbstractLogger
 {
     /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
 
-    public function __construct($logger = null)
+    public function __construct(?LoggerInterface $logger = null)
     {
         if ($logger === null) {
             $vitex = Vitex::getInstance();
@@ -37,47 +38,10 @@ class Log implements LoggerInterface
         }
     }
 
-    public function emergency($message, array $context = array())
-    {
-        $this->logger->emergency($message, $context);
-    }
-
-    public function alert($message, array $context = array())
-    {
-        $this->logger->alert($message, $context);
-    }
-
-    public function critical($message, array $context = array())
-    {
-        $this->logger->critical($message, $context);
-    }
-
-    public function error($message, array $context = array())
-    {
-        $this->logger->error($message, $context);
-    }
-
-    public function warning($message, array $context = array())
-    {
-        $this->logger->warning($message, $context);
-    }
-
-    public function notice($message, array $context = array())
-    {
-        $this->logger->notice($message, $context);
-    }
-
-    public function info($message, array $context = array())
-    {
-        $this->logger->info($message, $context);
-    }
-
-    public function debug($message, array $context = array())
-    {
-        $this->logger->debug($message, $context);
-    }
-
-    public function log($level, $message, array $context = array())
+    /**
+     * @inheritdoc
+     */
+    public function log(mixed $level, string|\Stringable $message, array $context = array()): void
     {
         $this->logger->log($level, $message, $context);
     }
