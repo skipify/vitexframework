@@ -318,9 +318,14 @@ class Wrapper
         }
         /**
          * 如果是一个子查询
+         * 字符串子查询按标识符级校验(子查询包含select会被拒绝，请使用Model::sub()对象方式)
+         * 子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
          */
         if (is_object($val) || (is_string($val) && SqlUtil::isSubQuery($val))) {
-            $param = new Param(str_replace(':sub', is_object($val) ? $val->build() : $val, WrapperConst::SUB_IN), $column, null);
+            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardIdentifier($val);
+            //片段会进入sprintf模板，转义其中的%避免被再次解析
+            $tpl = str_replace(':sub', str_replace('%', '%%', $subSql), WrapperConst::SUB_IN);
+            $param = new Param($tpl, $column, null);
             $param->setSigle(true);
         } else {
             $param = new Param(WrapperConst::IN, $column, is_string($val) ? explode(',', $val) : $val);
@@ -343,9 +348,14 @@ class Wrapper
         }
         /*
         * 如果是一个子查询
+        * 字符串子查询按标识符级校验(子查询包含select会被拒绝，请使用Model::sub()对象方式)
+        * 子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
         */
         if (is_object($val) || (is_string($val) && SqlUtil::isSubQuery($val))) {
-            $param = new Param(str_replace(':sub', is_object($val) ? $val->build() : $val, WrapperConst::SUB_NOT_IN), $column, null);
+            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardIdentifier($val);
+            //片段会进入sprintf模板，转义其中的%避免被再次解析
+            $tpl = str_replace(':sub', str_replace('%', '%%', $subSql), WrapperConst::SUB_NOT_IN);
+            $param = new Param($tpl, $column, null);
             $param->setSigle(true);
         } else {
             $param = new Param(WrapperConst::NOT_IN, $column, is_string($val) ? explode(',', $val) : $val);
@@ -355,29 +365,48 @@ class Wrapper
     }
 
     /**
+     * 构建子查询Model对象的SQL字符串
+     * 构建前重置子查询的构建期占位参数(保留合并参数)，
+     * 防止复用同一个子查询对象时产生多余的绑定参数；构建后把其中的占位参数合并到当前查询
+     * @param mixed $val 子查询Model对象
+     * @return string 子查询SQL
+     */
+    private function buildSubModelSql($val): string
+    {
+        //重置构建参数，防止复用时残留多余参数
+        if (method_exists($val, 'getSelectWrapper')) {
+            $val->getSelectWrapper()->dataHolder->reset();
+        }
+        $sql = $val->build();
+        if (method_exists($val, 'getSelectWrapper')) {
+            $sql = $this->dataHolder->mergeData($sql, $val->getSelectWrapper()->dataHolder->getData());
+        }
+        return $sql;
+    }
+
+    /**
      * a exists (select id from xx)
-     * @param string $val
+     * @param string $val 子查询语句，不要包含最外层的 ()
      * @return $this
      */
     public function exists(string $val): Wrapper
     {
-        $param = new Param(WrapperConst::EXISTS, null, $val);
-        $param->setSigle();
-        $this->data[$this->mode][] = $param;
-
+        //子查询片段统一安全校验(拦截注释/分号/危险函数)
+        SqlUtil::guardSqlFragment($val);
+        $this->data[$this->mode][] = 'EXISTS (' . $val . ')';
         return $this;
     }
 
     /**
      * a not exists (select id from xx)
-     * @param string $val
+     * @param string $val 子查询语句，不要包含最外层的 ()
      * @return $this
      */
     public function notExists(string $val): Wrapper
     {
-        $param = new Param(WrapperConst::NOT_EXISTS, null, $val);
-        $param->setSigle();
-        $this->data[$this->mode][] = $param;
+        //子查询片段统一安全校验
+        SqlUtil::guardSqlFragment($val);
+        $this->data[$this->mode][] = 'NOT EXISTS (' . $val . ')';
         return $this;
     }
 
@@ -401,6 +430,8 @@ class Wrapper
      */
     public function sql($sql)
     {
+        //原生片段入口校验(严格模式，与whereRaw一致；whereTuple等内部片段为列名与占位符，不受影响)
+        SqlUtil::guardSqlFragment($sql, false);
         $this->data[$this->mode][] = $sql;
         return $this;
     }
@@ -430,6 +461,11 @@ class Wrapper
      */
     public function orderBy(string $column, string $direct = 'DESC')
     {
+        //排序方向白名单(入口级校验，与Model::orderBy一致)
+        $direct = strtoupper(trim($direct));
+        if (!in_array($direct, ['ASC', 'DESC'], true)) {
+            throw new \InvalidArgumentException('不支持的排序方式，仅允许 asc/desc:' . $direct);
+        }
         $this->data['order'][] = [SqlUtil::wrapColumn($column), $direct];
         return $this;
     }
@@ -441,7 +477,24 @@ class Wrapper
      */
     public function having(string $sql)
     {
+        //原生having片段统一安全校验(严格模式：拦截注释/分号/危险函数/子查询关键字)
+        SqlUtil::guardSqlFragment($sql, false);
         $this->data['having'][] = $sql;
+        return $this;
+    }
+
+    /**
+     * 参数化的having条件
+     * 值在真正拼接HAVING子句时(build)才生成占位参数并绑定，
+     * 避免COUNT等不含HAVING的构建产生多余的绑定参数
+     * @param string $column 字段名(已经formatColumn处理)
+     * @param string $op 操作符(已经白名单校验)
+     * @param mixed $val 值
+     * @return $this
+     */
+    public function havingCond(string $column, string $op, mixed $val)
+    {
+        $this->data['having'][] = [$column, $op, $val];
         return $this;
     }
 
@@ -546,9 +599,21 @@ class Wrapper
 
         /**
          * having
+         * 数组条目为参数化条件，在此处才生成占位参数
          */
         if ($this->data['having'] && $this->buildType != self::BUILD_TYPE_COUNT) {
-            $whereStr .= ' HAVING ' . implode(',', $this->data['having']);
+            $havingSql = [];
+            foreach ($this->data['having'] as $having) {
+                if (is_array($having)) {
+                    //参数化的having条件 [column, op, val]
+                    list($havingColumn, $havingOp, $havingVal) = $having;
+                    list($havingKey,) = $this->dataHolder->addData('having_' . $havingColumn, $havingVal);
+                    $havingSql[] = $havingColumn . ' ' . $havingOp . ' ' . $havingKey;
+                } else {
+                    $havingSql[] = $having;
+                }
+            }
+            $whereStr .= ' HAVING ' . implode(',', $havingSql);
         }
 
         /**

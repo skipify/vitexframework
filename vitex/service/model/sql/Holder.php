@@ -24,8 +24,6 @@ class Holder
      * 名称
      * @var string
      */
-    public string $holdName;
-
     /**
      * 存储数据
      * @var array
@@ -33,21 +31,16 @@ class Holder
     private array $data = [];
 
     /**
-     * @return string
+     * 通过mergeData合并进来的外部SQL片段的占位数据
+     * 这些占位符存在于原始SQL片段中(如whereTuple/whereIn子查询)，
+     * 重新构建SQL时不会重新生成，因此reset()时不会被清除
+     * @var array
      */
-    public function getHoldName(): string
-    {
-        return $this->holdName;
-    }
+    private array $mergeData = [];
 
     /**
-     * @param string $holdName
+     * @return string
      */
-    public function setHoldName(string $holdName): void
-    {
-        $this->holdName = $holdName;
-    }
-
     /**
      * @param string $keyPrefix
      */
@@ -63,7 +56,7 @@ class Holder
      */
     public function getData(): array
     {
-        return $this->data;
+        return $this->data + $this->mergeData;
     }
 
     /**
@@ -77,6 +70,8 @@ class Holder
 
     /**
      * 重置缓存数据
+     * 注意：合并的外部SQL片段数据不会被重置，因为这些占位符不会在重新构建时再次生成
+     * @return void
      */
     public function reset(): void
     {
@@ -104,7 +99,7 @@ class Holder
         /**
          * 生成新的key
          */
-        if (isset($this->data[$key])) {
+        if (isset($this->data[$key]) || isset($this->mergeData[$key])) {
             $key = $key . '_' . $this->increment;
             $this->increment += 1;
         }
@@ -135,4 +130,45 @@ class Holder
         return [':' . $key, ':' . $key . '_trail'];
     }
 
+    /**
+     * 合并一段外部SQL片段(如子查询)中的占位数据
+     * 片段中的占位符会被重写为不冲突的新key，保证与当前已有的占位数据不冲突，
+     * 重写后的SQL片段返回给调用方，由调用方拼接到查询中，执行时统一使用prepare绑定
+     * @param string $sql 包含 :key 形式占位符的SQL片段
+     * @param array $data 占位数据 key=>val
+     * @return string 重写占位符之后的SQL片段
+     */
+    public function mergeData(string $sql, array $data): string
+    {
+        if (!$data) {
+            return $sql;
+        }
+        foreach ($data as $key => $val) {
+            $newKey = $this->createUniqueKey('sub_' . $key);
+            //整词匹配占位符，避免 :id 误替换 :id_1 / :idx
+            $pattern = '/:' . preg_quote((string)$key, '/') . '(?![A-Za-z0-9_])/';
+            $sql = preg_replace($pattern, ':' . $newKey, $sql);
+            $this->mergeData[$newKey] = $val;
+        }
+        return $sql;
+    }
+
+    /**
+     * 生成一个不与当前已有占位数据冲突的key
+     * @param string $key 期望的key
+     * @return string 不冲突的key
+     */
+    private function createUniqueKey(string $key): string
+    {
+        if (!isset($this->data[$key]) && !isset($this->mergeData[$key])) {
+            return $key;
+        }
+        for ($i = $this->increment;; $i++) {
+            $newKey = $key . '_' . $i;
+            if (!isset($this->data[$newKey]) && !isset($this->mergeData[$newKey])) {
+                $this->increment = $i + 1;
+                return $newKey;
+            }
+        }
+    }
 }

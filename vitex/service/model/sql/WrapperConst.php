@@ -33,8 +33,6 @@ class WrapperConst
     const BETWEEN = "%s BETWEEN %s AND %s";
     const NOT_BETWEEN = "%s NOT BETWEEN %s AND %s";
 
-    const EXISTS = "EXISTS (%s)";
-    const NOT_EXISTS = "NOT EXISTS (%s)";
 
     const IN = "%s IN (%s)";
     const NOT_IN = "%s NOT IN (%s)";

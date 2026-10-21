@@ -14,6 +14,7 @@ namespace vitex\service\model;
 
 use vitex\core\Exception;
 use vitex\service\log\LogUtil;
+use vitex\service\model\sql\SqlUtil;
 use vitex\Vitex;
 
 /**
@@ -69,6 +70,8 @@ class Pdo
      */
     public function execute($sql, $arr = [])
     {
+        //Pdo层兜底校验
+        SqlUtil::guardSqlFragment($sql);
         $this->debugSql = $sql;
         $this->debugData = $arr;
         $this->sth = $this->pdo->prepare($sql);
@@ -90,6 +93,8 @@ class Pdo
      */
     public function query($sql, $arr = [])
     {
+        //Pdo层兜底校验：拦截注释/分号堆叠/时间与文件/信息泄露函数(覆盖绕过Model层校验的直连路径)
+        SqlUtil::guardSqlFragment($sql);
         $this->debugSql = $sql;
         $this->debugData = $arr;
         $this->sth = $this->pdo->prepare($sql);

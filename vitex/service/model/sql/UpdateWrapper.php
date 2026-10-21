@@ -53,6 +53,8 @@ class UpdateWrapper extends Wrapper
      */
     public function setRaw(string $column, string $val)
     {
+        //set表达式无需子查询，按严格模式校验(拦截注释/分号/危险函数/子查询关键字)
+        SqlUtil::guardSqlFragment($val, false);
         $this->setRaw[] = [
             $column, $val
         ];
@@ -114,12 +116,14 @@ class UpdateWrapper extends Wrapper
              * @var $columnKey string 占位字符串
              */
             list($columnKey,) = $this->dataHolder->addData($column, $value);
-            $column = SqlUtil::wrapColumn($column);
+            //update字段名使用严格白名单校验
+            $column = SqlUtil::wrapStrictColumn($column);
             $sets[] = sprintf(self::TPL, $column, $columnKey);
         }
 
         foreach ($this->setRaw as list($column, $value)) {
-            $sets[] = sprintf(self::TPL,SqlUtil::wrapColumn($column),$value);
+            //setRaw的列名(increment等)使用严格白名单校验
+            $sets[] = sprintf(self::TPL, SqlUtil::wrapStrictColumn($column), $value);
         }
 
         return implode(',', $sets);

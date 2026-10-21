@@ -37,7 +37,6 @@ class Model
      * @var array
      */
     private $_sql = [
-        'wheretuple' => [],
         'select' => [],
         'from' => '',
         'offset' => 0,
@@ -131,12 +130,6 @@ class Model
      * @var $DB PDO
      */
     public $DB;
-
-    /**
-     * 是否是构造的子查询
-     * @var bool
-     */
-    private bool $isSub = false;
 
     public function __construct($table = '')
     {
@@ -358,7 +351,6 @@ class Model
         $self = new self;
         $self->setPrefix($prefix);
         $self->selectWrapper = new SelectWrapper();
-        $self->isSub = true;
         return $self;
     }
 
@@ -370,6 +362,8 @@ class Model
      */
     public function query($sql, array $data = [])
     {
+        //原生SQL统一安全校验(拦截注释/分号/堆叠与危险函数)
+        SqlUtil::guardSqlFragment($sql);
         $sql = str_replace('@#_', $this->prefix, $sql);
         $this->sql = $sql;
         /**
@@ -452,6 +446,7 @@ class Model
                 $this->selectWrapper->eq($key, $val);
                 break;
             case '!=':
+            case '<>':
                 $this->selectWrapper->ne($key, $val);
                 break;
             case 'like':
@@ -519,6 +514,8 @@ class Model
      */
     public function whereTuple($obj)
     {
+        //重置子查询的构建参数(保留合并参数)，防止复用同一子查询对象时产生多余的绑定参数
+        $this->resetSubHolder($obj);
         $where = $obj->buildWhere();
         //去除多余的where
         if(str_starts_with($where,'  WHERE')){
@@ -526,6 +523,8 @@ class Model
         }
         $mode = $this->selectWrapper->getMode();
         $this->selectWrapper->and();
+        //子查询的占位参数合并到当前查询，执行时统一使用prepare绑定
+        $where = $this->mergeSubBindData($where, $obj);
         $this->selectWrapper->sql('(' . $where . ')');
         if ($mode == "or") {
             $this->selectWrapper->or();
@@ -543,14 +542,54 @@ class Model
      */
     public function orWhereTuple($obj)
     {
+        //重置子查询的构建参数(保留合并参数)，防止复用同一子查询对象时产生多余的绑定参数
+        $this->resetSubHolder($obj);
         $where = $obj->buildWhere();
+        //去除多余的where
+        if(str_starts_with($where,'  WHERE')){
+            $where = substr($where,7);
+        }
         $mode = $this->selectWrapper->getMode();
         $this->selectWrapper->or();
+        //子查询的占位参数合并到当前查询，执行时统一使用prepare绑定
+        $where = $this->mergeSubBindData($where, $obj);
         $this->selectWrapper->sql('(' . $where . ')');
         if ($mode == "and") {
             $this->selectWrapper->and();
         }
         return $this;
+    }
+
+    /**
+     * 重置子查询对象的构建期占位参数
+     * 复用同一个子查询对象多次构建时，占位参数会自增产生多余的键导致执行报错，
+     * 构建前重置可保证每次构建都生成干净的参数(mergeData合并的参数不受影响)
+     * @param mixed $obj 子查询Model对象
+     * @return void
+     */
+    private function resetSubHolder($obj): void
+    {
+        if (is_object($obj) && method_exists($obj, 'getSelectWrapper')) {
+            $obj->getSelectWrapper()->dataHolder->reset();
+        }
+    }
+
+    /**
+     * 把子查询对象中的占位数据合并到当前查询的绑定参数中
+     * 子查询SQL片段中的占位符会被重写为不冲突的key，保证与当前查询的参数不冲突
+     * @param string $sql 子查询构建好的SQL片段
+     * @param mixed $obj 子查询的Model对象
+     * @return string 重写占位符之后的SQL片段
+     */
+    private function mergeSubBindData(string $sql, $obj): string
+    {
+        if (is_object($obj) && method_exists($obj, 'getSelectWrapper')) {
+            $sql = $this->selectWrapper->dataHolder->mergeData(
+                $sql,
+                $obj->getSelectWrapper()->dataHolder->getData()
+            );
+        }
+        return $sql;
     }
 
 
@@ -646,11 +685,12 @@ class Model
     /**
      * 基本的where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名 没啥用途
-     * @param string $val 值,如说明,不要包含最外层的 ()
+     * @param string|Model $val 值,如说明,不要包含最外层的 ()，也可以传递一个sub()生成的子查询对象
      * @return self
      */
     public function whereExists($key, $val)
     {
+        $val = $this->buildSubQuery($val);
         $this->selectWrapper->exists($val);
         return $this;
     }
@@ -658,11 +698,12 @@ class Model
     /**
      * 基本的where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
-     * @param string $val 值,如说明,不要包含最外层的 ()
+     * @param string|Model $val 值,如说明,不要包含最外层的 ()，也可以传递一个sub()生成的子查询对象
      * @return self
      */
     public function whereNotExists($key, $val)
     {
+        $val = $this->buildSubQuery($val);
         $this->selectWrapper->notExists($val);
         return $this;
     }
@@ -670,11 +711,12 @@ class Model
     /**
      * 基本的 or where exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
-     * @param string $val 值,如说明,不要包含最外层的 ()
+     * @param string|Model $val 值,如说明,不要包含最外层的 ()，也可以传递一个sub()生成的子查询对象
      * @return self
      */
     public function orWhereExists($key, $val)
     {
+        $val = $this->buildSubQuery($val);
         $this->selectWrapper->or()->exists($val)->and();
         return $this;
     }
@@ -682,13 +724,33 @@ class Model
     /**
      * 基本的 or where not exists(select name form user where id=1)查询条件,与前面的操作使用and连接
      * @param string $key 条件列名
-     * @param string $val 值,如说明,不要包含最外层的 ()
+     * @param string|Model $val 值,如说明,不要包含最外层的 ()，也可以传递一个sub()生成的子查询对象
      * @return self
      */
     public function orWhereNotExists($key, $val)
     {
+        $val = $this->buildSubQuery($val);
         $this->selectWrapper->or()->notExists($val)->and();
         return $this;
+    }
+
+    /**
+     * 构建子查询的SQL字符串
+     * 如果传递的是对象(如Model::sub()生成的子查询)则会构建SQL并把其中的占位参数
+     * 合并到当前查询的绑定参数中，保证值在执行时统一使用prepare绑定
+     * @param string|Model $val 子查询语句或者子查询对象
+     * @return string 子查询SQL字符串
+     */
+    private function buildSubQuery($val): string
+    {
+        if (is_object($val)) {
+            //重置子查询的构建参数(保留合并参数)，防止复用时产生多余的绑定参数
+            $this->resetSubHolder($val);
+            $sql = (string)$val;
+            return $this->mergeSubBindData($sql, $val);
+        }
+        //字符串子查询统一安全校验(子查询合法，拦截注释/分号/危险函数)
+        return SqlUtil::guardSqlFragment((string)$val);
     }
 
     /**
@@ -751,6 +813,8 @@ class Model
         // 因为新的拼接不需要提前写 and/or  此处是兼容之前写法
         $sql = trim($sql);
         $mode = $this->selectWrapper->getMode();
+        //片段校验由 Wrapper::sql() 入口统一执行(严格模式)
+        //以(and/or之外)其他字符开头的片段保持原有的静默丢弃行为
         if (strtolower(substr($sql, 0, 3)) == 'and') {
             $sql = substr($sql, 3);
             $this->selectWrapper->and();
@@ -810,9 +874,28 @@ class Model
      */
     public function having($key, $op, $val, $type = "AND")
     {
-        $key = $this->formatColumn($key);
-        $this->selectWrapper->having("$key $op $val");
+        //having键使用严格白名单
+        $key = SqlUtil::wrapStrictColumn($key);
+        $op = $this->checkOp($op);
+        //值使用占位符懒绑定，在真正拼接HAVING子句时才生成参数
+        $this->selectWrapper->havingCond($key, $op, $val);
         return $this;
+    }
+
+    /**
+     * 校验操作符是否在白名单内，防止通过操作符注入SQL
+     * @param string $op 操作符 = != <> > < >= <= like
+     * @return string 校验后的操作符
+     * @throws \InvalidArgumentException
+     */
+    private function checkOp($op): string
+    {
+        static $allowedOps = ['=', '!=', '<>', '>', '<', '>=', '<=', 'like'];
+        $op = strtolower(trim((string)$op));
+        if (!in_array($op, $allowedOps, true)) {
+            throw new \InvalidArgumentException('不支持的操作类型:' . $op);
+        }
+        return $op;
     }
 
     /**
@@ -841,10 +924,10 @@ class Model
 
         /**
          * 处理子查询问题
-         * 子查询使用()包裹
+         * 子查询使用()包裹，表名允许携带select子查询，仅拦截注释符与分号
          */
         if (strpos($table, ')') !== false && strpos($table, '(') !== false) {
-            return $table;
+            return SqlUtil::guardTableIdentifier($table);
         }
         $table = $this->prefix . $table;
         return SqlUtil::wrapSelectColumn($table);
@@ -897,12 +980,18 @@ class Model
     /**
      * 排序字段以及排序方式
      * @param string $column 字段
-     * @param string $way 排序方式
+     * @param string $way 排序方式 asc/desc
      * @return self
+     * @throws \InvalidArgumentException
      */
     final public function orderBy($column, $way = "DESC")
     {
-        $column = $this->formatColumn($column);
+        $way = strtoupper(trim((string)$way));
+        if (!in_array($way, ['ASC', 'DESC'], true)) {
+            throw new \InvalidArgumentException('不支持的排序方式，仅允许 asc/desc:' . $way);
+        }
+        //排序字段使用严格白名单，不支持函数与表达式
+        $column = SqlUtil::wrapStrictColumn($column);
         $this->selectWrapper->orderBy($column, $way);
         return $this;
     }
@@ -914,7 +1003,8 @@ class Model
      */
     final public function groupBy($column)
     {
-        $column = $this->formatColumn($column);
+        //分组字段使用严格白名单，不支持函数与表达式
+        $column = SqlUtil::wrapStrictColumn($column);
         $this->selectWrapper->groupBy($column);
         return $this;
     }
@@ -935,13 +1025,16 @@ class Model
      * @param string $type 各种不同的join操作
      * @param string $table join的表明
      * @param string $col 第一个字段
+     * @param string $op 操作符 = != <> > < >= <= like
      * @param string $col2 第二个字段
      * @return self
+     * @throws \InvalidArgumentException
      */
     private function join($type, $table, $col, $op, $col2 = '')
     {
         $col = $this->formatColumn($col);
         $col2 = $this->formatColumn($col2);
+        $op = $this->checkOp($op);
         $this->_sql['join'][$type][] = [$table, $col, $op, $col2];
         return $this;
     }
@@ -1044,12 +1137,18 @@ class Model
 
     /**
      * union操作
-     * @param string /callable $str union字符串或者一个可以tostring的对象
+     * @param string|Model $str union字符串或者一个可以tostring的对象，也可以是sub()生成的子查询对象
      * @return self
      */
     final public function union($str)
     {
-        $str = (string)$str;
+        if (is_object($str)) {
+            //子查询对象构建SQL并合并其中的占位参数，执行时统一使用prepare绑定
+            $str = $this->buildSubQuery($str);
+        } else {
+            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数)
+            $str = SqlUtil::guardSqlFragment((string)$str);
+        }
         $this->_sql['union'][] = $str;
         return $this;
     }
@@ -1143,10 +1242,10 @@ class Model
         }
 
         $sql .= " from " . $this->getTable() . ' ';
-        //union
+        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . $union . ') ';
+                $sql .= ' union (' . SqlUtil::guardSqlFragment((string)$union, true) . ') ';
             }
         }
         $sql .= $this->buildWhere();
@@ -1165,28 +1264,28 @@ class Model
         //join
         if ($this->_sql['join']) {
             foreach ($this->_sql['join'] as $key => $join) {
+                //构建期校验:连接类型仅允许已知join关键字
+                if (!preg_match('/^(inner|left|right|left outer|right outer|outer|full outer|cross) join$/i', trim($key))) {
+                    throw new \InvalidArgumentException('不安全的join类型:' . $key);
+                }
                 foreach ($join as list($table, $con1, $op, $con2)) {
                     $table = $this->prefix . $table;
-                    $table = SqlUtil::wrapSelectColumn($table);;
+                    //表名允许携带子查询，走表名级校验
+                    $table = SqlUtil::wrapTable($table);
+                    //构建期校验:连接条件与操作符(防setSqlSet等方式注入未校验数据)
+                    $con1 = SqlUtil::guardBuiltIdentifier($con1);
+                    $con2 = SqlUtil::guardBuiltIdentifier($con2);
+                    $op = $this->checkOp($op);
                     $sql .= sprintf(' %s %s on %s %s %s', $key, $table, $con1, $op, $con2);
                 }
             }
         }
         $sql .= $this->selectWrapper->build();
         /**
-         * 如果是子查询的话  替换占位可能会重复
-         * 目前没有想到好的方式传递
-         * 因此这里先替换拼接
+         * 子查询的占位符不在此时替换为具体的值
+         * whereTuple/whereIn/whereExists/union等方法在构建时会把子查询的占位参数
+         * 重写key后合并到当前查询的绑定参数中，SQL中保留占位符，执行时统一使用prepare绑定
          */
-        if ($this->isSub) {
-            foreach ($this->selectWrapper->dataHolder->getData() as $key => $val) {
-                $sql = str_replace(':' . $key, is_numeric($val) ? $val : "'" . $val . "'", $sql);
-            }
-        }
-
-        foreach ($this->_sql['wheretuple'] as list($_sql, $mode)) {
-            $sql .= ' ' . $mode . ' (' . $_sql . ' ) ';
-        }
         return $sql;
     }
 
@@ -1252,8 +1351,9 @@ class Model
         $params = array_map(function ($item) {
             return ':' . $item;
         }, $keys);
+        //insert字段名使用严格白名单校验
         $keys = array_map(function ($item) {
-            return $this->formatColumn($item);
+            return SqlUtil::wrapStrictColumn($item);
         }, $keys);
 
         $sql = sprintf(SqlTpl::INSERT, $this->getTable(), implode(',', $keys), implode(',', $params));
@@ -1561,10 +1661,10 @@ class Model
         $sql .= $this->selectWrapper->$method($field);
 
         $sql .= " from " . $this->getTable() . ' ';
-        //union
+        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . $union . ') ';
+                $sql .= ' union (' . SqlUtil::guardSqlFragment((string)$union, true) . ') ';
             }
         }
         $sql .= $this->buildWhere();
@@ -1670,6 +1770,8 @@ class Model
      */
     final public function fetchAll($sql, $type = \PDO::FETCH_ASSOC)
     {
+        //原生SQL统一安全校验
+        SqlUtil::guardSqlFragment($sql);
         $sth = $this->getConnect(self::SLAVER)->query($sql);
         $this->lastQueryAt = time();
         return $sth->fetchAll($type);
@@ -1684,6 +1786,8 @@ class Model
      */
     final public function fetch($sql, $type = \PDO::FETCH_ASSOC)
     {
+        //原生SQL统一安全校验
+        SqlUtil::guardSqlFragment($sql);
         $info = $this->getConnect(self::SLAVER)->query($sql)->fetch($type);
         $this->lastQueryAt = time();
         return $info;
@@ -1697,6 +1801,8 @@ class Model
      */
     final public function execute($sql)
     {
+        //原生SQL统一安全校验(拦截注释/分号/堆叠与危险函数)
+        SqlUtil::guardSqlFragment($sql);
         $this->lastQueryAt = time();
         return $this->getConnect(self::MASTER)->execute($sql);
     }
@@ -1757,8 +1863,7 @@ class Model
     protected function resetCon()
     {
         $this->_sql = [
-            'wheretuple' => [],
-            'select' => [],
+                'select' => [],
             'from' => '',
             'offset' => 0,
             'union' => [],

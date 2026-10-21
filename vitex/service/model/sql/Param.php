@@ -66,7 +66,8 @@ class Param
      */
     public function getColumn(): string
     {
-        return SqlUtil::wrapColumn($this->column);
+        //where条件列使用严格白名单校验(仅允许字母数字下划线中划线和点)
+        return SqlUtil::wrapStrictColumn($this->column);
     }
 
     /**
