@@ -33,9 +33,41 @@ class Session extends Middleware implements \ArrayAccess, \Iterator, \Countable
                 if ($sid) {
                     session_id($sid);
                 }
+                $this->setSessionCookieParams();
                 session_start();
             }
         }
+    }
+
+    /**
+     * 设置session cookie的安全属性
+     * httponly禁止脚本读取，SameSite默认Lax缓解CSRF，secure可由配置开启
+     * @return void
+     */
+    private function setSessionCookieParams(): void
+    {
+        $config = Vitex::getInstance()->getConfig('session') ?? [];
+        $secure = !empty($config['secure']) || !empty($config['cookie_secure']);
+        if (session_status() === PHP_SESSION_NONE) {
+            session_set_cookie_params([
+                'lifetime' => 0,
+                'path' => '/',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+    }
+
+    /**
+     * 重新生成session id
+     * 登录/提权等场景必须调用，防止会话固定攻击
+     * @return $this
+     */
+    public function regenerate(): self
+    {
+        session_regenerate_id(true);
+        return $this;
     }
 
 

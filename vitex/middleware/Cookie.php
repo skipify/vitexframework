@@ -14,6 +14,7 @@ namespace vitex\middleware;
 use vitex\helper\Set;
 use vitex\helper\Utils;
 use vitex\Middleware;
+use vitex\service\config\CookieConfig;
 use vitex\core\Exception;
 
 /**
@@ -27,6 +28,25 @@ class Cookie extends Middleware
     }
 
     /**
+     * 获取cookie加密配置
+     * 优先读取3.0的cookie配置组，兼容旧版的cookies.*顶层配置
+     * @return array [encrypt, secret_key]
+     */
+    private function getEncryptConfig(): array
+    {
+        $config = $this->vitex->getConfig('cookie');
+        if (is_array($config) && $config) {
+            $cookieConfig = CookieConfig::fromArray($config);
+            return [$cookieConfig->isEncrypt(), $cookieConfig->getSecretKey()];
+        }
+        //兼容旧版点分隔的顶层配置
+        return [
+            (bool)$this->vitex->getConfig('cookies.encrypt'),
+            (string)$this->vitex->getConfig('cookies.secret_key')
+        ];
+    }
+
+    /**
      * 根据指定的cookie名获取cookie
      * @param  string $name                                                       cookie的名字
      * @return string|array cookie的值，如果有加密返回的是解密后的值
@@ -34,9 +54,8 @@ class Cookie extends Middleware
     public function getCookie($name = null)
     {
         $cookie  = $_COOKIE;
-        $encrypt = $this->vitex->getConfig('cookies.encrypt');
-        if ($encrypt) {
-            $secret_key = $this->vitex->getConfig('cookies.secret_key');
+        list($encrypt, $secret_key) = $this->getEncryptConfig();
+        if ($encrypt && $secret_key) {
             foreach ($cookie as &$c) {
                 try {
                     $c = Utils::decrypt($c, $secret_key);

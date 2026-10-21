@@ -33,6 +33,10 @@ class MultipartFile extends \SplFileObject
      */
     public function writeToFile($file): void
     {
+        //路径穿越防护：拒绝携带 .. 的写入路径
+        if (str_contains((string)$file, '..')) {
+            throw new Exception('非法的写入路径:' . $file, Exception::CODE_PARAM_VALUE_ERROR);
+        }
         @mkdir(dirname($file), 0777, true);
         $handle = fopen($file, 'a+');
         while (!$this->eof()) {
@@ -43,11 +47,20 @@ class MultipartFile extends \SplFileObject
 
     /**
      * 写入到指定的目录 会自动生成文件名
+     * 必须传入允许的扩展名白名单，未通过白名单校验的文件将被拒绝写入
      * @param $basePath
+     * @param array $allowExt 允许的扩展名白名单 如 ['jpg','png','gif']
      * @return string 返回写入的文件名
+     * @throws Exception
      */
-    public function writeToPath($basePath): string
+    public function writeToPath($basePath, array $allowExt = []): string
     {
+        if (!$allowExt) {
+            throw new Exception('必须指定允许的扩展名白名单，如 ["jpg","png"]', Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        if (!$this->isAllow($allowExt)) {
+            throw new Exception('文件扩展名不在允许的白名单之内:' . $this->getExtension(), Exception::CODE_PARAM_VALUE_ERROR);
+        }
         if (!is_dir($basePath)) {
             throw new Exception($basePath . ' must be a directory');
         }
@@ -73,13 +86,22 @@ class MultipartFile extends \SplFileObject
 
     /**
      * 返回用户上传文件的扩展名
+     * 强校验：仅允许字母数字组合(1-20位)，防止通过原始文件名携带 / ../ 等字符造成路径穿越
      * @return string
+     * @throws Exception
      */
     public function getExtension(): string
     {
         $fileName = $this->getOrginName();
+        if (!str_contains($fileName, '.')) {
+            throw new Exception('上传文件缺少扩展名:' . $fileName, Exception::CODE_PARAM_VALUE_ERROR);
+        }
         $fs = explode('.', $fileName);
-        return (string)end($fs);
+        $ext = (string)end($fs);
+        if (!preg_match('/^[A-Za-z0-9]{1,20}$/', $ext)) {
+            throw new Exception('上传文件的扩展名不合法:' . $ext, Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        return $ext;
     }
 
     /**

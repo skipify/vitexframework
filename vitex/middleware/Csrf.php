@@ -30,14 +30,15 @@ class Csrf extends Middleware
 
     /**
      * 验证csrf_token信息是否正确
+     * 覆盖所有会变更状态的方法(POST/PUT/PATCH/DELETE)，
+     * 防止通过MethodOverride等方式把请求改写为DELETE/PATCH绕过验证
      * @return bool
      * @throws TokenMismatchException
      */
     public function verify()
     {
-        if(strtoupper($this->vitex->env->method()) == 'POST' ||
-            strtoupper($this->vitex->env->method()) == 'PUT'
-        ) {
+        $method = strtoupper($this->vitex->env->method());
+        if(in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             $token = $this->vitex->req->body->_token;
             if(!$token){
                 $token = $this->vitex->env->get('HTTP_X_CSRF_TOKEN');
@@ -89,7 +90,8 @@ class Csrf extends Middleware
     private function getCsrfToken()
     {
         if(!isset($this->vitex->req->session['_csrf_token'])){
-            $token = md5(rand(0,999).VITEX_NOW);
+            //使用密码学安全的随机源生成token
+            $token = bin2hex(random_bytes(16));
             $this->vitex->req->session['_csrf_token'] = $token;
         } else {
             $token = $this->vitex->req->session['_csrf_token'];

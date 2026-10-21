@@ -26,7 +26,11 @@ class CookieConfig implements ConfigInterface
 
     private bool $secure = false;
 
-    private bool $httponly = false;
+    /**
+     * 默认开启httponly防止XSS读取cookie
+     * secure默认关闭，避免纯HTTP部署环境下cookie无法下发，生产环境HTTPS建议显式开启
+     */
+    private bool $httponly = true;
 
     private string $secretKey = 'Vitex is a micro restfull framework';
 
