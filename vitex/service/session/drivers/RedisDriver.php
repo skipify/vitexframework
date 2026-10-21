@@ -6,6 +6,7 @@ namespace vitex\service\session\drivers;
 
 use vitex\service\cache\CacheStore;
 use vitex\service\cache\CacheUtil;
+use vitex\service\session\SessionHandler;
 use vitex\service\session\SessionDriverInterface;
 use vitex\Vitex;
 
@@ -29,18 +30,27 @@ class RedisDriver implements SessionDriverInterface
 
     public function get($key)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return null;
+        }
         $key = self::PREFIX . $key;
         return CacheUtil::get($key);
     }
 
     public function set($key, $val, $expire = 60)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return false;
+        }
         $key = self::PREFIX . $key;
         return CacheUtil::set($key, $val, $expire);
     }
 
     public function delete($key)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return false;
+        }
         $key = self::PREFIX . $key;
         return CacheUtil::delete($key);
     }

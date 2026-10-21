@@ -246,6 +246,8 @@ class Cookie implements \ArrayAccess
 
     /**
      * 发送 cookie 到客户端
+     * 直接发送已存储的值(启用加密时为密文)，读取方由Cookie中间件统一解密，
+     * 避免加密后又被getValue()解密成明文下发导致加密失效
      */
     public function send()
     {
@@ -259,7 +261,7 @@ class Cookie implements \ArrayAccess
         ];
 
         \setcookie(
-            $this->getName(), $this->getValue(),
+            $this->getName(), $this->value,
             $options
         );
     }
@@ -291,7 +293,7 @@ class Cookie implements \ArrayAccess
     {
         return json_encode([
             "name" => $this->getName(),
-            "value" => $this->getValue(),
+            "value" => $this->value,
             'expires' => $this->getMaxAge(),
             'path' => $this->getPath(),
             'domain' => $this->getDomain(),

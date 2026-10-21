@@ -24,13 +24,25 @@ class Upload extends Middleware
 {
     /**
      * 默认的配置文件
+     * ext默认为常见资源类型扩展名白名单(多个用|分割)，'*'为显式放行任意扩展名(不推荐)
      * @var array
      */
     public $setting = [
-        'ext'       => '*', //多个请使用 |分割
+        'ext'       => 'jpg|jpeg|png|gif|webp|bmp|ico|svg|avif|pdf|txt|csv|md|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|gz|tar|mp3|wav|flac|mp4|avi|mov|mkv|webm',
         'fieldname' => '',
         'rename'    => null,
         'dest'      => '',
+    ];
+
+    /**
+     * 可执行/服务端解析类危险扩展名，无论白名单或通配如何配置一律硬拒绝
+     * 防止上传php/phtml/htaccess等导致RCE
+     */
+    private const DANGER_EXTS = [
+        'php', 'phtml', 'pht', 'php3', 'php4', 'php5', 'php6', 'php7', 'php8', 'phps', 'phtm',
+        'htaccess', 'htpasswd', 'user.ini', 'ini',
+        'jsp', 'jspx', 'jspa', 'asp', 'aspx', 'ascx', 'asax', 'ashx', 'asmx', 'cer', 'cdx',
+        'exe', 'dll', 'so', 'bat', 'cmd', 'com', 'sh', 'bash', 'cgi', 'pl', 'py', 'rb',
     ];
     /**
      * 错误信息列表
@@ -92,14 +104,18 @@ class Upload extends Middleware
 
     /**
      * 根据扩展名过滤上传的文件,该方法会生成一个错误列表
+     * 即使配置为'*'通配，可执行类危险扩展名也会被硬拒绝
      * @return array 过滤后的文件
      */
     private function filterFile($files)
     {
         if (strpos($this->setting['ext'], '*') !== false) {
-            return $files;
+            return $this->denyDangerousExt($files);
         }
         $exts = explode('|', $this->setting['ext']);
+        $exts = array_map(function ($ext) {
+            return strtolower(trim($ext));
+        }, $exts);
 
         foreach ($files as $field => &$file) {
             if (!isset($file['name'])) {
@@ -109,7 +125,14 @@ class Upload extends Middleware
             if (is_array($name)) {
                 foreach ($name as $k => $v) {
                     $ext = $this->getExt($v);
-                    if (!in_array($ext, $exts)) {
+                    if ($this->isDangerExt($ext)) {
+                        unset($file['name'][$k]);
+                        unset($file['type'][$k]);
+                        unset($file['tmp_name'][$k]);
+                        unset($file['error'][$k]);
+                        unset($file['size'][$k]);
+                        $this->setError('500', $field . '字段中的' . $v . '文件为不允许上传的危险类型');
+                    } elseif (!in_array($ext, $exts, true)) {
                         unset($file['name'][$k]);
                         unset($file['type'][$k]);
                         unset($file['tmp_name'][$k]);
@@ -120,13 +143,59 @@ class Upload extends Middleware
                 }
             } else {
                 $ext = $this->getExt($name);
-                if (!in_array($ext, $exts)) {
+                if ($this->isDangerExt($ext)) {
+                    unset($files[$field]);
+                    $this->setError('500', $field . '字段中的' . $name . '文件为不允许上传的危险类型');
+                } elseif (!in_array($ext, $exts, true)) {
                     unset($files[$field]);
                     $this->setError('500', $field . '字段中的' . $name . '文件不在允许的扩展名之内');
                 }
             }
         }
         return $files;
+    }
+
+    /**
+     * 通配模式下仅硬拒绝危险扩展名
+     * @param array $files
+     * @return array
+     */
+    private function denyDangerousExt($files)
+    {
+        foreach ($files as $field => &$file) {
+            if (!isset($file['name'])) {
+                continue;
+            }
+            $name = $file['name'];
+            if (is_array($name)) {
+                foreach ($name as $k => $v) {
+                    if ($this->isDangerExt($this->getExt($v))) {
+                        unset($file['name'][$k]);
+                        unset($file['type'][$k]);
+                        unset($file['tmp_name'][$k]);
+                        unset($file['error'][$k]);
+                        unset($file['size'][$k]);
+                        $this->setError('500', $field . '字段中的' . $v . '文件为不允许上传的危险类型');
+                    }
+                }
+            } else {
+                if ($this->isDangerExt($this->getExt($name))) {
+                    unset($files[$field]);
+                    $this->setError('500', $field . '字段中的' . $name . '文件为不允许上传的危险类型');
+                }
+            }
+        }
+        return $files;
+    }
+
+    /**
+     * 判断扩展名是否为危险的可执行/服务端解析类型
+     * @param  string $ext 已小写的扩展名
+     * @return bool
+     */
+    private function isDangerExt(string $ext): bool
+    {
+        return in_array($ext, self::DANGER_EXTS, true);
     }
     /**
      * 根据文件名获取扩展名

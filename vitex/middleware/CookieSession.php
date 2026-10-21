@@ -47,13 +47,17 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
 
     /**
      * 获取cookie
-     * @throws \vitex\core\Exception
+     * 解密失败(旧格式/被篡改的cookie)时按无会话数据处理，避免抛出异常导致500
      */
     private function getCookie()
     {
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
         $val = isset($_COOKIE['v']) ? $_COOKIE['v'] : '';
-        $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
+        try {
+            $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
+        } catch (\Exception $e) {
+            $decryptVal = '';
+        }
         $this->cookieData = $decryptVal ? json_decode($decryptVal,true):[];
     }
 

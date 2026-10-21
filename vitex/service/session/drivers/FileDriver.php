@@ -5,6 +5,7 @@ namespace vitex\service\session\drivers;
 use Doctrine\Common\Cache\FilesystemCache;
 use vitex\service\cache\CacheUtil;
 use vitex\service\session\SessionConfig;
+use vitex\service\session\SessionHandler;
 use vitex\service\session\SessionDriverInterface;
 use vitex\Vitex;
 
@@ -39,8 +40,22 @@ class FileDriver implements SessionDriverInterface
         }
     }
 
+    /**
+     * 防御纵深:校验key(session id)合法性
+     * key会直接拼接文件路径，包含 ../ 等字符会导致任意文件读写删除
+     * @param string $key
+     * @return bool
+     */
+    private function isSafeKey(string $key): bool
+    {
+        return SessionHandler::isValidSessionId($key);
+    }
+
     public function get($key)
     {
+        if (!$this->isSafeKey((string)$key)) {
+            return null;
+        }
         if (file_exists($path = $this->storePath . '/' . $key)) {
             $expireTime = VITEX_NOW - ($this->lifetime * 60);
             if (filemtime($path) >= $expireTime) {
@@ -51,13 +66,19 @@ class FileDriver implements SessionDriverInterface
 
     public function set($key, $val, $expire = 60)
     {
+        if (!$this->isSafeKey((string)$key)) {
+            return false;
+        }
         file_put_contents($this->storePath . '/' . $key, $val, LOCK_EX);
         return true;
     }
 
     public function delete($key)
     {
-        unlink($this->storePath . '/' . $key);
+        if (!$this->isSafeKey((string)$key)) {
+            return false;
+        }
+        return @unlink($this->storePath . '/' . $key);
     }
 
     public function gc($maxlifetime)

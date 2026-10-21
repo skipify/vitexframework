@@ -900,12 +900,16 @@ class Model
 
     /**
      * 要查询的表名
+     * 仅允许 表名/库.表名 以及可选别名，字符集为字母数字下划线中划线
      * @param string $table 表名
      * @return self
+     * @throws \InvalidArgumentException
      */
     final public function from($table)
     {
         $table = (string)$table;
+        //入口级严格白名单校验，表名不支持子查询，需要子查询请使用Model::sub()对象方式
+        SqlUtil::wrapTableName($table);
         $this->_sql['from'] = $table;
         return $this;
     }
@@ -913,6 +917,7 @@ class Model
     /**
      * 获取当前要查询的表名
      * @return string name
+     * @throws \InvalidArgumentException
      */
     public function getTable()
     {
@@ -923,25 +928,22 @@ class Model
         }
 
         /**
-         * 处理子查询问题
-         * 子查询使用()包裹，表名允许携带select子查询，仅拦截注释符与分号
+         * 构建期统一严格白名单校验(覆盖from/setTable/构造函数所有来源)，
+         * 表前缀拼接后一并校验，包裹反引号返回
          */
-        if (strpos($table, ')') !== false && strpos($table, '(') !== false) {
-            return SqlUtil::guardTableIdentifier($table);
-        }
-        $table = $this->prefix . $table;
-        return SqlUtil::wrapSelectColumn($table);
+        return $this->prefix . SqlUtil::wrapTableName($table);
     }
 
     /**
      * 返回From设置的表名
      * @return string
+     * @throws \InvalidArgumentException
      */
     public function getFromTable()
     {
         $table = $this->_sql['from'];
         if ($table) {
-            return SqlUtil::wrapSelectColumn($table);
+            return SqlUtil::wrapTableName($table);
         }
         return '';
     }

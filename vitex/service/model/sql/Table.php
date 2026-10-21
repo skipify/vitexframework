@@ -17,12 +17,15 @@ class Table
     //todo index  alter 等命令
     /**
      * 从数据库读取表结构元数据
+     * 表名严格白名单(字母/数字/下划线/中划线/点)，并反引号包裹后执行
+     * @param string $tableName 表名
      * @return array/string
      * @throws Exception
+     * @throws \InvalidArgumentException
      */
     final public function getMeta(string $tableName)
     {
-        $sql = 'describe ' . $tableName;
+        $sql = 'describe ' . SqlUtil::wrapTableName($tableName);
         $this->sql = $sql;
 
         $sth = PdoUtil::instance()->getMaster()->query($sql);

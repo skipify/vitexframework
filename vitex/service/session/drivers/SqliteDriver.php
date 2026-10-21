@@ -6,6 +6,7 @@ namespace vitex\service\session\drivers;
 
 use vitex\service\cache\CacheStore;
 use vitex\service\cache\CacheUtil;
+use vitex\service\session\SessionHandler;
 use vitex\service\session\SessionDriverInterface;
 use vitex\Vitex;
 
@@ -25,16 +26,25 @@ class SqliteDriver implements SessionDriverInterface
 
     public function get($key)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return null;
+        }
         return CacheUtil::get($key);
     }
 
     public function set($key, $val, $expire = 60)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return false;
+        }
         return CacheUtil::set($key,$val,$expire);
     }
 
     public function delete($key)
     {
+        if (!SessionHandler::isValidSessionId((string)$key)) {
+            return false;
+        }
         return CacheUtil::delete($key);
     }
 
