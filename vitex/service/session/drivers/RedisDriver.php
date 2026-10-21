@@ -20,6 +20,12 @@ class RedisDriver implements SessionDriverInterface
      */
     const PREFIX = "session:";
 
+    /**
+     * 会话生命周期(分钟)
+     * @var int
+     */
+    private $lifetime;
+
     public function __construct()
     {
         $vitex = Vitex::getInstance();

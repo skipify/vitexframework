@@ -57,7 +57,7 @@ class Container implements ContainerInterface
      * @param string $name
      * @return mixed|string
      */
-    public function get($name)
+    public function get(string $name): mixed
     {
 
         $instance = $this->phpDi->get($name);
@@ -88,7 +88,7 @@ class Container implements ContainerInterface
      * @param array $parameters
      * @return mixed
      */
-    public function make($name, array $parameters = [])
+    public function make(string $name, array $parameters = []): mixed
     {
         return $this->phpDi->make($name, $parameters);
     }
@@ -98,7 +98,7 @@ class Container implements ContainerInterface
      * @param string $name
      * @return bool
      */
-    public function has($name)
+    public function has(string $name): bool
     {
         return $this->phpDi->has($name);
     }
@@ -106,21 +106,21 @@ class Container implements ContainerInterface
     /**
      * 设置实例
      * 设置的内容是
-     * @param $name
-     * @param $instance
+     * @param string $name
+     * @param mixed $instance
      */
-    public function set($name, $instance)
+    public function set(string $name, mixed $instance): void
     {
         $this->phpDi->set($name, $instance);
     }
 
     /**
      * 使用给定的参数执行指定的函数
-     * @param $callable
+     * @param callable $callable
      * @param array $parameters
      */
-    public function call($callable, array $parameters = [])
+    public function call(callable $callable, array $parameters = []): mixed
     {
-        $this->phpDi->call($callable, $parameters);
+        return $this->phpDi->call($callable, $parameters);
     }
 }

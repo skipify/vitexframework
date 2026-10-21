@@ -25,7 +25,7 @@ trait SetTrait
     protected $_data = [];
     protected $_pos = 0;
 
-    public function offsetExists($val)
+    public function offsetExists($val): bool
     {
         return isset($this->_data[$val]);
     }
@@ -35,7 +35,7 @@ trait SetTrait
      * @param $key
      * @param $val
      */
-    public function offsetSet($key, $val)
+    public function offsetSet($key, $val): void
     {
         if (is_null($key)) {
             $this->_data[] = $val;
@@ -46,7 +46,7 @@ trait SetTrait
         }
     }
 
-    public function offsetGet($key)
+    public function offsetGet($key): mixed
     {
         return $this->_data[$key] ?? null;
     }
@@ -55,7 +55,7 @@ trait SetTrait
      * 会触发 remove/unset事件 事件参数为
      * @param $key
      */
-    public function offsetUnset($key)
+    public function offsetUnset($key): void
     {
         $val = $this->_data[$key] ?? null;
         unset($this->_data[$key]);
@@ -63,54 +63,54 @@ trait SetTrait
         $this->emit('unset', [$val]);
     }
 
-    public function __isset($val)
+    public function __isset($val): bool
     {
         return $this->offsetExists($val);
     }
 
-    public function __set($key, $val)
+    public function __set($key, $val): void
     {
         $this->offsetSet($key, $val);
     }
 
-    public function __get($key)
+    public function __get($key): mixed
     {
         return $this->offsetGet($key);
     }
 
-    public function __unset($key)
+    public function __unset($key): void
     {
         $this->offsetUnset($key);
     }
 
     //Iterator methods
     //
-    public function rewind()
+    public function rewind(): void
     {
         reset($this->_data);
     }
 
-    public function key()
+    public function key(): mixed
     {
         return key($this->_data);
     }
 
-    public function next()
+    public function next(): void
     {
-        return next($this->_data);
+        next($this->_data);
     }
 
-    public function current()
+    public function current(): mixed
     {
         return current($this->_data);
     }
 
-    public function valid()
+    public function valid(): bool
     {
         return $this->offsetExists($this->key());
     }
 
-    public function count()
+    public function count(): int
     {
         return count($this->_data);
     }

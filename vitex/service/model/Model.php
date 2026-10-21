@@ -1202,7 +1202,7 @@ class Model
      * @return $this
      * @deprecated
      */
-    public function when($condition, callable $call, callable $notCall = null)
+    public function when($condition, callable $call, ?callable $notCall = null)
     {
         if (is_callable($condition)) {
             $result = call_user_func($condition);

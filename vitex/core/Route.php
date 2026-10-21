@@ -300,7 +300,7 @@ class Route
      * @param callable $call 404执行的方法
      * @return self
      */
-    public function notFound(callable $call = null)
+    public function notFound(?callable $call = null)
     {
         if ($call === null) {
             $vitex = Vitex::getInstance();

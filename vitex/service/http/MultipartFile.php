@@ -73,13 +73,13 @@ class MultipartFile extends \SplFileObject
 
     /**
      * 返回用户上传文件的扩展名
-     * @return string|void
+     * @return string
      */
-    public function getExtension()
+    public function getExtension(): string
     {
         $fileName = $this->getOrginName();
         $fs = explode('.', $fileName);
-        return end($fs);
+        return (string)end($fs);
     }
 
     /**

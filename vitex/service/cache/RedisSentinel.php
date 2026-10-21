@@ -45,7 +45,7 @@ class RedisSentinel
      */
     protected $databaseId = 0;
 
-    public function __construct(float $timeout = null)
+    public function __construct(?float $timeout = null)
     {
         $this->redis = new \Redis();
         $this->timeout = $timeout === null ? 0.0 : $timeout;

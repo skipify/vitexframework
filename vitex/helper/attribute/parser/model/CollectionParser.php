@@ -21,7 +21,7 @@ class CollectionParser extends AttributeParserBase implements AttributeParserInt
      */
     private CollectionData $data;
 
-    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty $reflectInstance = null)
+    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty|null $reflectInstance = null)
     {
         /**
          * @var $instance Collection

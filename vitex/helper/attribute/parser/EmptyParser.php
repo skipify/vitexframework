@@ -10,7 +10,7 @@ namespace vitex\helper\attribute\parser;
 class EmptyParser extends AttributeParserBase implements AttributeParserInterface
 {
 
-    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty $reflectInstance = null)
+    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty|null $reflectInstance = null)
     {
         $data = new ParseDataBase();
         $data->setIsSlot(true);

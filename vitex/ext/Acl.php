@@ -20,6 +20,13 @@ class Acl
      * @var array
      */
     private $group = [];
+
+    /**
+     * 匹配路由
+     * @var Router
+     */
+    private $route;
+
     public function __construct()
     {
         $this->route = new Router();

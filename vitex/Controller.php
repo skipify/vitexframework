@@ -46,6 +46,24 @@ class Controller
     public $view;
 
     /**
+     * 路由对象
+     * @var \vitex\core\Route
+     */
+    public $route;
+
+    /**
+     * 环境变量
+     * @var \vitex\core\Env
+     */
+    public $env;
+
+    /**
+     * 日志对象
+     * @var Log|null
+     */
+    public $log;
+
+    /**
      * @var
      */
     public $container;

@@ -180,12 +180,12 @@ class Env implements \ArrayAccess
      * @param mixed $offset
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return isset($this->_env[$offset]);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         if ($offset === null) {
             return null;
@@ -193,13 +193,13 @@ class Env implements \ArrayAccess
         return $this->get($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $offset = strtoupper($offset);
         $this->_env[$offset] = $value;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         $offset = strtoupper($offset);
         unset($this->_env[$offset]);

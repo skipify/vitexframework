@@ -52,34 +52,34 @@ class SessionHandler implements \SessionHandlerInterface
         $this->lifetime = $sessionConfig['lifetime'];
     }
 
-    public function close()
+    public function close(): bool
     {
         return true;
     }
 
-    public function destroy($session_id)
+    public function destroy(string $session_id): bool
     {
-        return $this->driver->delete($session_id);
+        return (bool)$this->driver->delete($session_id);
     }
 
-    public function gc($maxlifetime)
+    public function gc(int $maxlifetime): int|false
     {
         $this->driver->gc($maxlifetime);
-        return true;
+        return 0;
     }
 
-    public function open($save_path, $name)
+    public function open(string $save_path, string $name): bool
     {
         return true;
     }
 
-    public function read($session_id)
+    public function read(string $session_id): string|false
     {
         return $this->driver->get($session_id) ? (string)$this->driver->get($session_id) : '';
     }
 
-    public function write($session_id, $session_data)
+    public function write(string $session_id, string $session_data): bool
     {
-        return $this->driver->set($session_id, $session_data, $this->lifetime * 60);
+        return (bool)$this->driver->set($session_id, $session_data, $this->lifetime * 60);
     }
 }

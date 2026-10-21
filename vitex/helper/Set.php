@@ -88,7 +88,8 @@ class Set implements \ArrayAccess, \Iterator, \Countable, EventEmitterInterface
     }
 
 
-    public function __tostring(){
-
+    public function __tostring(): string
+    {
+        return json_encode($this->_data, JSON_UNESCAPED_UNICODE) ?: '';
     }
 }

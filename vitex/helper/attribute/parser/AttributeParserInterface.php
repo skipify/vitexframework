@@ -13,7 +13,7 @@ interface AttributeParserInterface
      * @param \ReflectionProperty|\ReflectionClass|\ReflectionMethod|\ReflectionParameter|null $reflectInstance  反射的实例
      * @return mixed
      */
-    public function parse(\ReflectionAttribute $attribute,$instance = null,\ReflectionProperty|\ReflectionClass|\ReflectionMethod | \ReflectionParameter $reflectInstance = null);
+    public function parse(\ReflectionAttribute $attribute,$instance = null,\ReflectionProperty|\ReflectionClass|\ReflectionMethod |\ReflectionParameter|null $reflectInstance = null);
 
     /**
      * 对解析成功的注解进行处理，此处为处理程序

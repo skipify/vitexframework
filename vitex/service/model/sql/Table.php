@@ -13,6 +13,11 @@ use vitex\service\model\PdoUtil;
  */
 class Table
 {
+    /**
+     * 最近一次执行的sql语句
+     * @var string|null
+     */
+    private $sql;
 
     //todo index  alter 等命令
     /**

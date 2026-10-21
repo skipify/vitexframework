@@ -12,7 +12,7 @@ use vitex\helper\attribute\parser\AttributeParserInterface;
 class TableFieldParser extends AttributeParserBase implements AttributeParserInterface
 {
     private $data;
-    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty $reflectInstance = null)
+    public function parse(\ReflectionAttribute $attribute, $instance = null, \ReflectionParameter|\ReflectionMethod|\ReflectionClass|\ReflectionProperty|null $reflectInstance = null)
     {
         $tableData = new TableFieldData();
 

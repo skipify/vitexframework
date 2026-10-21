@@ -6,7 +6,7 @@
 namespace vitex\helper\traits;
 
 
-use GuzzleHttp\Stream\Stream;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\StreamInterface;
 
 trait MessageTrait
@@ -120,7 +120,7 @@ trait MessageTrait
 
     public function getBody()
     {
-        return $this->stream ?? Stream::factory("");
+        return $this->stream ?? Utils::streamFor('');
     }
 
     public function withBody(StreamInterface $body)

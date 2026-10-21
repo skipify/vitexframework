@@ -34,8 +34,8 @@ use vitex\service\Container;
 use vitex\service\log\Log;
 
 
-if (!Utils::phpVersion('8.0')) {
-    throw new Exception("I am at least PHP version 8.0.0");
+if (!Utils::phpVersion('8.2')) {
+    throw new Exception("I am at least PHP version 8.2.0");
 }
 /**
  * 框架根目录
@@ -49,7 +49,7 @@ define("VITEX_NOW",time());
 
 class Vitex extends EventEmitter
 {
-    const VERSION = "2.1.0";
+    const VERSION = "3.0.0";
     /**
      * App instance
      */
@@ -141,6 +141,30 @@ class Vitex extends EventEmitter
      * @var bool
      */
     public bool $openLog = false;
+
+    /**
+     * 类加载器
+     * @var Loader
+     */
+    public $loader;
+
+    /**
+     * 视图对象，调用view()后初始化
+     * @var View|null
+     */
+    public $view = null;
+
+    /**
+     * 日志对象
+     * @var Log|null
+     */
+    public $log;
+
+    /**
+     * 解析后的注解数据
+     * @var array
+     */
+    public $attributes = [];
 
     /**
      * Vitex constructor.
@@ -708,7 +732,7 @@ class Vitex extends EventEmitter
      * @param  $call
      * @return self
      */
-    public function notFound(callable $call = null)
+    public function notFound(?callable $call = null)
     {
         $this->route->notFound($call);
         return $this;

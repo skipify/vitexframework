@@ -15,6 +15,12 @@ use vitex\Vitex;
  */
 class SqliteDriver implements SessionDriverInterface
 {
+    /**
+     * 会话生命周期(分钟)
+     * @var int
+     */
+    private $lifetime;
+
     public function __construct()
     {
         $vitex = Vitex::getInstance();
