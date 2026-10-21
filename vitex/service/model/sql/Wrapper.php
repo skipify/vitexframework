@@ -391,8 +391,8 @@ class Wrapper
      */
     public function exists(string $val): Wrapper
     {
-        //子查询片段统一安全校验(拦截注释/分号/危险函数)
-        SqlUtil::guardSqlFragment($val);
+        //子查询片段统一安全校验(拦截注释/分号/危险函数/盲注与编码外泄函数)
+        SqlUtil::guardSubQuery($val);
         $this->data[$this->mode][] = 'EXISTS (' . $val . ')';
         return $this;
     }
@@ -404,8 +404,8 @@ class Wrapper
      */
     public function notExists(string $val): Wrapper
     {
-        //子查询片段统一安全校验
-        SqlUtil::guardSqlFragment($val);
+        //子查询片段统一安全校验(拦截注释/分号/危险函数/盲注与编码外泄函数)
+        SqlUtil::guardSubQuery($val);
         $this->data[$this->mode][] = 'NOT EXISTS (' . $val . ')';
         return $this;
     }

@@ -16,12 +16,22 @@ class Csrf extends Middleware
 {
 
     /**
+     * 生成本次请求token之前会话中已存在的token快照
+     * 非空说明token来自跨请求持久化的会话，verify时以会话token为唯一真值源
+     * @var string|null
+     */
+    private ?string $sessionTokenSnapshot = null;
+
+    /**
      * 执行中间件，使之生效
      * @return [type] [description]
      */
     public function call()
     {
         if($this->vitex->getConfig('csrf.open')){
+            //在getCsrfHtml生成本次token之前快照会话中的token，
+            //若快照非空则说明会话跨请求持久化，verify以该值为唯一真值
+            $this->sessionTokenSnapshot = $this->vitex->req->session['_csrf_token'] ?? null;
             $this->getCsrfHtml();
             $this->verify();
         }
@@ -44,9 +54,28 @@ class Csrf extends Middleware
                 $token = $this->vitex->env->get('HTTP_X_CSRF_TOKEN');
             }
             $cookieToken = $this->vitex->req->cookies->csrf_token;
-            $pathinfo = $this->vitex->env->getPathinfo();
-            $except = $this->vitex->getConfig('csrf.except');
-            if($token != $cookieToken){
+            $sessionToken = $this->sessionTokenSnapshot;
+            if(is_string($sessionToken) && $sessionToken !== ''){
+                /*
+                 * 会话token跨请求持久化：以服务端会话为唯一真值源
+                 * 提交的token必须为非空字符串且与会话token严格一致(hash_equals防时序攻击)
+                 * 修复：双空(null==null)绕过、宽松!=比较、以及仅比对客户端cookie
+                 * 导致的子域cookie注入(cookie tossing)绕过
+                 */
+                $valid = is_string($token) && $token !== '' && hash_equals($sessionToken, $token);
+            } else {
+                /*
+                 * 无持久会话时退化为double-submit校验：
+                 * token与cookie必须均为非空字符串且严格相等(hash_equals防时序攻击)，
+                 * 修复：双方均缺失时(null==null)被判定相等而放行的绕过
+                 */
+                $valid = is_string($token) && $token !== ''
+                    && is_string($cookieToken) && $cookieToken !== ''
+                    && hash_equals($cookieToken, $token);
+            }
+            if(!$valid){
+                $pathinfo = $this->vitex->env->getPathinfo();
+                $except = $this->vitex->getConfig('csrf.except') ?: [];
                 /*
                  * 一个符合排除的链接就排除
                  */

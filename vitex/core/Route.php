@@ -90,8 +90,8 @@ class Route
             echo "<h1>404 Not Found</h1>\n";
             $vitex = Vitex::getInstance();
             if ($vitex->getConfig('debug')) {
-                //输出调试信息
-                $url = $this->env->getPathinfo();
+                //输出调试信息(URL来自PATH_INFO等用户可控输入，必须转义防止反射型XSS)
+                $url = htmlspecialchars($this->env->getPathinfo(), ENT_QUOTES, 'UTF-8');
                 $patterns = $this->router->getPattern();
 
                 if ($vitex->getConfig('log.format') == 'html') {
@@ -99,7 +99,7 @@ class Route
                     echo '<strong>URL</strong>: ' . $url . '<br /><strong>Matcher:</strong>';
                     echo '<ul>';
                     foreach ($patterns as list($method, $matcher, $call, $pattern)) {
-                        echo sprintf('<li><span>Method: %s </span> <span>Url: %s</span> <span style="width:500px">RegExp: %s</span></li>', $method, $pattern, $matcher);
+                        echo sprintf('<li><span>Method: %s </span> <span>Url: %s</span> <span style="width:500px">RegExp: %s</span></li>', htmlspecialchars((string)$method, ENT_QUOTES, 'UTF-8'), htmlspecialchars((string)$pattern, ENT_QUOTES, 'UTF-8'), htmlspecialchars((string)$matcher, ENT_QUOTES, 'UTF-8'));
                     }
                     echo '</ul>';
                     echo '<style type="text/css">li span{display:inline-block;width:150px;}</style>';
@@ -107,7 +107,7 @@ class Route
                     echo "Router Detail\n";
                     echo 'URL: ' . $url . "\n Matcher:\n";
                     foreach ($patterns as list($method, $matcher, $call, $pattern)) {
-                        echo sprintf("Method: %s \t Url: %s \t RegExp: %s\n", $method, $pattern, $matcher);
+                        echo sprintf("Method: %s \t Url: %s \t RegExp: %s\n", htmlspecialchars((string)$method, ENT_QUOTES, 'UTF-8'), htmlspecialchars((string)$pattern, ENT_QUOTES, 'UTF-8'), htmlspecialchars((string)$matcher, ENT_QUOTES, 'UTF-8'));
                     }
                 }
             }
