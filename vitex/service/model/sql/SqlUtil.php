@@ -38,9 +38,9 @@ class SqlUtil
      * @return string 校验通过的标识符
      * @throws \InvalidArgumentException
      */
-    public static function guardIdentifier(string $identifier): string
+    public static function guardIdentifier(string $identifier, bool $withBlind = true): string
     {
-        if (preg_match(self::IDENT_DANGER_PATTERN, $identifier)
+        if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $identifier)
             || (str_contains($identifier, '`') && preg_match('/\s/', $identifier))
         ) {
             throw new \InvalidArgumentException('不安全的标识符:' . $identifier);
@@ -64,6 +64,8 @@ class SqlUtil
     private const RAW_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . ')/i';
     /** 标识符/表达式危险模式(追加子查询关键字与盲注函数族) */
     private const IDENT_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . '|' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . ')/i';
+    /** select字段危险模式(允许CASE WHEN等表达式，不含盲注函数族) */
+    private const SELECT_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . '|' . self::RE_SUBQUERY . ')/i';
 
     /**
      * 校验原生SQL片段的安全性(whereRaw/union/query/execute等入口)
@@ -212,7 +214,8 @@ class SqlUtil
         }
         //格式化一下column
         if (str_contains($column, '`') || str_contains($column, '(') || str_contains($column, ')') || str_contains($column, '*')) {
-            return self::guardIdentifier($column);
+            //select字段允许CASE WHEN等表达式，按不含盲注函数族的模式校验
+            return self::guardIdentifier($column, false);
         }
 
         //包含别名的形式
@@ -249,7 +252,9 @@ class SqlUtil
         if (str_contains($column, '.')) {
             $column = substr($column, strrpos($column, '.') + 1);
         }
-        return strtr($column, ['('=>'','`'=> '',')'=>'','+'=>'','-'=>'']);
+        //剥离占位符名不允许的字符(空格/运算符等)，保证生成的:占位符合法；为空时兜底
+        $cleaned = preg_replace('/[^A-Za-z0-9_]/', '', $column);
+        return $cleaned === '' ? 'col' : $cleaned;
     }
 
     /**

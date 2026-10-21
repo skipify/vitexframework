@@ -874,8 +874,8 @@ class Model
      */
     public function having($key, $op, $val, $type = "AND")
     {
-        //having键使用严格白名单
-        $key = SqlUtil::wrapStrictColumn($key);
+        //having键支持聚合表达式(如sum(pv))，按表达式级校验(拦危险词)
+        $key = $this->formatColumn($key);
         $op = $this->checkOp($op);
         //值使用占位符懒绑定，在真正拼接HAVING子句时才生成参数
         $this->selectWrapper->havingCond($key, $op, $val);

@@ -66,8 +66,8 @@ class Param
      */
     public function getColumn(): string
     {
-        //where条件列使用严格白名单校验(仅允许字母数字下划线中划线和点)
-        return SqlUtil::wrapStrictColumn($this->column);
+        //where条件列允许函数表达式(如UNIX_TIMESTAMP(...)算术列)，按黑名单校验(拦子查询/盲注/注释/危险函数)
+        return SqlUtil::wrapColumn($this->column);
     }
 
     /**
