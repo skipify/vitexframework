@@ -67,44 +67,44 @@ class SessionHandler implements \SessionHandlerInterface
         return preg_match(self::ID_PATTERN, $session_id) === 1;
     }
 
-    public function close(): bool
+    public function close()
     {
         return true;
     }
 
-    public function destroy(string $session_id): bool
+    public function destroy($session_id)
     {
         //非法id直接视为无需销毁，不允许透传给驱动
-        if (!self::isValidSessionId($session_id)) {
+        if (!self::isValidSessionId((string)$session_id)) {
             return true;
         }
         return (bool)$this->driver->delete($session_id);
     }
 
-    public function gc(int $maxlifetime): int|false
+    public function gc($maxlifetime)
     {
         $this->driver->gc($maxlifetime);
         return 0;
     }
 
-    public function open(string $save_path, string $name): bool
+    public function open($save_path, $name)
     {
         return true;
     }
 
-    public function read(string $session_id): string|false
+    public function read($session_id)
     {
         //非法id按无会话处理，不允许透传给驱动
-        if (!self::isValidSessionId($session_id)) {
+        if (!self::isValidSessionId((string)$session_id)) {
             return '';
         }
         return $this->driver->get($session_id) ? (string)$this->driver->get($session_id) : '';
     }
 
-    public function write(string $session_id, string $session_data): bool
+    public function write($session_id, $session_data)
     {
         //非法id拒绝写入，防止路径穿越任意文件写入
-        if (!self::isValidSessionId($session_id)) {
+        if (!self::isValidSessionId((string)$session_id)) {
             return false;
         }
         return (bool)$this->driver->set($session_id, $session_data, $this->lifetime * 60);
