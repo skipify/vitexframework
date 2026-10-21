@@ -111,6 +111,12 @@ class SqlUtil
     private const RE_LOGIC_OPS = '/\|\||&&/';
 
     /**
+     * 引号字符串字面量(支持反斜杠转义)，用于在检测逻辑拼接特征前剥离字符串内容，
+     * 避免误伤合法片段中字符串值包含关键字的场景；字符串字面量在SQL中是惰性数据
+     */
+    private const RE_QUOTED_LITERALS = '/\'(?:\\\\.|[^\'\\\\])*\'|"(?:\\\\.|[^"\\\\])*"/';
+
+    /**
      * 条件列(where/having/order/group)透传表达式允许的字符集:
      * 标识符/数字/四则与取模运算/引号字符串/括号/逗号/反引号/空白。
      * 比较与逻辑运算符(=<>!&|^~)必须经由操作符白名单参数传入，
@@ -153,9 +159,11 @@ class SqlUtil
 
     /**
      * 校验原生SQL片段的安全性(whereRaw/union/query/execute等入口)
-     * 恒定拦截: 注释符(-- /* #)、语句分隔符(;)、时间盲注/文件/信息泄露函数
+     * 恒定拦截: 注释符(-- /* #)、语句分隔符(;)、时间盲注/文件/信息泄露函数、
+     * 锁类函数(get_lock等时间盲注原语)、||/&&/^/~/单独! 逻辑位运算符(恒真拼接口)、
+     * procedure analyse、handler、load data(危险语句)
      * allowSelect=false 时额外拦截 select/union/delete/update/insert/drop (如setRaw的表达式无需子查询)
-     * 完整语句/子查询场景(select合法)请传 true
+     * 完整语句/子查询场景(select合法)请传 true；字符串子查询请使用 guardSubQuery
      * @param string $sql SQL片段
      * @param bool $allowSelect 是否允许select/union等子查询关键字
      * @return string 校验通过的SQL片段
@@ -166,10 +174,46 @@ class SqlUtil
         if (preg_match(self::RAW_DANGER_PATTERN, $sql)) {
             throw new \InvalidArgumentException('不安全的SQL片段:' . $sql);
         }
-        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . '|' . self::RE_LOCK_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $sql)) {
+        //剥离引号字符串字面量后再检测逻辑拼接特征(字符串内容为惰性数据，不参与SQL逻辑)
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (
+            //||/&&/^(xor)/~/单独!(非!=) 在MySQL中均为逻辑/位运算拼接口，可构造恒真条件
+            preg_match('/\|\||&&|[\^~]|!(?!=)/', $stripped)
+            //优化器/文件句柄类危险语句
+            || preg_match('/\bprocedure\s+analyse\b/i', $stripped)
+            || preg_match('/\bhandler\b/i', $stripped)
+            || preg_match('/\bload\s+data\b/i', $stripped)
+        ) {
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许逻辑位运算符/危险语句):' . $sql);
+        }
+        //锁类函数(get_lock等)是sleep之外的替代时间盲注原语，应用SQL无合法用途，全场景拦截
+        if (preg_match('/(' . self::RE_LOCK_FUNCS . ')/i', $sql)) {
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许锁函数):' . $sql);
+        }
+        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $sql)) {
             //严格模式(whereRaw/setRaw/having等条件片段)额外拦截:
-            //盲注函数族(if/case/ascii/substr等)、锁函数(get_lock时间盲注)、编码外泄函数(hex/conv等)
-            throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询/盲注/锁/编码外泄函数):' . $sql);
+            //盲注函数族(if/case/ascii/substr等)、编码外泄函数(hex/conv等)
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询/盲注/编码外泄函数):' . $sql);
+        }
+        return $sql;
+    }
+
+    /**
+     * 校验字符串子查询(whereExists/whereIn/union等子查询场景)
+     * 在guardSqlFragment基础上额外禁用盲注函数族(if/case/ascii/substr等)与
+     * 编码外泄函数族(hex/unhex/conv等)：合法子查询不需要这些原语，
+     * 而它们是子查询场景布尔盲注/逐列导出数据的核心工具
+     * (检测前剥离引号字符串字面量，避免误伤字符串值中包含关键字的合法子查询)
+     * @param string $sql 子查询SQL(不含最外层括号)
+     * @return string 校验通过的子查询SQL
+     * @throws \InvalidArgumentException
+     */
+    public static function guardSubQuery(string $sql): string
+    {
+        $sql = self::guardSqlFragment($sql, true);
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (preg_match('/(' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $stripped)) {
+            throw new \InvalidArgumentException('不安全的SQL片段(子查询中不允许盲注/编码外泄函数):' . $sql);
         }
         return $sql;
     }

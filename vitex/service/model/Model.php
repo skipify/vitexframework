@@ -749,8 +749,8 @@ class Model
             $sql = (string)$val;
             return $this->mergeSubBindData($sql, $val);
         }
-        //字符串子查询统一安全校验(子查询合法，拦截注释/分号/危险函数)
-        return SqlUtil::guardSqlFragment((string)$val);
+        //字符串子查询统一安全校验(拦截注释/分号/危险函数/盲注与编码外泄函数)
+        return SqlUtil::guardSubQuery((string)$val);
     }
 
     /**
@@ -1148,8 +1148,8 @@ class Model
             //子查询对象构建SQL并合并其中的占位参数，执行时统一使用prepare绑定
             $str = $this->buildSubQuery($str);
         } else {
-            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数)
-            $str = SqlUtil::guardSqlFragment((string)$str);
+            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数/盲注与编码外泄函数)
+            $str = SqlUtil::guardSubQuery((string)$str);
         }
         $this->_sql['union'][] = $str;
         return $this;
@@ -1244,10 +1244,10 @@ class Model
         }
 
         $sql .= " from " . $this->getTable() . ' ';
-        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
+        //union (构建期校验:拦截注释/分号/危险函数/盲注与编码外泄函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . SqlUtil::guardSqlFragment((string)$union, true) . ') ';
+                $sql .= ' union (' . SqlUtil::guardSubQuery((string)$union) . ') ';
             }
         }
         $sql .= $this->buildWhere();
@@ -1663,10 +1663,10 @@ class Model
         $sql .= $this->selectWrapper->$method($field);
 
         $sql .= " from " . $this->getTable() . ' ';
-        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
+        //union (构建期校验:拦截注释/分号/危险函数/盲注与编码外泄函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . SqlUtil::guardSqlFragment((string)$union, true) . ') ';
+                $sql .= ' union (' . SqlUtil::guardSubQuery((string)$union) . ') ';
             }
         }
         $sql .= $this->buildWhere();

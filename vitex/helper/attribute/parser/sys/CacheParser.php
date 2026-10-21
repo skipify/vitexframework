@@ -50,17 +50,11 @@ class CacheParser extends AttributeParserBase implements AttributeParserInterfac
         \runkit7_method_rename($className,$methodName,$newMethodName);
         /**
          * 新的函数体
-         * 需要根据是否是swoole模式判断是否是跨请求的处理
          */
-        //todo  此处swoole的扩展可能不是很安全
         $str = '
             $cache = vitex\helper\attribute\parsedata\CacheData::instance();
             $args = func_get_args();
             $key = "'.$className.'-'.$methodName.'".(count($args) == 0 ? "-":json_encode($args));
-            if(defined("IS_SWOOLE")){
-                $vitex = \vitex\Vitex::getInstance();
-                $key = $vitex->requestId . $key;
-            }
             if ($cache->fetch($key) !== false) {
                return $cache->fetch($key);
             }

@@ -27,6 +27,21 @@ use vitex\Vitex;
 class Router
 {
     /**
+     * 无显式@method时HTTP动词到默认方法名的映射
+     * 只有标准HTTP动词允许作为默认方法名，防止请求动词被篡改后
+     * 直接作为控制器方法名调用任意public方法
+     */
+    private const VERB_DEFAULT_METHODS = [
+        'get'     => 'get',
+        'post'    => 'post',
+        'put'     => 'put',
+        'delete'  => 'delete',
+        'patch'   => 'patch',
+        'options' => 'options',
+        'head'    => 'head',
+    ];
+
+    /**
      * 所有注册的路由的基本信息
      *
      * 请求方法  0
@@ -637,7 +652,20 @@ class Router
     {
         $strs = explode('@', $str);
         $class = array_shift($strs);
-        $method = $strs ? array_pop($strs) : strtolower($httpmethod);
+        if ($strs) {
+            $method = array_pop($strs);
+        } else {
+            /*
+             * 无显式@method时，默认方法名必须来自标准HTTP动词映射表，
+             * 未知动词(含被注入的任意字符串)直接拒绝解析，
+             * 防止HTTP动词被篡改后作为控制器方法名调用任意public方法
+             */
+            $method = self::VERB_DEFAULT_METHODS[strtolower((string)$httpmethod)] ?? null;
+            if ($method === null) {
+                Vitex::getInstance()->log->error('Illegal route http verb: ' . (string)$httpmethod);
+                return null;
+            }
+        }
         $vitex = Vitex::getInstance();
 
         //完全限定命名空间

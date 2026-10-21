@@ -76,7 +76,7 @@ class MultipartFile extends \SplFileObject
      */
     public function generateFileName($basePath = ''): string
     {
-        $filename = uniqid() . '.' . $this->getExtension();
+        $filename = bin2hex(random_bytes(16)) . '.' . $this->getExtension();
         if ($basePath) {
             return rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
         } else {

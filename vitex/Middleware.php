@@ -54,7 +54,7 @@ abstract class Middleware
     /**
      * 是否是进程级别的中间件，默认都是请求级别的
      * 请求级别的中间件在每次请求时候都会初始化
-     * 进程级别的只会初始化一次，适合在cli模式下运行，例如 swoole环境，征程的cgi/fpm环境2者没区别
+     * 进程级别的只会初始化一次，适合在cli模式下运行，cgi/fpm环境2者没区别
      * @return false
      */
     public function isThreadLevel()
