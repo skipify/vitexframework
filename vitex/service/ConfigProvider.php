@@ -40,7 +40,8 @@ class ConfigProvider
             'cookies.domain' => '',
             'cookies.secure' => false,
             'cookies.httponly' => false,
-            'cookies.secret_key' => 'Vitex is a micro restfull framework',
+            //禁止默认密钥：留空时启用加密的组件会直接抛出异常，强制配置私有随机密钥
+            'cookies.secret_key' => '',
             /**
              * 会话管理
              * file  cache native//

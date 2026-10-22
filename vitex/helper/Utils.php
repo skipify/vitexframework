@@ -34,6 +34,25 @@ class Utils
     const KDF_MAC = 'vitex.crypt.mac';
 
     /**
+     * 历史版本硬编码的公开默认cookie密钥，已知不安全，配置了该值时加密组件拒绝工作
+     */
+    const KNOWN_INSECURE_KEY = 'Vitex is a micro restfull framework';
+
+    /**
+     * 校验cookie加密密钥：禁止空值与框架公开默认密钥(fail-closed)，
+     * 防止使用公开密钥的应用被离线伪造密文(会话/加密cookie身份伪造)
+     * @param string $secret_key
+     * @throws Exception
+     */
+    public static function assertSecretKey($secret_key)
+    {
+        $secret_key = (string)$secret_key;
+        if ($secret_key === '' || $secret_key === self::KNOWN_INSECURE_KEY) {
+            throw new Exception('cookie加密密钥未配置或使用了框架公开默认值，请配置独立的随机密钥(cookies.secret_key)');
+        }
+    }
+
+    /**
      * 加密数据
      * 每次加密使用随机IV并前置密文，附带HMAC做完整性校验，
      * 防止密文比特翻转篡改、填充预言机攻击与相同明文前缀产生相同密文

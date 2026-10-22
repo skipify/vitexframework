@@ -134,7 +134,8 @@ class View
         if (!file_exists($file)) {
             throw new Exception("模板文件--" . $file . '--不存在',Exception::CODE_NOTFOUND_FILE);
         }
-        extract($data, EXTR_OVERWRITE);
+        //EXTR_SKIP防止模板数据覆盖已解析的$file等局部变量，避免数据中携带file键时include任意文件(LFI/RCE)
+        extract($data, EXTR_SKIP);
         ob_start();
         if (file_exists($file)) {
             include $file;

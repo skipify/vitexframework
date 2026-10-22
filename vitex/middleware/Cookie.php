@@ -56,6 +56,8 @@ class Cookie extends Middleware
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
         $encrypt    = $this->vitex->getConfig('cookies.encrypt');
         if ($encrypt) {
+            //禁止空密钥与框架公开默认密钥(fail-closed)
+            Utils::assertSecretKey($secret_key);
             $value = Utils::encrypt($value, $secret_key);
         }
         setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
@@ -72,6 +74,8 @@ class Cookie extends Middleware
         $encrypt = $this->vitex->getConfig('cookies.encrypt');
         if ($encrypt) {
             $secret_key = $this->vitex->getConfig('cookies.secret_key');
+            //禁止空密钥与框架公开默认密钥(fail-closed)
+            Utils::assertSecretKey($secret_key);
             foreach ($cookie as &$c) {
                 try {
                     $c = Utils::decrypt($c, $secret_key);
