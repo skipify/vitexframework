@@ -54,9 +54,15 @@ class Cookie implements \ArrayAccess
         $this->setHttpOnly($cookieConfig->isHttponly());
 
         $this->secret = $cookieConfig->getSecretKey();
+        if ($this->secret === '') {
+            //兼容旧版顶层cookies.secret_key配置
+            $this->secret = (string)$vitex->getConfig('cookies.secret_key');
+        }
         $this->needEncrypt = $cookieConfig->isEncrypt();
 
         if ($this->needEncrypt) {
+            //禁止空密钥与框架公开默认密钥(fail-closed)
+            CookieConfig::assertSecretKey($this->secret);
             $this->value = Utils::encrypt($value, $this->secret);
         } else {
             $this->value = $value;

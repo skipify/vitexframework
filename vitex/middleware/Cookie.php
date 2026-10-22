@@ -31,19 +31,29 @@ class Cookie extends Middleware
      * 获取cookie加密配置
      * 优先读取3.0的cookie配置组，兼容旧版的cookies.*顶层配置
      * @return array [encrypt, secret_key]
+     * @throws \InvalidArgumentException
      */
     private function getEncryptConfig(): array
     {
         $config = $this->vitex->getConfig('cookie');
         if (is_array($config) && $config) {
             $cookieConfig = CookieConfig::fromArray($config);
-            return [$cookieConfig->isEncrypt(), $cookieConfig->getSecretKey()];
+            $encrypt = $cookieConfig->isEncrypt();
+            $secret_key = $cookieConfig->getSecretKey();
+        } else {
+            //兼容旧版点分隔的顶层配置
+            $encrypt = (bool)$this->vitex->getConfig('cookies.encrypt');
+            $secret_key = '';
         }
-        //兼容旧版点分隔的顶层配置
-        return [
-            (bool)$this->vitex->getConfig('cookies.encrypt'),
-            (string)$this->vitex->getConfig('cookies.secret_key')
-        ];
+        //配置组密钥为空时回退旧版顶层配置
+        if ($secret_key === '') {
+            $secret_key = (string)$this->vitex->getConfig('cookies.secret_key');
+        }
+        //启用加密时禁止空密钥与框架公开默认密钥(fail-closed)
+        if ($encrypt) {
+            CookieConfig::assertSecretKey($secret_key);
+        }
+        return [$encrypt, $secret_key];
     }
 
     /**
