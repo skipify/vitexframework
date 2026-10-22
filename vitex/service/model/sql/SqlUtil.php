@@ -219,6 +219,27 @@ class SqlUtil
     }
 
     /**
+     * 校验条件位置的原生SQL片段(whereRaw/having/whereTuple等条件透传场景)
+     * 不含子查询关键字的片段按严格模式校验(拦截子查询/盲注/编码外泄函数)；
+     * 含select等子查询关键字的片段(如 in (select ...)/exists (select ...) 等
+     * 文档化的合法读子查询写法)按guardSubQuery规则校验：
+     * 仍拦截注释符/堆叠语句/时间盲注与锁函数/盲注与编码外泄函数/逻辑位运算符，
+     * 仅放行子查询关键字(信任级别与from/join表名的select子查询一致)
+     * @param string $sql SQL条件片段
+     * @return string 校验通过的SQL片段
+     * @throws \InvalidArgumentException
+     */
+    public static function guardRawCondition(string $sql): string
+    {
+        //剥离引号字符串字面量后检测子查询关键字(字符串值中的关键字是惰性数据)
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (preg_match('/(' . self::RE_SUBQUERY . ')/i', $stripped)) {
+            return self::guardSubQuery($sql);
+        }
+        return self::guardSqlFragment($sql, false);
+    }
+
+    /**
      * 校验构建期的标识符(已经wrapColumn/wrapStrictColumn处理过的存储形式)
      * 完整反引号包裹的形式(含 点号/别名/星号)是安全的字面标识符直接放行，
      * 其余(函数表达式/透传片段)按guardIdentifier黑名单校验

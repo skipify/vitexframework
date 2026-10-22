@@ -820,17 +820,19 @@ class Model
         // 因为新的拼接不需要提前写 and/or  此处是兼容之前写法
         $sql = trim($sql);
         $mode = $this->selectWrapper->getMode();
-        //片段校验由 Wrapper::sql() 入口统一执行(严格模式)
-        //以(and/or之外)其他字符开头的片段保持原有的静默丢弃行为
-        if (strtolower(substr($sql, 0, 3)) == 'and') {
-            $sql = substr($sql, 3);
+        //前缀整词匹配(防 order by/android 等以or/and开头的词被误截断)
+        if (preg_match('/^and\b/i', $sql)) {
+            $sql = ltrim(substr($sql, 3));
             $this->selectWrapper->and();
             $this->selectWrapper->sql($sql);
-        }
-
-        if (strtolower(substr($sql, 0, 2)) == 'or') {
-            $sql = substr($sql, 3);
+        } elseif (preg_match('/^or\b/i', $sql)) {
+            $sql = ltrim(substr($sql, 2));
             $this->selectWrapper->or();
+            $this->selectWrapper->sql($sql);
+        } elseif ($sql !== '') {
+            //无and/or前缀的完整条件片段(如 (a=1) or (b=2))按当前连接模式原样透传，
+            //不再静默丢弃(与1.x行为一致，防止条件丢失导致查询结果错误)
+            //片段校验由 Wrapper::sql() 入口统一执行
             $this->selectWrapper->sql($sql);
         }
         //还原原来的链接模式
