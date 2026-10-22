@@ -394,8 +394,10 @@ class Model
 
     /**
      * 校验透传(不包裹反引号)的标识符/表达式片段的安全性
-     * 透传片段会直接进入SQL，禁止注释符、语句分隔符与select等关键字，
-     * 同时禁止 反引号+空格 的组合(防止闭合反引号后拼接额外条件)
+     * 透传片段会直接进入SQL，禁止注释符、语句分隔符、select等子查询关键字
+     * 以及sleep等时间盲注函数；同时禁止 反引号+任意空白 的组合(防止闭合反引号后拼接额外条件)
+     * 禁止 ||/&& 逻辑运算符(防止(1)||(1)式恒真条件拼接)；
+     * 含函数调用时要求括号配平且函数在白名单内(防止hex()/conv()/get_lock()等任意函数造成外泄或盲注)
      * 需要子查询的场景请使用 Model::sub() 对象方式传递
      * @param string $identifier 标识符或表达式
      * @return string 校验通过的标识符
@@ -406,10 +408,53 @@ class Model
         $identifier = (string)$identifier;
         if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $identifier)
             || (strpos($identifier, "`") !== false && preg_match('/\s/', $identifier))
+            || preg_match(self::RE_LOGIC_OPS, $identifier)
         ) {
             throw new \InvalidArgumentException('不安全的标识符:' . $identifier);
         }
+        $this->checkExpressionFunctions($identifier, '标识符');
         return $identifier;
+    }
+
+    /**
+     * 校验进入条件位置(where/having/order/group)的透传列名/表达式
+     * 在guardIdentifier基础上额外限制字符集: 禁止比较与逻辑运算符(=<>!&|^~)，
+     * 比较运算必须经由操作符白名单参数传入，防止 (1)=(1) 式恒真条件拼接
+     * @param string $column
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function guardConditionColumn($column)
+    {
+        $column = $this->guardIdentifier($column);
+        if (!preg_match(self::COND_EXPR_PATTERN, $column)) {
+            throw new \InvalidArgumentException('不安全的列名表达式(不允许比较/逻辑运算符):' . $column);
+        }
+        return $column;
+    }
+
+    /**
+     * 校验透传表达式中的函数调用: 括号配平 + 函数白名单
+     * @param string $id 表达式
+     * @param string $label 报错场景描述
+     * @throws \InvalidArgumentException
+     */
+    private function checkExpressionFunctions($id, $label)
+    {
+        $id = (string)$id;
+        if (strpos($id, '(') === false) {
+            return;
+        }
+        if (substr_count($id, '(') !== substr_count($id, ')')) {
+            throw new \InvalidArgumentException('不安全的' . $label . '(括号不配平):' . $id);
+        }
+        if (preg_match_all('/([A-Za-z_][A-Za-z0-9_]*)\s*\(/', $id, $matches)) {
+            foreach ($matches[1] as $func) {
+                if (!in_array(strtolower($func), self::ALLOWED_FUNCS, true)) {
+                    throw new \InvalidArgumentException('不安全的' . $label . '(函数不在白名单):' . $id);
+                }
+            }
+        }
     }
 
     /**
@@ -442,6 +487,7 @@ class Model
 
     /**
      * 校验函数/聚合表达式：按guardIdentifier同款完整黑名单校验，
+     * 并追加逻辑运算符拦截与函数白名单校验(括号配平+白名单)，
      * 但不检查 反引号+空白 规则(合法聚合表达式如 max(`id`) as info 含该形式)
      * @param string $id 表达式
      * @return string
@@ -449,9 +495,10 @@ class Model
      */
     private function guardExpression($id)
     {
-        if (preg_match(self::IDENT_DANGER_PATTERN, $id)) {
+        if (preg_match(self::IDENT_DANGER_PATTERN, $id) || preg_match(self::RE_LOGIC_OPS, $id)) {
             throw new \InvalidArgumentException('不安全的表达式:' . $id);
         }
+        $this->checkExpressionFunctions($id, '表达式');
         return $id;
     }
 
@@ -487,6 +534,52 @@ class Model
     public const RE_SUBQUERY = '\bselect\b|\bunion\b|\bdelete\b|\bupdate\b|\binsert\b|\bdrop\b';
     /** 盲注函数族(标识符/表达式场景拦截，合法场景如ifnull/nullif经词边界不受影响) */
     public const RE_BLIND_FUNCS = '\bif\b|\bcase\b|\bascii\b|\bord\b|\bsubstr\b|\bsubstring\b|\bmid\b|\bchar\b|\belt\b';
+    /** 锁类函数(时间盲注原语，get_lock可替代sleep做延时)，应用SQL无合法用途 */
+    public const RE_LOCK_FUNCS = '\bget_lock\b|\brelease_lock\b|\bis_free_lock\b|\bis_used_lock\b';
+    /** 编码/数据外泄辅助函数(条件/字段透传场景无合法用途，可逐列导出数据) */
+    public const RE_EXFIL_FUNCS = '\bhex\b|\bunhex\b|\bconv\b|\bbin\b|\baes_encrypt\b|\baes_decrypt\b|\bencode\b|\bdecode\b|\bcompress\b|\buncompress\b';
+    /** 逻辑运算符拼接口(如(1)||(1)在MySQL中等价于OR，产生恒真条件) */
+    public const RE_LOGIC_OPS = '/\|\||&&/';
+
+    /**
+     * 引号字符串字面量(支持反斜杠转义)，用于在检测逻辑拼接特征前剥离字符串内容，
+     * 避免误伤合法片段中字符串值包含关键字的场景；字符串字面量在SQL中是惰性数据
+     */
+    public const RE_QUOTED_LITERALS = '/\'(?:\\\\.|[^\'\\\\])*\'|"(?:\\\\.|[^"\\\\])*"/';
+
+    /**
+     * 条件列(where/having/order/group)透传表达式允许的字符集:
+     * 标识符/数字/四则与取模运算/引号字符串/括号/逗号/反引号/空白。
+     * 比较与逻辑运算符(=<>!&|^~)必须经由操作符白名单参数传入，
+     * 出现在列名表达式中即拒绝，防止 (1)=(1) 式恒真条件拼接
+     */
+    private const COND_EXPR_PATTERN = '/^[A-Za-z0-9_.*+\/%\- \t\'"(),`]+$/';
+
+    /**
+     * 透传表达式允许的函数白名单(聚合函数与常用标量函数)
+     * 括号内的函数调用一律按此白名单校验，防止hex()/conv()/get_lock()/rand()等
+     * 任意函数调用造成数据外泄或时间/布尔盲注
+     */
+    private const ALLOWED_FUNCS = [
+        //聚合
+        'count', 'sum', 'min', 'max', 'avg', 'group_concat', 'bit_and', 'bit_or', 'bit_xor', 'std', 'stddev', 'variance', 'var_pop', 'var_samp',
+        //条件与空值处理
+        'ifnull', 'nullif', 'coalesce', 'isnull',
+        //字符串
+        'concat', 'concat_ws', 'length', 'char_length', 'character_length', 'octet_length', 'bit_length',
+        'trim', 'ltrim', 'rtrim', 'upper', 'ucase', 'lower', 'lcase', 'reverse', 'replace',
+        'left', 'right', 'substring_index', 'lpad', 'rpad', 'repeat', 'space', 'instr', 'locate', 'position', 'field', 'format',
+        //数值
+        'abs', 'round', 'ceil', 'ceiling', 'floor', 'truncate', 'mod', 'greatest', 'least', 'sign', 'pow', 'power', 'sqrt', 'exp', 'ln', 'log', 'log2', 'log10',
+        //日期时间
+        'curdate', 'curtime', 'now', 'sysdate', 'unix_timestamp', 'from_unixtime', 'utc_timestamp', 'utc_date', 'utc_time',
+        'date', 'time', 'year', 'month', 'day', 'dayname', 'dayofweek', 'dayofmonth', 'dayofyear', 'weekday', 'week', 'weekofyear', 'yearweek',
+        'quarter', 'hour', 'minute', 'second', 'microsecond',
+        'date_format', 'time_format', 'datediff', 'timediff', 'timestampdiff', 'timestampadd', 'date_add', 'date_sub', 'adddate', 'subdate',
+        'last_day', 'from_days', 'to_days', 'sec_to_time', 'time_to_sec', 'makedate', 'maketime', 'str_to_date',
+        //类型转换
+        'cast', 'convert',
+    ];
 
     /** 原生SQL片段危险模式(注释/分隔符/危险函数，select等由严格模式追加) */
     private const RAW_DANGER_PATTERN = '/(' . self::RE_TERMINATORS . '|' . self::RE_DANGER_FUNCS . ')/i';
@@ -497,9 +590,11 @@ class Model
 
     /**
      * 校验原生SQL片段的安全性(whereRaw/union/query/execute等入口)
-     * 恒定拦截: 注释符(-- /* #)、语句分隔符(;)、时间盲注/文件/信息泄露函数
+     * 恒定拦截: 注释符(-- /* #)、语句分隔符(;)、时间盲注/文件/信息泄露函数、
+     * 锁类函数(get_lock等时间盲注原语)、||/&&/^/~/单独! 逻辑位运算符(恒真拼接口)、
+     * procedure analyse、handler、load data(危险语句)
      * allowSelect=false 时额外拦截 select/union/delete/update/insert/drop
-     * 完整语句/子查询场景(select合法)请传 true
+     * 完整语句/子查询场景(select合法)请传 true；字符串子查询请使用 guardSubQuery
      * @param string $sql SQL片段
      * @param bool $allowSelect 是否允许select/union等子查询关键字
      * @return string 校验通过的SQL片段
@@ -511,10 +606,69 @@ class Model
         if (preg_match(self::RAW_DANGER_PATTERN, $sql)) {
             throw new \InvalidArgumentException('不安全的SQL片段:' . $sql);
         }
-        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . ')/i', $sql)) {
-            throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询关键字):' . $sql);
+        //剥离引号字符串字面量后再检测逻辑拼接特征(字符串内容为惰性数据，不参与SQL逻辑)
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (
+            //||/&&/^(xor)/~/单独!(非!=) 在MySQL中均为逻辑/位运算拼接口，可构造恒真条件
+            preg_match('/\|\||&&|[\^~]|!(?!=)/', $stripped)
+            //优化器/文件句柄类危险语句
+            || preg_match('/\bprocedure\s+analyse\b/i', $stripped)
+            || preg_match('/\bhandler\b/i', $stripped)
+            || preg_match('/\bload\s+data\b/i', $stripped)
+        ) {
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许逻辑位运算符/危险语句):' . $sql);
+        }
+        //锁类函数(get_lock等)是sleep之外的替代时间盲注原语，应用SQL无合法用途，全场景拦截
+        if (preg_match('/(' . self::RE_LOCK_FUNCS . ')/i', $sql)) {
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许锁函数):' . $sql);
+        }
+        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $sql)) {
+            //严格模式(whereRaw/whereTuple等条件片段)额外拦截:
+            //盲注函数族(if/case/ascii/substr等)、编码外泄函数(hex/conv等)
+            throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询/盲注/编码外泄函数):' . $sql);
         }
         return $sql;
+    }
+
+    /**
+     * 校验字符串子查询(whereExists/whereIn/union等子查询场景)
+     * 在guardSqlFragment基础上额外禁用盲注函数族(if/case/ascii/substr等)与
+     * 编码外泄函数族(hex/unhex/conv等)：合法子查询不需要这些原语，
+     * 而它们是子查询场景布尔盲注/逐列导出数据的核心工具
+     * (检测前剥离引号字符串字面量，避免误伤字符串值中包含关键字的合法子查询)
+     * @param string $sql 子查询SQL(不含最外层括号)
+     * @return string 校验通过的子查询SQL
+     * @throws \InvalidArgumentException
+     */
+    private function guardSubQuery($sql)
+    {
+        $sql = $this->guardSqlFragment($sql, true);
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', (string)$sql) ?? '';
+        if (preg_match('/(' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $stripped)) {
+            throw new \InvalidArgumentException('不安全的SQL片段(子查询中不允许盲注/编码外泄函数):' . $sql);
+        }
+        return $sql;
+    }
+
+    /**
+     * 严格校验表名(白名单)
+     * 仅允许 表名/库.表名，以及可选的单个别名： tbl / db.tbl / tbl t / db.tbl t
+     * 字符集与formatStrictColumn一致(字母/数字/下划线/中划线/点)，禁止空格、括号、反引号等一切其他字符
+     * 不支持子查询等复杂表名，需要子查询请使用 Model::sub() 对象方式
+     * @param string $table 表名
+     * @return string 校验通过的表名
+     * @throws \InvalidArgumentException
+     */
+    private function wrapTableName($table)
+    {
+        $table = trim((string)$table);
+        if ($table === '') {
+            throw new \InvalidArgumentException('表名不得为空');
+        }
+        if (!preg_match('/^[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-]+)*(?:\s+[A-Za-z0-9_\-]+)?$/', $table)) {
+            throw new \InvalidArgumentException('不安全的表名(仅允许字母数字下划线中划线点以及可选别名):' . $table);
+        }
+        return $table;
     }
 
     /**
@@ -810,9 +964,13 @@ class Model
             //where条件列允许函数表达式(如UNIX_TIMESTAMP(...)算术列)
             $key = $this->formatColumn($key);
             if (is_string($key) && strpos($key, "(") !== false) {
-                //表达式列按完整黑名单校验(拦截盲注函数族)
-                $this->guardIdentifier($key);
+                //条件位置表达式按完整黑名单校验并禁止比较/逻辑运算符(防恒真条件拼接)
+                $this->guardConditionColumn($key);
             }
+        } else {
+            //exists子查询(以key传入，如 whereExists('select id from t where ...'))
+            //统一安全校验(拦截注释/分号/危险函数/盲注与编码外泄函数)
+            $this->guardSubQuery((string)$key);
         }
         //非这俩方法时不需要指定操作符
         if ($method != 'where' && $method != 'orWhere') {
@@ -834,8 +992,8 @@ class Model
          * exists的值为子查询语句本身，保持原样拼接
          */
         if ($op == 'exists' || $op == 'not exists') {
-            //字符串子查询统一安全校验(子查询合法，拦截注释/分号/危险函数)
-            $val = is_array($val) ? $val : $this->guardSqlFragment((string)$val);
+            //字符串子查询统一安全校验(子查询合法，拦截注释/分号/危险函数/盲注与编码外泄函数)
+            $val = is_array($val) ? $val : $this->guardSubQuery((string)$val);
         } elseif ($op == 'is' || $op == 'is not') {
             $val = 'null';
         } elseif (is_object($val)) {
@@ -928,6 +1086,11 @@ class Model
      */
     public function findInSet($column, $val, $type = 'and')
     {
+        //连接符白名单(type会原样拼入SQL，防止注入)
+        $type = strtolower(trim((string)$type));
+        if (!in_array($type, ['and', 'or'], true)) {
+            throw new \InvalidArgumentException('不安全的连接类型，仅允许 and/or:' . $type);
+        }
         $column = $this->formatStrictColumn($column);
         //值使用占位符预处理绑定
         $val = $this->addBindParam($val);
@@ -967,12 +1130,16 @@ class Model
 
     /**
      * 要查询的表名
+     * 仅允许 表名/库.表名 以及可选别名，字符集为字母数字下划线中划线
      * @param string $table 表名
      * @return self
+     * @throws \InvalidArgumentException
      */
     final public function from($table)
     {
         $table = (string)$table;
+        //入口级严格白名单校验，表名不支持子查询，需要子查询请使用Model::sub()对象方式
+        $this->wrapTableName($table);
         $this->_sql['from'] = $table;
         return $this;
     }
@@ -980,6 +1147,7 @@ class Model
     /**
      * 获取当前要查询的表名
      * @return string name
+     * @throws \InvalidArgumentException
      */
     public function getTable()
     {
@@ -989,12 +1157,10 @@ class Model
             $table = $this->table;
         }
         /**
-         * 处理子查询问题
-         * 子查询使用()包裹，表名允许携带select子查询，仅拦截注释符与分号
+         * 构建期统一严格白名单校验(覆盖from/setTable/构造函数所有来源)，
+         * 表名不支持子查询，需要子查询请使用Model::sub()对象方式
          */
-        if (strpos($table, ')') !== false && strpos($table, '(') !== false) {
-            return $this->guardTableIdentifier($table);
-        }
+        $table = $this->wrapTableName($table);
         $table = $this->prefix . $table;
         return $this->formatTable($table);
     }
@@ -1207,8 +1373,8 @@ class Model
             $subParams = ($str instanceof self) ? $str->_bindParams : [];
             $str = $this->mergeBindParams((string)$str, $subParams);
         } else {
-            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数)
-            $str = $this->guardSqlFragment((string)$str);
+            //原生SQL统一安全校验(完整SELECT合法，拦截注释/分号/危险函数/盲注与编码外泄函数)
+            $str = $this->guardSubQuery((string)$str);
         }
         $this->_sql['union'][] = $str;
         return $this;
@@ -1304,16 +1470,29 @@ class Model
                 if (count($this->_sql['distinct']) > 1) {
                     throw new Exception(Exception::CODE_PARAM_ERROR_MSG . 'DISTINCT 用于COUNT只能一个字段', Exception::CODE_PARAM_ERROR);
                 }
-                $sql .= 'count(distinct ' . $this->_sql['distinct'][0] . ') as num ';
+                //构建期校验:防setSqlSet等方式注入未校验数据
+                $sql .= 'count(distinct ' . $this->guardBuiltIdentifier($this->_sql['distinct'][0], false) . ') as num ';
             } else {
                 $sql .= 'count(' . $field . ') as num ';
             }
         } else {
             //select/distinct字段允许CASE WHEN等表达式(无盲注函数族校验)
             if ($this->_sql['distinct']) {
-                $sql .= 'distinct (' . implode(',', array_map(fn($v) => $this->guardBuiltIdentifier($v, false), $this->_sql['distinct'])) . ') ';
+                $distinctCols = [];
+                foreach ($this->_sql['distinct'] as $v) {
+                    $distinctCols[] = $this->guardBuiltIdentifier($v, false);
+                }
+                $sql .= 'distinct (' . implode(',', $distinctCols) . ') ';
             } else {
-                $field = $this->_sql['select'] ? implode(',', array_map(fn($v) => $this->guardBuiltIdentifier($v, false), $this->_sql['select'])) : '*';
+                if ($this->_sql['select']) {
+                    $selectCols = [];
+                    foreach ($this->_sql['select'] as $v) {
+                        $selectCols[] = $this->guardBuiltIdentifier($v, false);
+                    }
+                    $field = implode(',', $selectCols);
+                } else {
+                    $field = '*';
+                }
                 $sql .= $field . ' ';
             }
         }
@@ -1340,10 +1519,10 @@ class Model
             }
         }
 
-        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数)
+        //union (构建期校验:完整SELECT合法，拦截注释/分号/危险函数/盲注与编码外泄函数)
         if ($this->_sql['union']) {
             foreach ($this->_sql['union'] as $union) {
-                $sql .= ' union (' . $this->guardSqlFragment((string)$union, true) . ') ';
+                $sql .= ' union (' . $this->guardSubQuery((string)$union) . ') ';
             }
         }
         //orderby (构建期校验)
@@ -1389,7 +1568,12 @@ class Model
                 }
                 foreach ($join as list($table, $con1, $op, $con2)) {
                     $table = $this->prefix . $table;
-                    $table = $this->formatTable($table);
+                    if (strpos($table, '(') !== false && strpos($table, ')') !== false) {
+                        //表名允许携带子查询，走表名级校验
+                        $table = $this->guardTableIdentifier($table);
+                    } else {
+                        $table = $this->formatTable($table);
+                    }
                     //构建期校验:连接条件与操作符
                     $con1 = $this->guardBuiltIdentifier($con1);
                     $con2 = $this->guardBuiltIdentifier($con2);
@@ -1411,7 +1595,8 @@ class Model
                 if ($op != 'exists' && $op != 'not exists') {
                     $column = $this->guardBuiltIdentifier($column);
                 } else {
-                    $this->guardSqlFragment((string)$column, true);
+                    //构建期防线:子查询统一安全校验(拦截注释/分号/危险函数/盲注与编码外泄函数)
+                    $this->guardSubQuery((string)$column);
                 }
                 switch ($op) {
                     case 'in':

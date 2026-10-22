@@ -20,7 +20,7 @@ class Pdo extends Middleware
     /**
      * 兜底安全校验的危险模式(与 Model 的组合式构建块统一维护)
      */
-    private const GUARD_PATTERN = '/(' . Model::RE_TERMINATORS . '|' . Model::RE_DANGER_FUNCS . ')/i';
+    private const GUARD_PATTERN = '/(' . Model::RE_TERMINATORS . '|' . Model::RE_DANGER_FUNCS . '|' . Model::RE_LOCK_FUNCS . ')/i';
 
     public $engine = 'mysql';
     public $pdo    = null;
@@ -188,15 +188,31 @@ class Pdo extends Middleware
     }
 
     /**
-     * Pdo层兜底SQL校验
+     * Pdo层兜底SQL校验(与3.0基线guardSqlFragment对齐:
+     * 注释/分号/危险函数/锁函数 + 剥离字面量后的逻辑位运算符与危险语句)
      * @param string $sql
      * @return void
      * @throws Exception
      */
     private function guardSql($sql)
     {
-        if (is_string($sql) && preg_match(self::GUARD_PATTERN, $sql)) {
+        if (!is_string($sql)) {
+            return;
+        }
+        if (preg_match(self::GUARD_PATTERN, $sql)) {
             throw new Exception('不安全的SQL语句: ' . substr($sql, 0, 100), Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        //剥离引号字符串字面量后再检测逻辑拼接特征(字符串内容为惰性数据，不参与SQL逻辑)
+        $stripped = preg_replace(Model::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (
+            //||/&&/^(xor)/~/单独!(非!=) 在MySQL中均为逻辑/位运算拼接口，可构造恒真条件
+            preg_match('/\|\||&&|[\^~]|!(?!=)/', $stripped)
+            //优化器/文件句柄类危险语句
+            || preg_match('/\bprocedure\s+analyse\b/i', $stripped)
+            || preg_match('/\bhandler\b/i', $stripped)
+            || preg_match('/\bload\s+data\b/i', $stripped)
+        ) {
+            throw new Exception('不安全的SQL语句(逻辑位运算符/危险语句): ' . substr($sql, 0, 100), Exception::CODE_PARAM_VALUE_ERROR);
         }
     }
 

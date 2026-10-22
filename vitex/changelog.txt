@@ -1,3 +1,15 @@
+1.1.7（安全修复，自3.0分支移植，补齐SQL防护精化）
+
+1. SQL子查询：whereExists/notExists与union的字符串子查询增加guardSubQuery校验，拦截盲注函数族(if/case/ascii/substr等)与编码外泄函数族(hex/unhex/conv等)
+2. SQL条件位：where条件列表达式增加guardConditionColumn校验，禁止比较/逻辑运算符(防(1)=(1)式恒真条件拼接)
+3. SQL表达式：标识符/表达式校验增加||/&&逻辑运算符拦截与函数白名单+括号配平校验(防hex()/conv()/get_lock()/rand()等任意函数外泄或盲注)
+4. SQL原生片段：guardSqlFragment增加锁类函数(get_lock等)、procedure analyse/handler/load data危险语句拦截；严格模式(whereRaw等)额外拦截盲注/编码外泄函数族
+5. SQL表名：from/setTable/构造函数表名统一严格白名单校验(仅允许表名/库.表名及可选别名，不再支持子查询表名，需要子查询请使用Model::sub()对象方式)，join表名允许子查询但走表名级校验
+6. 修复PHP7.3兼容：select/distinct构建改用循环，移除a5b2132误用的PHP7.4箭头函数fn()(7.3下解析致命错误)
+7. 修复count(distinct ...)构建期未校验(防setSqlSet注入未校验数据)
+8. 修复findInSet连接类型$type原样拼入SQL无白名单(连接符注入)，仅允许and/or
+9. Pdo层兜底校验guardSql与3.0基线对齐：增加锁函数拦截与剥离字面量后的逻辑位运算符/procedure analyse/handler/load data检测
+
 1.1.6（安全修复，自3.0分支移植）
 
 1. CSRF：token改用random_bytes生成(md5(rand().time())可预测)，校验改为hash_equals防时序比较，会话token作为唯一真值源(防子域cookie注入)，覆盖PATCH/DELETE，修复双空token绕过
