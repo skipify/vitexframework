@@ -936,9 +936,10 @@ class Model
 
         /**
          * 构建期统一严格白名单校验(覆盖from/setTable/构造函数所有来源)，
-         * 表前缀拼接后一并校验，包裹反引号返回
+         * 表名与前缀先拼接为一个完整标识符，再统一校验并包裹反引号返回，
+         * 避免先包裹反引号再拼前缀导致 `kudo_` 与 `user` 被解析为两个标识符
          */
-        return $this->prefix . SqlUtil::wrapTableName($table);
+        return SqlUtil::wrapTableName($this->prefix . $table);
     }
 
     /**
