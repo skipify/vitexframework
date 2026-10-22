@@ -430,8 +430,9 @@ class Wrapper
      */
     public function sql($sql)
     {
-        //原生片段入口校验(严格模式，与whereRaw一致；whereTuple等内部片段为列名与占位符，不受影响)
-        SqlUtil::guardSqlFragment($sql, false);
+        //原生片段入口校验(与whereRaw一致)：含select等子查询关键字的合法读子查询片段
+        //(如 in (select ...))按guardRawCondition放行，仍拦截盲注/外泄/锁函数与注释堆叠
+        SqlUtil::guardRawCondition($sql);
         $this->data[$this->mode][] = $sql;
         return $this;
     }
@@ -477,8 +478,8 @@ class Wrapper
      */
     public function having(string $sql)
     {
-        //原生having片段统一安全校验(严格模式：拦截注释/分号/危险函数/子查询关键字)
-        SqlUtil::guardSqlFragment($sql, false);
+        //原生having片段统一安全校验(与whereRaw一致，合法子查询片段按guardRawCondition放行)
+        SqlUtil::guardRawCondition($sql);
         $this->data['having'][] = $sql;
         return $this;
     }
