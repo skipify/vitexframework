@@ -166,6 +166,9 @@ class Response
             $key      = $vitex->getConfig('callback');
             $callback = $vitex->req->query[$key];
         }
+        //回调名仅允许合法的JS标识符(支持window.xxx.xxx形式点分命名空间，最多10段)，
+        //非法输入回退为固定回调名callback，防止回调名注入造成的反射型XSS
+        $callback = $this->filterJsonpCallback((string)$callback);
         $res = json_encode($arr, JSON_UNESCAPED_UNICODE);
         $res = $callback . '(' . $res . ');';
         if ($out) {
@@ -173,6 +176,21 @@ class Response
             return "";
         }
         return $res;
+    }
+
+    /**
+     * 过滤jsonp回调名
+     * 合法JS标识符: 以字母/$/_开头，后续为字母/数字/$/_，可点分(如 window.callback)
+     * 不合法时回退为固定回调名，确保拼接进响应体的内容永远是一个安全的函数名
+     * @param  string $callback
+     * @return string
+     */
+    private function filterJsonpCallback(string $callback): string
+    {
+        if (preg_match('/^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*){0,9}$/', $callback)) {
+            return $callback;
+        }
+        return 'callback';
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace vitex\service\session\drivers;
 
 use vitex\service\session\SessionDriverInterface;
+use vitex\service\session\SessionHandler;
 use vitex\Vitex;
 
 /**
@@ -35,8 +36,22 @@ class FileDriver implements SessionDriverInterface
         }
     }
 
+    /**
+     * 防御纵深:校验key(session id)合法性
+     * key会直接拼接文件路径，包含 ../ 等字符会导致任意文件读写删除
+     * @param string $key
+     * @return bool
+     */
+    private function isSafeKey(string $key): bool
+    {
+        return SessionHandler::isValidSessionId($key);
+    }
+
     public function get($key)
     {
+        if (!$this->isSafeKey((string)$key)) {
+            return null;
+        }
         if (file_exists($path = $this->storePath . '/' . $key)) {
             $expireTime = time() - ($this->lifetime * 60);
             if (filemtime($path) >= $expireTime) {
@@ -47,18 +62,28 @@ class FileDriver implements SessionDriverInterface
 
     public function set($key, $val, $expire = 60)
     {
-        file_put_contents($this->storePath . '/' . $key, $val, LOCK_EX);
+        if (!$this->isSafeKey((string)$key)) {
+            return false;
+        }
+        $bytes = file_put_contents($this->storePath . '/' . $key, $val, LOCK_EX);
+        if ($bytes === false) {
+            return false;
+        }
+        @chmod($this->storePath . '/' . $key, 0600);
         return true;
     }
 
     public function delete($key)
     {
-        unlink($this->storePath . '/' . $key);
+        if (!$this->isSafeKey((string)$key)) {
+            return false;
+        }
+        @unlink($this->storePath . '/' . $key);
+        return true;
     }
 
     public function gc($maxlifetime)
     {
-        file_put_contents("/home/www/gc.txt",1);
         $expireTime = time() - ($maxlifetime * 60);
         foreach (glob($this->storePath.'/*') as $file) {
             if (is_file($file) && filemtime($file) < $expireTime) {

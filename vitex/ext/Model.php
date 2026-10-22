@@ -405,7 +405,7 @@ class Model
     {
         $identifier = (string)$identifier;
         if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $identifier)
-            || (str_contains($identifier, '`') && preg_match('/\s/', $identifier))
+            || (strpos($identifier, "`") !== false && preg_match('/\s/', $identifier))
         ) {
             throw new \InvalidArgumentException('不安全的标识符:' . $identifier);
         }
@@ -428,7 +428,7 @@ class Model
             return $id;
         }
         //括号配平的函数/聚合表达式(如 max(`id`) as info)：select字段允许CASE WHEN等，其余场景按完整黑名单
-        if (str_contains($id, '(') && substr_count($id, '(') === substr_count($id, ')')) {
+        if (strpos($id, "(") !== false && substr_count($id, '(') === substr_count($id, ')')) {
             if ($withBlind) {
                 return $this->guardExpression($id);
             }
@@ -809,7 +809,7 @@ class Model
         if (strpos($method, 'xists') === false) {
             //where条件列允许函数表达式(如UNIX_TIMESTAMP(...)算术列)
             $key = $this->formatColumn($key);
-            if (is_string($key) && str_contains($key, '(')) {
+            if (is_string($key) && strpos($key, "(") !== false) {
                 //表达式列按完整黑名单校验(拦截盲注函数族)
                 $this->guardIdentifier($key);
             }

@@ -19,13 +19,27 @@ use vitex\core\Exception;
  */
 class Utils
 {
-    const CRYPT_DEFAULT = ['cipher' => 'aes-256-cbc', 'options' => OPENSSL_RAW_DATA,'iv'=>'0000000000000000'];
+    const CRYPT_DEFAULT = ['cipher' => 'aes-256-cbc', 'options' => OPENSSL_RAW_DATA];
+
+    /**
+     * 密文存储格式: base64( IV + HMAC-SHA256(iv.ciphertext) + ciphertext )
+     * IV每次加密随机生成并前置在密文中，解密时按算法IV长度从头部切出，
+     * 因此解密方无需预先知道IV(IV不要求保密，只要求每次加密不可预测且不重复)
+     */
+    const MAC_ALGO = 'sha256';
+    /** HMAC-SHA256 输出32字节 */
+    const MAC_LENGTH = 32;
+    /** 由用户密钥派生出相互独立的加密密钥与MAC密钥(Encrypt-then-MAC) */
+    const KDF_ENC = 'vitex.crypt.enc';
+    const KDF_MAC = 'vitex.crypt.mac';
 
     /**
      * 加密数据
+     * 每次加密使用随机IV并前置密文，附带HMAC做完整性校验，
+     * 防止密文比特翻转篡改、填充预言机攻击与相同明文前缀产生相同密文
      * @param  string $data 要加密的数据
      * @param  string $key 加密的密钥
-     * @param  array $setting 配置文件，配置加密的模式和加密的方法
+     * @param  array $setting 配置文件，配置加密的模式和加密的方法; setting['iv'] 显式传入时使用固定IV(不推荐，仅兼容特殊场景)
      * @return string 加密的数据
      * @throws Exception
      */
@@ -37,15 +51,29 @@ class Utils
         }
 
         $setting = array_merge(Utils::CRYPT_DEFAULT, $setting);
-        $encrypted = openssl_encrypt($data,$setting['cipher'],$key,$setting['options'],$setting['iv']);
+        $cipher = $setting['cipher'];
+        $ivLength = openssl_cipher_iv_length($cipher);
+        if ($ivLength === false || $ivLength <= 0) {
+            throw new Exception('Can not encrypt data: invalid cipher ' . $cipher, Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        //默认每次随机生成IV；仅当调用方显式传入时使用固定IV(不推荐)
+        $iv = !empty($setting['iv']) ? (string)$setting['iv'] : random_bytes($ivLength);
+        if (strlen($iv) !== $ivLength) {
+            throw new Exception('Can not encrypt data: iv length error', Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        list($encKey, $macKey) = self::deriveKeys((string)$key);
+        $encrypted = openssl_encrypt($data, $cipher, $encKey, $setting['options'], $iv);
         if($encrypted === false){
             throw new Exception('Can not encrypt data',Exception::CODE_PARAM_VALUE_ERROR);
         }
-        return base64_encode($encrypted);
+        //Encrypt-then-MAC: 对IV+密文整体计算HMAC，解密前校验
+        $mac = hash_hmac(self::MAC_ALGO, $iv . $encrypted, $macKey, true);
+        return base64_encode($iv . $mac . $encrypted);
     }
 
     /**
      * 解密数据
+     * 从密文头部提取IV与HMAC，先校验HMAC(hash_equals防时序攻击)再解密
      * @param  string $endata 加密的字符串
      * @param  string $key 密钥
      * @param  array $setting 配置
@@ -58,11 +86,42 @@ class Utils
             throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
         }
         $setting = array_merge(Utils::CRYPT_DEFAULT, $setting);
-        $data = openssl_decrypt(base64_decode($endata), $setting['cipher'], $key, $setting['options'],$setting['iv']);
+        $cipher = $setting['cipher'];
+        $ivLength = openssl_cipher_iv_length($cipher);
+        if ($ivLength === false || $ivLength <= 0) {
+            throw new Exception('Can not decrypt data: invalid cipher ' . $cipher, Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        $raw = base64_decode($endata, true);
+        if ($raw === false || strlen($raw) < $ivLength + self::MAC_LENGTH + 1) {
+            throw new Exception('Can not decrypt data', Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        $iv = substr($raw, 0, $ivLength);
+        $mac = substr($raw, $ivLength, self::MAC_LENGTH);
+        $encrypted = substr($raw, $ivLength + self::MAC_LENGTH);
+        //先验证MAC再解密(Encrypt-then-MAC)
+        list($encKey, $macKey) = self::deriveKeys((string)$key);
+        $expected = hash_hmac(self::MAC_ALGO, $iv . $encrypted, $macKey, true);
+        if (!hash_equals($expected, $mac)) {
+            throw new Exception('Can not decrypt data', Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        $data = openssl_decrypt($encrypted, $cipher, $encKey, $setting['options'], $iv);
         if($data === false){
             throw new Exception('Can not decrypt data',Exception::CODE_PARAM_VALUE_ERROR);
         }
         return $data;
+    }
+
+    /**
+     * 从用户密钥派生独立的加密密钥与MAC密钥
+     * @param string $key
+     * @return array [encKey, macKey] 均为32字节二进制
+     */
+    private static function deriveKeys(string $key): array
+    {
+        return [
+            hash_hmac(self::MAC_ALGO, self::KDF_ENC, $key, true),
+            hash_hmac(self::MAC_ALGO, self::KDF_MAC, $key, true),
+        ];
     }
 
     /**

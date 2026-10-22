@@ -47,9 +47,19 @@ class FileHandler extends SessionHandler implements \SessionHandlerInterface
         return true;
     }
 
+    /**
+     * 防御纵深:session id会直接拼接文件路径，非法id(如携带../)拒绝操作防路径穿越
+     */
+    private function isSafeKey(string $key): bool
+    {
+        return preg_match('/^[A-Za-z0-9,\-]{16,128}$/', $key) === 1;
+    }
+
     public function destroy($session_id)
     {
-
+        if (!$this->isSafeKey((string)$session_id)) {
+            return true;
+        }
         unlink($this->path.'/'.$session_id);
         return true;
     }
@@ -71,6 +81,9 @@ class FileHandler extends SessionHandler implements \SessionHandlerInterface
 
     public function read($session_id)
     {
+        if (!$this->isSafeKey((string)$session_id)) {
+            return '';
+        }
         if (file_exists($path = $this->path.'/'.$session_id)) {
             $expireTime = time() - ($this->lifetime * 60);
             if (filemtime($path) >= $expireTime) {
@@ -82,6 +95,9 @@ class FileHandler extends SessionHandler implements \SessionHandlerInterface
 
     public function write($session_id, $session_data)
     {
+        if (!$this->isSafeKey((string)$session_id)) {
+            return false;
+        }
         file_put_contents($this->path.'/'.$session_id, $session_data, LOCK_EX);
         return true;
     }

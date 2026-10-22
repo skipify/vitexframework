@@ -123,6 +123,9 @@ class Filter
 
     /**
      * 给引号加斜线转义
+     * 注意：禁止用作SQL注入防护。addslashes不感知数据库连接编码，
+     * GBK等多字节编码下存在宽字节绕过，也不适用于列名/排序等非字符串字面量位置。
+     * SQL防注入请使用PDO预处理参数绑定(框架Model层默认方式)
      * @param $str mixed
      * @return string
      */

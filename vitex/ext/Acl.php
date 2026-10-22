@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * Vitex 一个基于php7.0开发的 快速开发restful API的微型框架
- * @version  0.2.0
+ * Vitex 一个基于php8.0开发的 快速开发restful API的微型框架
+ * @version  2.0.0
  *
  * @package vitex
  *
@@ -20,6 +20,13 @@ class Acl
      * @var array
      */
     private $group = [];
+
+    /**
+     * 匹配路由
+     * @var Router
+     */
+    private $route;
+
     public function __construct()
     {
         $this->route = new Router();
@@ -58,14 +65,22 @@ class Acl
         }
         if ($matcher === '*') {
             return '|^.*$|i';
-        } else {
-            //替换 *为匹配除了 /分组之外的所有内容
-            $matcher = str_replace('*', '[^\/]*', $matcher);
         }
+
+        //转义正则元字符，防止规则中的 . + [ 等字符被解释为正则语法造成过宽匹配
+        //保留 ( ) ? : @ 字符：( )? 为可选分组语法，: @ 为参数段语法
+        $matcher = preg_replace('/([.+\\[\]$^{}|#])/', '\\\\$1', $matcher);
+        // * 为跨段通配：匹配包括 / 在内的任意内容，覆盖嵌套路径(/admin/* 匹配 /admin/a/b)
+        $matcher = str_replace('*', '.*', $matcher);
 
         $slices = $this->route->getSlice($matcher);
         foreach ($slices as list($slice, $reg)) {
             $matcher = str_replace(':' . $slice, $reg, $matcher);
+        }
+        //规则末尾的 /* 同时覆盖父路径本身：/admin/* 也匹配 /admin
+        //(必须在getSlice处理参数段之后再转换，避免(?:中的冒号被误认为参数段语法)
+        if (substr($matcher, -3) === '/.*') {
+            $matcher = substr($matcher, 0, -strlen('/.*')) . '(?:/.*)?';
         }
         $matcher = '|^' . $matcher . '$|i';
         return $matcher;
@@ -181,7 +196,9 @@ class Acl
      */
     public function groupAllowed($alias, $pattern, $method = 'all')
     {
-        if (isset($this->group[$alias])) {
+        //分组不存在时按fail-closed处理(拒绝)：
+        //原逻辑条件写反(存在即拒绝、不存在时空指针崩溃)，异常被上层捕获时会被误判为放行
+        if (!isset($this->group[$alias])) {
             return false;
         }
 

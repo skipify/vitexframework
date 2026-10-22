@@ -38,22 +38,36 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
     private function saveCookie(array $value)
     {
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
-        $this->cookieData = array_merge($this->cookieData,$value);
+        $this->cookieData = array_merge((array)$this->cookieData,$value);
         $this->vitex->req->session = $this;
         $value = Utils::encrypt(json_encode($this->cookieData,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret_key);
-        setcookie('v', $value, time() + 15 * 60, '/', '', false, true);
+        //secure默认关闭以兼容纯HTTP部署，可通过cookie.secure配置开启；httponly防脚本读取；SameSite=Lax缓解CSRF
+        $secure = (bool)$this->vitex->getConfig('cookie.secure');
+        setcookie('v', $value, [
+            'expires'  => time() + 15 * 60,
+            'path'     => '/',
+            'secure'   => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     }
 
     /**
      * 获取cookie
-     * @throws \vitex\core\Exception
+     * 解密失败(旧格式/被篡改的cookie)时按无会话数据处理，避免抛出异常导致500
      */
     private function getCookie()
     {
         $secret_key = $this->vitex->getConfig('cookies.secret_key');
         $val = isset($_COOKIE['v']) ? $_COOKIE['v'] : '';
-        $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
-        $this->cookieData = $decryptVal ? json_decode($decryptVal,true):[];
+        try {
+            $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
+        } catch (\Exception $e) {
+            $decryptVal = '';
+        }
+        $decoded = $decryptVal ? json_decode($decryptVal,true):[];
+        //解密结果可能为标量，强制为数组避免后续array_merge抛出TypeError造成自拒绝服务
+        $this->cookieData = is_array($decoded) ? $decoded : [];
     }
 
 

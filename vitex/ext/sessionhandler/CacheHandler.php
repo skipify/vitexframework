@@ -43,8 +43,19 @@ class CacheHandler extends SessionHandler implements \SessionHandlerInterface
         return true;
     }
 
+    /**
+     * 防御纵深:session id会作为缓存key透传给后端，非法id拒绝操作
+     */
+    private function isSafeKey(string $key): bool
+    {
+        return preg_match('/^[A-Za-z0-9,\-]{16,128}$/', $key) === 1;
+    }
+
     public function destroy($session_id)
     {
+        if (!$this->isSafeKey((string)$session_id)) {
+            return true;
+        }
         return $this->cache->delete($session_id);
     }
 
@@ -60,11 +71,17 @@ class CacheHandler extends SessionHandler implements \SessionHandlerInterface
 
     public function read($session_id)
     {
+        if (!$this->isSafeKey((string)$session_id)) {
+            return '';
+        }
         return $this->cache->get($session_id) ? (string) $this->cache->get($session_id)  : '';
     }
 
     public function write($session_id, $session_data)
     {
+        if (!$this->isSafeKey((string)$session_id)) {
+            return false;
+        }
         $expireMinutes = $this->vitex->getConfig('session.lifetime');
         return $this->cache->set($session_id,$session_data,$expireMinutes * 60);
     }

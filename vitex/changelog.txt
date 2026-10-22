@@ -1,3 +1,15 @@
+1.1.6（安全修复，自3.0分支移植）
+
+1. CSRF：token改用random_bytes生成(md5(rand().time())可预测)，校验改为hash_equals防时序比较，会话token作为唯一真值源(防子域cookie注入)，覆盖PATCH/DELETE，修复双空token绕过
+2. 加密组件：加密IV改为每次随机生成并前置密文，新增HMAC-SHA256完整性校验(Encrypt-then-MAC)。注意：破坏性变更，旧格式密文(含旧cookie)升级后无法解密，用户需重新登录/重发cookie
+3. 上传：默认扩展名白名单，新增可执行/服务端解析类危险扩展名硬拒绝(php/htaccess等防RCE)
+4. 会话：session id统一白名单校验(防路径穿越任意文件读写)，文件驱动与旧版FileHandler/CacheHandler双重校验，session cookie增加httponly/SameSite默认值，CookieSession解密失败按无会话处理不再500
+5. 路由：无显式@method时HTTP动词映射为白名单方法名，未知动词拒绝解析(防动词注入调用任意public方法)
+6. 方法重写中间件：HTTP动词改写增加白名单(PUT/PATCH/DELETE)
+7. ACL：规则正则元字符转义，分组不存在时fail-closed(原逻辑条件写反)
+8. JSONP：回调名白名单过滤(防反射型XSS)；404调试页输出HTML转义
+9. 修复FileDriver::gc调试残留(每次GC向硬编码路径写文件)
+
 0.9.0
 
 1. Request增加默认数据处理
