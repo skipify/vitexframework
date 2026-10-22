@@ -1,5 +1,5 @@
 {
-    "name": "skipify/vitex1",
+    "name": "skipify/vitex",
     "version":"3.0.0",
     "description": "A Tiny Framework.轻量级的php resetful框架 for php8.2+.",
     "keywords": ["framework", "vitex","phpframework"],
