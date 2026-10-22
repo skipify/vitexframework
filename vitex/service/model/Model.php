@@ -131,6 +131,13 @@ class Model
      */
     public $DB;
 
+    /**
+     * 原生PDO实例(init()中赋值，兼容旧版本直接访问$model->pdo)
+     * 显式声明避免赋值进入__set的模型数据袋_post(save()会将其作为insert数据)
+     * @var \PDO
+     */
+    public $pdo;
+
     public function __construct($table = '')
     {
         if ($table) {
