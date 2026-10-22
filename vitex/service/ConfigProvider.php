@@ -57,7 +57,8 @@ class ConfigProvider
             'methodoverride.key' => '__METHOD', //url request method 重写的key
 
             'cookies.encrypt' => true,
-            'cookies.secret_key' => 'Vitex is a micro restfull framework',
+            //禁止默认密钥：留空时启用加密的组件会直接抛出异常，强制配置私有随机密钥
+            'cookies.secret_key' => '',
             /* 请使用新的cookie配置*/
             'cookie' => (CookieConfig::fromArray([]))->toArray(),
             /**

@@ -13,7 +13,7 @@ class CookieConfig implements ConfigInterface
      * 'cookies.domain' => '',
      * 'cookies.secure' => false,
      * 'cookies.httponly' => false,
-     * 'cookies.secret_key' => 'Vitex is a micro restfull framework',
+     * 'cookies.secret_key' => '请替换为私有随机密钥(禁止空值/框架公开默认值)',
      */
 
     private bool $encrypt = true;
@@ -32,7 +32,10 @@ class CookieConfig implements ConfigInterface
      */
     private bool $httponly = true;
 
-    private string $secretKey = 'Vitex is a micro restfull framework';
+    /**
+     * 禁止默认密钥：留空时启用加密的组件会直接抛出异常，强制配置私有随机密钥
+     */
+    private string $secretKey = '';
 
     /**
      * @return bool
@@ -146,13 +149,31 @@ class CookieConfig implements ConfigInterface
         $this->secretKey = $secretKey;
     }
 
+    /**
+     * 历史版本硬编码的公开默认密钥，已知不安全
+     */
+    public const KNOWN_INSECURE_KEY = 'Vitex is a micro restfull framework';
+
+    /**
+     * 校验cookie加密密钥：禁止空值与框架公开默认密钥(fail-closed)，
+     * 防止使用公开密钥的应用被离线伪造密文(会话/加密cookie身份伪造)
+     * @param string $secretKey
+     * @throws \InvalidArgumentException
+     */
+    public static function assertSecretKey(string $secretKey): void
+    {
+        if ($secretKey === '' || $secretKey === self::KNOWN_INSECURE_KEY) {
+            throw new \InvalidArgumentException('cookie加密密钥未配置或使用了框架公开默认值，请配置独立的随机密钥(cookie.secret_key)');
+        }
+    }
+
 //*            'cookies.encrypt' => true, //是否启用cookie加密
 //* 'cookies.lifetime' => '20 minutes',
 //* 'cookies.path' => '/',
 //* 'cookies.domain' => '',
 //* 'cookies.secure' => false,
 //* 'cookies.httponly' => false,
-//* 'cookies.secret_key' => 'Vitex is a micro restfull framework',
+//* 'cookies.secret_key' => '请替换为私有随机密钥(禁止空值/框架公开默认值)',
 
     public function toArray(): array
     {
@@ -175,6 +196,13 @@ class CookieConfig implements ConfigInterface
             $key = str_replace('cookies.','',$key);
             if ($key == 'maxage') {
                 $key = 'lifetime';
+            }
+            //下划线配置键映射到驼峰属性，避免落到不存在的动态属性上导致配置静默失效
+            if ($key == 'secret_key') {
+                $key = 'secretKey';
+            }
+            if (!property_exists($instance, $key)) {
+                throw new \InvalidArgumentException('未知的cookie配置项:' . $key);
             }
             $instance->{$key} = $val;
         }

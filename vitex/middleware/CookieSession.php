@@ -10,6 +10,7 @@ use vitex\helper\SetMethod;
 use vitex\helper\traits\SetTrait;
 use vitex\helper\Utils;
 use vitex\Middleware;
+use vitex\service\config\CookieConfig;
 use vitex\service\session\SessionHandler;
 use vitex\Vitex;
 
@@ -32,17 +33,47 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
     }
 
     /**
+     * 获取cookie加密密钥：优先cookie配置组，回退旧版cookies.secret_key顶层配置，
+     * 禁止空值与框架公开的默认密钥(fail-closed)，防止离线伪造会话cookie
+     * @return string
+     */
+    private function getSecretKey(): string
+    {
+        $secret_key = '';
+        $config = $this->vitex->getConfig('cookie');
+        if (is_array($config) && $config) {
+            $secret_key = CookieConfig::fromArray($config)->getSecretKey();
+        }
+        if ($secret_key === '') {
+            //兼容旧版顶层配置
+            $secret_key = (string)$this->vitex->getConfig('cookies.secret_key');
+        }
+        CookieConfig::assertSecretKey($secret_key);
+        return $secret_key;
+    }
+
+    /**
      * 设置cookie
      * @param array $value
      * @throws \vitex\core\Exception
      */
     private function saveCookie(array $value)
     {
-        $secret_key = $this->vitex->getConfig('cookies.secret_key');
+        $secret_key = $this->getSecretKey();
         $this->cookieData = array_merge($this->cookieData,$value);
         $this->vitex->req->session = $this;
         $value = Utils::encrypt(json_encode($this->cookieData,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret_key);
-        setcookie('v', $value, VITEX_NOW + 15 * 60, '/', '', false, true);
+        //会话cookie生命周期与会话配置一致(分钟)；secure默认关闭以兼容纯HTTP部署，可通过cookie配置开启；httponly防脚本读取；SameSite=Lax缓解CSRF
+        $sessionLifetime = (int)(((array)$this->vitex->getConfig('session'))['lifetime'] ?? 0);
+        $cookieConfig = CookieConfig::fromArray((array)$this->vitex->getConfig('cookie'));
+        setcookie('v', $value, [
+            'expires'  => VITEX_NOW + ($sessionLifetime > 0 ? $sessionLifetime : 15) * 60,
+            'path'     => $cookieConfig->getPath() ?: '/',
+            'domain'   => $cookieConfig->getDomain(),
+            'secure'   => $cookieConfig->isSecure(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     }
 
     /**
@@ -51,7 +82,7 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
      */
     private function getCookie()
     {
-        $secret_key = $this->vitex->getConfig('cookies.secret_key');
+        $secret_key = $this->getSecretKey();
         $val = isset($_COOKIE['v']) ? $_COOKIE['v'] : '';
         try {
             $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
