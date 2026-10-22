@@ -651,6 +651,28 @@ class Model
     }
 
     /**
+     * 校验条件位置的原生SQL片段(whereRaw/whereTuple等条件透传场景)
+     * 不含子查询关键字的片段按严格模式校验(拦截子查询/盲注/编码外泄函数)；
+     * 含select等子查询关键字的片段(如 in (select ...)/exists (select ...) 等
+     * 文档化的合法读子查询写法)按guardSubQuery规则校验：
+     * 仍拦截注释符/堆叠语句/时间盲注与锁函数/盲注与编码外泄函数/逻辑位运算符，
+     * 仅放行子查询关键字(信任级别与from/join表名的select子查询一致)
+     * @param string $sql SQL条件片段
+     * @return string 校验通过的SQL片段
+     * @throws \InvalidArgumentException
+     */
+    private function guardRawCondition($sql)
+    {
+        $sql = (string)$sql;
+        //剥离引号字符串字面量后检测子查询关键字(字符串值中的关键字是惰性数据)
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        if (preg_match('/(' . self::RE_SUBQUERY . ')/i', $stripped)) {
+            return $this->guardSubQuery($sql);
+        }
+        return $this->guardSqlFragment($sql, false);
+    }
+
+    /**
      * 严格校验表名(白名单)
      * 仅允许 表名/库.表名，以及可选的单个别名： tbl / db.tbl / tbl t / db.tbl t
      * 字符集与formatStrictColumn一致(字母/数字/下划线/中划线/点)，禁止空格、括号、反引号等一切其他字符
@@ -1072,8 +1094,9 @@ class Model
      */
     public function whereRaw($val)
     {
-        //原生片段统一安全校验(严格模式：拦截注释/分号/堆叠/危险函数与子查询关键字)
-        $this->_sql['whereraw'][] = $this->guardSqlFragment($val, false);
+        //原生片段统一安全校验(条件片段)：含select等子查询关键字的合法读子查询片段
+        //(如 in (select ...))按guardRawCondition放行，仍拦截盲注/外泄/锁函数与注释堆叠
+        $this->_sql['whereraw'][] = $this->guardRawCondition($val);
         return $this;
     }
 
@@ -1645,12 +1668,12 @@ class Model
             }
             //where raw (构建期校验)
             foreach ($this->_sql['whereraw'] as $raw) {
-                $sql .= ' ' . $this->guardSqlFragment($raw, false) . ' ';
+                $sql .= ' ' . $this->guardRawCondition($raw) . ' ';
                 $haswhere = true;
             }
             //where tuple (构建期校验)
             foreach ($this->_sql['wheretuple'] as list($raw, $type)) {
-                $raw = $this->guardSqlFragment((string)$raw, false);
+                $raw = $this->guardRawCondition((string)$raw);
                 if ($haswhere) {
                     $sql .= $type . ' (' . $raw . ') ';
                 } else {

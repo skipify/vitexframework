@@ -9,6 +9,7 @@
 7. 修复count(distinct ...)构建期未校验(防setSqlSet注入未校验数据)
 8. 修复findInSet连接类型$type原样拼入SQL无白名单(连接符注入)，仅允许and/or
 9. Pdo层兜底校验guardSql与3.0基线对齐：增加锁函数拦截与剥离字面量后的逻辑位运算符/procedure analyse/handler/load data检测
+10. 修复whereRaw误拦合法子查询：新增guardRawCondition条件片段校验，含select等子查询关键字的合法读子查询片段(如 id not in (select ...))按guardSubQuery规则放行(仍拦截盲注/编码外泄/锁函数/注释堆叠/逻辑位运算符)，无子查询关键字的片段维持严格模式；whereRaw入口与buildWhere构建期复检(whereraw/wheretuple)同步适用
 
 1.1.6（安全修复，自3.0分支移植）
 
