@@ -607,7 +607,7 @@ class Model
         //字符串
         'concat', 'concat_ws', 'length', 'char_length', 'character_length', 'octet_length', 'bit_length',
         'trim', 'ltrim', 'rtrim', 'upper', 'ucase', 'lower', 'lcase', 'reverse', 'replace',
-        'left', 'right', 'substring_index', 'lpad', 'rpad', 'repeat', 'space', 'instr', 'locate', 'position', 'field', 'format',
+        'left', 'right', 'substr', 'substring', 'mid', 'substring_index', 'lpad', 'rpad', 'repeat', 'space', 'instr', 'locate', 'position', 'field', 'format',
         //数值
         'abs', 'round', 'ceil', 'ceiling', 'floor', 'truncate', 'mod', 'greatest', 'least', 'sign', 'pow', 'power', 'sqrt', 'exp', 'ln', 'log', 'log2', 'log10',
         //日期时间
@@ -687,6 +687,17 @@ class Model
             throw new \InvalidArgumentException('不安全的SQL片段(子查询中不允许盲注/编码外泄函数):' . $sql);
         }
         return $sql;
+    }
+
+    /**
+     * 判断字符串值是否为子查询(select ... from ...形式)
+     * 用于whereIn/whereNotIn兼容旧版字符串子查询写法
+     * @param string $query 值
+     * @return bool
+     */
+    private function isSubQuery($query)
+    {
+        return (bool)preg_match("/select\s+(.?)+\s+from./msi", (string)$query);
     }
 
     /**
@@ -1057,6 +1068,10 @@ class Model
             $val = is_array($val) ? $val : $this->guardSubQuery((string)$val);
         } elseif ($op == 'is' || $op == 'is not') {
             $val = 'null';
+        } elseif (($op == 'in' || $op == 'not in') && is_string($val) && $this->isSubQuery($val)) {
+            //兼容旧版 in/not in('select ...')字符串子查询写法：按子查询级校验后整体内联
+            //(拦截注释/分号/危险函数/盲注与编码外泄函数，放行select)
+            $val = $this->guardSubQuery($val);
         } elseif (is_object($val)) {
             //子查询对象(如Model::sub()生成的)：构建SQL并合并其中的占位参数，子查询整体内联
             $subParams = ($val instanceof self) ? $val->_bindParams : [];
