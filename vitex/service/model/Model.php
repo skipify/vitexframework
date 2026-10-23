@@ -1044,11 +1044,29 @@ class Model
      */
     private function join($type, $table, $col, $op, $col2 = '')
     {
-        $col = $this->formatColumn($col);
-        $col2 = $this->formatColumn($col2);
         $op = $this->checkOp($op);
+        //兼容旧版复合ON条件:括号可拆分在col/col2两个参数中(如'(a.memberid' + 'b.memberid and b.status=1)')
+        //合并后的完整ON片段须括号配平且函数在白名单内；两侧分别做黑名单校验；普通列名仍按标识符包裹
+        SqlUtil::guardJoinCondition((string)$col, $op, (string)$col2);
+        $col = $this->formatJoinColumn($col);
+        $col2 = $this->formatJoinColumn($col2);
         $this->_sql['join'][$type][] = [$table, $col, $op, $col2];
         return $this;
+    }
+
+    /**
+     * join连接列格式化(兼容旧版透传行为)：含括号的表达式片段透传(仅黑名单校验)，普通列名包裹反引号
+     * @param string $column 连接列
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function formatJoinColumn($column)
+    {
+        $column = trim((string)$column);
+        if (str_contains($column, '(') || str_contains($column, ')')) {
+            return SqlUtil::guardJoinColumn($column);
+        }
+        return $this->formatColumn($column);
     }
 
     /**
@@ -1285,8 +1303,10 @@ class Model
                     //表名允许携带子查询，走表名级校验
                     $table = SqlUtil::wrapTable($table);
                     //构建期校验:连接条件与操作符(防setSqlSet等方式注入未校验数据)
-                    $con1 = SqlUtil::guardBuiltIdentifier($con1);
-                    $con2 = SqlUtil::guardBuiltIdentifier($con2);
+                    //兼容拆分括号的复合ON条件:合并后的完整ON片段配平+函数白名单，两侧黑名单校验
+                    SqlUtil::guardJoinCondition((string)$con1, (string)$op, (string)$con2);
+                    $con1 = SqlUtil::guardJoinColumn($con1);
+                    $con2 = SqlUtil::guardJoinColumn($con2);
                     $op = $this->checkOp($op);
                     $sql .= sprintf(' %s %s on %s %s %s', $key, $table, $con1, $op, $con2);
                 }
