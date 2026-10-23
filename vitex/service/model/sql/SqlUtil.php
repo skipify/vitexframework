@@ -176,7 +176,7 @@ class SqlUtil
         //字符串
         'concat', 'concat_ws', 'length', 'char_length', 'character_length', 'octet_length', 'bit_length',
         'trim', 'ltrim', 'rtrim', 'upper', 'ucase', 'lower', 'lcase', 'reverse', 'replace',
-        'left', 'right', 'substring_index', 'lpad', 'rpad', 'repeat', 'space', 'instr', 'locate', 'position', 'field', 'format',
+        'left', 'right', 'substr', 'substring', 'mid', 'substring_index', 'lpad', 'rpad', 'repeat', 'space', 'instr', 'locate', 'position', 'field', 'format',
         //数值
         'abs', 'round', 'ceil', 'ceiling', 'floor', 'truncate', 'mod', 'greatest', 'least', 'sign', 'pow', 'power', 'sqrt', 'exp', 'ln', 'log', 'log2', 'log10',
         //日期时间
