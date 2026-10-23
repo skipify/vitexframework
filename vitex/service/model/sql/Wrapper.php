@@ -318,11 +318,11 @@ class Wrapper
         }
         /**
          * 如果是一个子查询
-         * 字符串子查询按标识符级校验(子查询包含select会被拒绝，请使用Model::sub()对象方式)
-         * 子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
+         * 字符串子查询按子查询级校验(guardSubQuery：拦截注释/分号/危险函数/盲注与编码外泄函数，放行select)，
+         * 兼容旧版 in('select ...')字符串子查询写法；子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
          */
         if (is_object($val) || (is_string($val) && SqlUtil::isSubQuery($val))) {
-            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardIdentifier($val);
+            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardSubQuery($val);
             //片段会进入sprintf模板，转义其中的%避免被再次解析
             $tpl = str_replace(':sub', str_replace('%', '%%', $subSql), WrapperConst::SUB_IN);
             $param = new Param($tpl, $column, null);
@@ -348,11 +348,11 @@ class Wrapper
         }
         /*
         * 如果是一个子查询
-        * 字符串子查询按标识符级校验(子查询包含select会被拒绝，请使用Model::sub()对象方式)
-        * 子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
+        * 字符串子查询按子查询级校验(guardSubQuery：拦截注释/分号/危险函数/盲注与编码外泄函数，放行select)，
+        * 兼容旧版 not in('select ...')字符串子查询写法；子查询对象中的占位参数会重写key后合并到当前查询中，执行时统一使用prepare绑定
         */
         if (is_object($val) || (is_string($val) && SqlUtil::isSubQuery($val))) {
-            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardIdentifier($val);
+            $subSql = is_object($val) ? $this->buildSubModelSql($val) : SqlUtil::guardSubQuery($val);
             //片段会进入sprintf模板，转义其中的%避免被再次解析
             $tpl = str_replace(':sub', str_replace('%', '%%', $subSql), WrapperConst::SUB_NOT_IN);
             $param = new Param($tpl, $column, null);
