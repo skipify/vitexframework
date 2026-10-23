@@ -53,6 +53,45 @@ class SqlUtil
     }
 
     /**
+     * 校验join连接列(兼容旧版复合ON条件写法)
+     * 旧版允许把带括号的复合ON条件拆分在join的两个列参数中
+     * (如 leftJoin($t, '(a.memberid', '=', 'b.memberid and b.status=1'))，
+     * 单侧括号不配平属于历史合法用法，因此不做单侧括号配平检查；
+     * 黑名单(注释/子查询/危险函数/||&&逻辑运算符/反引号+空白)照常拦截，
+     * 括号配平与函数白名单由join()对合并后的完整ON片段统一校验
+     * @param string $column 连接列/表达式片段
+     * @return string 校验通过的片段
+     * @throws \InvalidArgumentException
+     */
+    public static function guardJoinColumn(string $column): string
+    {
+        $column = trim($column);
+        if (
+            preg_match(self::SELECT_DANGER_PATTERN, $column)
+            || (str_contains($column, '`') && preg_match('/\s/', $column))
+            || preg_match(self::RE_LOGIC_OPS, $column)
+        ) {
+            throw new \InvalidArgumentException('不安全的join条件列:' . $column);
+        }
+        return $column;
+    }
+
+    /**
+     * 校验join的完整ON条件片段(合并col/op/col2后)
+     * 兼容旧版把复合ON条件拆分在两个列参数中的写法：
+     * 括号配平与函数白名单必须对合并后的完整片段校验，
+     * 两侧片段的黑名单由guardJoinColumn负责，操作符由checkOp白名单负责
+     * @param string $col 第一个连接列/片段
+     * @param string $op 操作符(已经checkOp白名单校验)
+     * @param string $col2 第二个连接列/片段
+     * @throws \InvalidArgumentException
+     */
+    public static function guardJoinCondition(string $col, string $op, string $col2): void
+    {
+        self::checkExpressionFunctions($col . ' ' . $op . ' ' . $col2, 'join条件');
+    }
+
+    /**
      * 校验进入条件位置(where/having/order/group)的透传列名/表达式
      * 在guardIdentifier基础上额外限制字符集: 禁止比较与逻辑运算符(=<>!&|^~)，
      * 比较运算必须经由操作符白名单参数传入，防止 (1)=(1) 式恒真条件拼接
