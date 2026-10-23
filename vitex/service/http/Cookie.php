@@ -63,7 +63,7 @@ class Cookie implements \ArrayAccess
         if ($this->needEncrypt) {
             //禁止空密钥与框架公开默认密钥(fail-closed)
             CookieConfig::assertSecretKey($this->secret);
-            $this->value = Utils::encrypt($value, $this->secret);
+            $this->value = Utils::encryptSafe($value, $this->secret);
         } else {
             $this->value = $value;
         }
@@ -94,7 +94,7 @@ class Cookie implements \ArrayAccess
     public function getValue(): string
     {
         if ($this->needEncrypt) {
-            return Utils::decrypt($this->value, $this->secret);
+            return Utils::decryptSafe($this->value, $this->secret);
         } else {
             return $this->value;
         }
@@ -106,7 +106,7 @@ class Cookie implements \ArrayAccess
     public function setValue(string $value): void
     {
         if ($this->needEncrypt) {
-            $this->value = Utils::encrypt($value, $this->secret);
+            $this->value = Utils::encryptSafe($value, $this->secret);
         } else {
             $this->value = $value;
         }
