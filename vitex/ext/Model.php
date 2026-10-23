@@ -417,6 +417,45 @@ class Model
     }
 
     /**
+     * 校验join连接列(兼容旧版复合ON条件写法)
+     * 旧版允许把带括号的复合ON条件拆分在join的两个列参数中
+     * (如 leftJoin($t, '(a.memberid', '=', 'b.memberid and b.status=1'))，
+     * 单侧括号不配平属于历史合法用法，因此不做单侧括号配平检查；
+     * 黑名单(注释/子查询/危险函数/||&&逻辑运算符/反引号+空白)照常拦截，
+     * 括号配平与函数白名单由join()对合并后的完整ON片段统一校验
+     * @param string $column 连接列/表达式片段
+     * @return string 校验通过的片段
+     * @throws \InvalidArgumentException
+     */
+    private function guardJoinColumn($column)
+    {
+        $column = trim((string)$column);
+        if (
+            preg_match(self::SELECT_DANGER_PATTERN, $column)
+            || (strpos($column, "`") !== false && preg_match('/\s/', $column))
+            || preg_match(self::RE_LOGIC_OPS, $column)
+        ) {
+            throw new \InvalidArgumentException('不安全的join条件列:' . $column);
+        }
+        return $column;
+    }
+
+    /**
+     * 校验join的完整ON条件片段(合并col/op/col2后)
+     * 兼容旧版把复合ON条件拆分在两个列参数中的写法：
+     * 括号配平与函数白名单必须对合并后的完整片段校验，
+     * 两侧片段的黑名单由guardJoinColumn负责，操作符由checkOp白名单负责
+     * @param string $col 第一个连接列/片段
+     * @param string $op 操作符(已经checkOp白名单校验)
+     * @param string $col2 第二个连接列/片段
+     * @throws \InvalidArgumentException
+     */
+    private function guardJoinCondition($col, $op, $col2)
+    {
+        $this->checkExpressionFunctions((string)$col . ' ' . (string)$op . ' ' . (string)$col2, 'join条件');
+    }
+
+    /**
      * 校验进入条件位置(where/having/order/group)的透传列名/表达式
      * 在guardIdentifier基础上额外限制字符集: 禁止比较与逻辑运算符(=<>!&|^~)，
      * 比较运算必须经由操作符白名单参数传入，防止 (1)=(1) 式恒真条件拼接
@@ -1281,11 +1320,29 @@ class Model
      */
     private function join($type, $table, $col, $op, $col2 = '')
     {
-        $col = $this->formatColumn($col);
-        $col2 = $this->formatColumn($col2);
         $op = $this->checkOp($op);
+        //兼容旧版复合ON条件:括号可拆分在col/col2两个参数中(如'(a.memberid' + 'b.memberid and b.status=1)')
+        //合并后的完整ON片段须括号配平且函数在白名单内；两侧分别做黑名单校验；普通列名仍按标识符包裹
+        $this->guardJoinCondition($col, $op, $col2);
+        $col = $this->formatJoinColumn($col);
+        $col2 = $this->formatJoinColumn($col2);
         $this->_sql['join'][$type][] = [$table, $col, $op, $col2];
         return $this;
+    }
+
+    /**
+     * join连接列格式化(兼容旧版透传行为)：含括号的表达式片段透传(仅黑名单校验)，普通列名包裹反引号
+     * @param string $column 连接列
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function formatJoinColumn($column)
+    {
+        $column = trim((string)$column);
+        if (strpos($column, '(') !== false || strpos($column, ')') !== false) {
+            return $this->guardJoinColumn($column);
+        }
+        return $this->formatColumn($column);
     }
 
     /**
@@ -1598,8 +1655,10 @@ class Model
                         $table = $this->formatTable($table);
                     }
                     //构建期校验:连接条件与操作符
-                    $con1 = $this->guardBuiltIdentifier($con1);
-                    $con2 = $this->guardBuiltIdentifier($con2);
+                    //兼容拆分括号的复合ON条件:合并后的完整ON片段配平+函数白名单，两侧黑名单校验
+                    $this->guardJoinCondition($con1, $op, $con2);
+                    $con1 = $this->guardJoinColumn($con1);
+                    $con2 = $this->guardJoinColumn($con2);
                     $op = $this->checkOp($op);
                     $sql .= $key . ' ' . $table . ' on ' . $con1 . ' ' . $op . ' ' . $con2 . ' ';
                 }
