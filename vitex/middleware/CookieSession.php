@@ -53,7 +53,7 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
         $secret_key = $this->getSecretKey();
         $this->cookieData = array_merge((array)$this->cookieData,$value);
         $this->vitex->req->session = $this;
-        $value = Utils::encrypt(json_encode($this->cookieData,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret_key);
+        $value = Utils::encryptSafe(json_encode($this->cookieData,JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret_key);
         //会话cookie生命周期与会话配置一致(分钟)；secure默认关闭以兼容纯HTTP部署，可通过cookies.secure配置开启；httponly防脚本读取；SameSite=Lax缓解CSRF
         $lifetime = (int)$this->vitex->getConfig('session.lifetime');
         setcookie('v', $value, [
@@ -75,7 +75,7 @@ class CookieSession extends Middleware implements \ArrayAccess, \Iterator, \Coun
         $secret_key = $this->getSecretKey();
         $val = isset($_COOKIE['v']) ? $_COOKIE['v'] : '';
         try {
-            $decryptVal = $val ? Utils::decrypt($val,$secret_key):'';
+            $decryptVal = $val ? Utils::decryptSafe($val,$secret_key):'';
         } catch (\Exception $e) {
             $decryptVal = '';
         }

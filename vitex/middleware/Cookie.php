@@ -58,7 +58,7 @@ class Cookie extends Middleware
         if ($encrypt) {
             //禁止空密钥与框架公开默认密钥(fail-closed)
             Utils::assertSecretKey($secret_key);
-            $value = Utils::encrypt($value, $secret_key);
+            $value = Utils::encryptSafe($value, $secret_key);
         }
         setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
     }
@@ -78,7 +78,7 @@ class Cookie extends Middleware
             Utils::assertSecretKey($secret_key);
             foreach ($cookie as &$c) {
                 try {
-                    $c = Utils::decrypt($c, $secret_key);
+                    $c = Utils::decryptSafe($c, $secret_key);
                 } catch(Exception $e){}
             }
         }
