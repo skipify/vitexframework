@@ -148,7 +148,7 @@ class Utils
         }
 
         $setting = array_merge(Utils::CRYPT_DEFAULT_LEGACY, $setting);
-        $encrypted = openssl_encrypt($data,$setting['cipher'],$key,$setting['options'],$setting['iv']);
+        $encrypted = openssl_encrypt($data,$setting['cipher'],(string)$key,$setting['options'],$setting['iv']);
         if($encrypted === false){
             throw new Exception('Can not encrypt data',Exception::CODE_PARAM_VALUE_ERROR);
         }
@@ -172,7 +172,7 @@ class Utils
             throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
         }
         $setting = array_merge(Utils::CRYPT_DEFAULT_LEGACY, $setting);
-        $data = openssl_decrypt(base64_decode($endata), $setting['cipher'], $key, $setting['options'],$setting['iv']);
+        $data = openssl_decrypt(base64_decode($endata), $setting['cipher'], (string)$key, $setting['options'],$setting['iv']);
         if($data === false){
             throw new Exception('Can not decrypt data',Exception::CODE_PARAM_VALUE_ERROR);
         }
