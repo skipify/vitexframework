@@ -68,7 +68,7 @@ class Cookie extends Middleware
         if ($encrypt && $secret_key) {
             foreach ($cookie as &$c) {
                 try {
-                    $c = Utils::decrypt($c, $secret_key);
+                    $c = Utils::decryptSafe($c, $secret_key);
                 } catch(Exception $e){}
             }
         }

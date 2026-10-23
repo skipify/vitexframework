@@ -22,6 +22,11 @@ class Utils
     const CRYPT_DEFAULT = ['cipher' => 'aes-256-cbc', 'options' => \OPENSSL_RAW_DATA];
 
     /**
+     * 旧版(固定IV)加密的默认配置，仅供废弃的encrypt/decrypt兼容使用
+     */
+    const CRYPT_DEFAULT_LEGACY = ['cipher' => 'aes-256-cbc', 'options' => \OPENSSL_RAW_DATA, 'iv' => '0000000000000000'];
+
+    /**
      * 密文存储格式: base64( IV + HMAC-SHA256(iv.ciphertext) + ciphertext )
      * IV每次加密随机生成并前置在密文中，解密时按算法IV长度从头部切出，
      * 因此解密方无需预先知道IV(IV不要求保密，只要求每次加密不可预测且不重复)
@@ -34,7 +39,7 @@ class Utils
     private const KDF_MAC = 'vitex.crypt.mac';
 
     /**
-     * 加密数据
+     * 安全加密数据
      * 每次加密使用随机IV并前置密文，附带HMAC做完整性校验，
      * 防止密文比特翻转篡改、填充预言机攻击与相同明文前缀产生相同密文
      * @param  string $data 要加密的数据
@@ -43,7 +48,7 @@ class Utils
      * @return string 加密的数据
      * @throws Exception
      */
-    public static function encrypt($data, $key, array $setting = [])
+    public static function encryptSafe($data, $key, array $setting = [])
     {
         $data = (string) $data;
         if(!is_string($data)){
@@ -72,7 +77,7 @@ class Utils
     }
 
     /**
-     * 解密数据
+     * 安全解密数据
      * 从密文头部提取IV与HMAC，先校验HMAC(hash_equals防时序攻击)再解密
      * @param  string $endata 加密的字符串
      * @param  string $key 密钥
@@ -80,7 +85,7 @@ class Utils
      * @return mixed 加密的数据
      * @throws Exception
      */
-    public static function decrypt($endata, $key, array $setting = [])
+    public static function decryptSafe($endata, $key, array $setting = [])
     {
         if(!is_string($endata)){
             throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
@@ -122,6 +127,56 @@ class Utils
             hash_hmac(self::MAC_ALGO, self::KDF_ENC, $key, true),
             hash_hmac(self::MAC_ALGO, self::KDF_MAC, $key, true),
         ];
+    }
+
+    /**
+     * 加密数据(旧版兼容)
+     * 使用固定IV加密，相同明文与密钥总是产生相同密文，且无完整性校验，存在安全隐患
+     * 为了兼容旧数据保留此方法，请尽快迁移到随机IV的 encryptSafe()
+     * @param  string $data 要加密的数据
+     * @param  string $key 加密的密钥
+     * @param  array $setting 配置文件，配置加密的模式和加密的方法，setting['iv']为固定IV
+     * @return string 加密的数据
+     * @throws Exception
+     * @deprecated 2.1.3 请使用 self::encryptSafe()
+     */
+    public static function encrypt($data, $key, array $setting = [])
+    {
+        $data = (string) $data;
+        if(!is_string($data)){
+            throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
+        }
+
+        $setting = array_merge(Utils::CRYPT_DEFAULT_LEGACY, $setting);
+        $encrypted = openssl_encrypt($data,$setting['cipher'],$key,$setting['options'],$setting['iv']);
+        if($encrypted === false){
+            throw new Exception('Can not encrypt data',Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        return base64_encode($encrypted);
+    }
+
+    /**
+     * 解密数据(旧版兼容)
+     * 使用固定IV解密旧版encrypt()加密的数据，无完整性校验
+     * 为了兼容旧数据保留此方法，请尽快迁移到随机IV的 decryptSafe()
+     * @param  string $endata 加密的字符串
+     * @param  string $key 密钥
+     * @param  array $setting 配置
+     * @return mixed 加密的数据
+     * @throws Exception
+     * @deprecated 2.1.3 请使用 self::decryptSafe()
+     */
+    public static function decrypt($endata, $key, array $setting = [])
+    {
+        if(!is_string($endata)){
+            throw  new Exception(Exception::CODE_PARAM_ERROR_MSG,Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        $setting = array_merge(Utils::CRYPT_DEFAULT_LEGACY, $setting);
+        $data = openssl_decrypt(base64_decode($endata), $setting['cipher'], $key, $setting['options'],$setting['iv']);
+        if($data === false){
+            throw new Exception('Can not decrypt data',Exception::CODE_PARAM_VALUE_ERROR);
+        }
+        return $data;
     }
 
     /**
