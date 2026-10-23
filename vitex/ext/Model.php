@@ -1275,8 +1275,13 @@ class Model
         if (!in_array($way, ['ASC', 'DESC'], true)) {
             throw new \InvalidArgumentException('不支持的排序方式，仅允许 asc/desc:' . $way);
         }
-        //排序字段使用严格白名单，不支持函数与表达式
-        $column = $this->formatStrictColumn($column);
+        //兼容旧版:含括号的排序表达式(如 day(from_unixtime(create_at,'%Y-%m-%d')))按透传表达式校验
+        //(黑名单+括号配平+函数白名单)；纯列名仍走严格白名单
+        if (strpos((string)$column, '(') !== false) {
+            $this->guardConditionColumn((string)$column);
+        } else {
+            $column = $this->formatStrictColumn($column);
+        }
         $this->_sql['order'][] = [$column, $way];
         return $this;
     }
@@ -1288,8 +1293,13 @@ class Model
      */
     final public function groupBy($column)
     {
-        //分组字段使用严格白名单，不支持函数与表达式
-        $column = $this->formatStrictColumn($column);
+        //兼容旧版:含括号的分组表达式(如 day(from_unixtime(create_at,'%Y-%m-%d')))按透传表达式校验
+        //(黑名单+括号配平+函数白名单)；纯列名仍走严格白名单
+        if (strpos((string)$column, '(') !== false) {
+            $this->guardConditionColumn((string)$column);
+        } else {
+            $column = $this->formatStrictColumn($column);
+        }
         $this->_sql['group'][] = $column;
         return $this;
     }
