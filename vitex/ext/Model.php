@@ -1292,8 +1292,13 @@ class Model
     final public function from($table)
     {
         $table = (string)$table;
-        //入口级严格白名单校验，表名不支持子查询，需要子查询请使用Model::sub()对象方式
-        $this->wrapTableName($table);
+        if (strpos($table, '(') !== false || strpos($table, ')') !== false) {
+            //子查询表名走表名级校验(放行select子查询，拦截注释/堆叠/危险函数)
+            $this->guardTableIdentifier($table);
+        } else {
+            //入口级严格白名单校验，普通表名不支持子查询
+            $this->wrapTableName($table);
+        }
         $this->_sql['from'] = $table;
         return $this;
     }
@@ -1307,12 +1312,15 @@ class Model
     {
         if ($this->_sql['from']) {
             $table = $this->_sql['from'];
+            //兼容旧版：子查询表名(含括号)构建期复核后原样返回，不拼接表名前缀
+            if (strpos($table, '(') !== false || strpos($table, ')') !== false) {
+                return $this->guardTableIdentifier($table);
+            }
         } else {
             $table = $this->table;
         }
         /**
-         * 构建期统一严格白名单校验(覆盖from/setTable/构造函数所有来源)，
-         * 表名不支持子查询，需要子查询请使用Model::sub()对象方式
+         * 构建期统一严格白名单校验(覆盖from/setTable/构造函数所有来源)
          */
         $table = $this->wrapTableName($table);
         $table = $this->prefix . $table;
