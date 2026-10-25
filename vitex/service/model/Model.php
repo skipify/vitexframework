@@ -919,8 +919,9 @@ class Model
     {
         $table = (string)$table;
         if (str_contains($table, '(') || str_contains($table, ')')) {
-            //子查询表名走表名级校验(放行select子查询，拦截注释/堆叠/危险函数)
-            SqlUtil::guardTableIdentifier($table);
+            //子查询表名按子查询级校验(与whereExists/whereIn字符串子查询同级：放行select，
+            //拦截注释/堆叠/危险函数/锁函数/逻辑位运算符/盲注与编码外泄函数)
+            SqlUtil::guardSubQuery($table);
         } else {
             //入口级严格白名单校验，普通表名不支持子查询
             SqlUtil::wrapTableName($table);
@@ -938,9 +939,9 @@ class Model
     {
         if ($this->_sql['from']) {
             $table = $this->_sql['from'];
-            //兼容旧版：子查询表名(含括号)构建期复核后原样返回，不拼接表名前缀
+            //兼容旧版：子查询表名(含括号)构建期按子查询级复核后原样返回，不拼接表名前缀
             if (str_contains($table, '(') || str_contains($table, ')')) {
-                return SqlUtil::guardTableIdentifier($table);
+                return SqlUtil::guardSubQuery($table);
             }
         } else {
             $table = $this->table;
@@ -963,9 +964,9 @@ class Model
     {
         $table = $this->_sql['from'];
         if ($table) {
-            //兼容旧版：子查询表名(含括号)构建期复核后原样返回
+            //兼容旧版：子查询表名(含括号)构建期按子查询级复核后原样返回
             if (str_contains($table, '(') || str_contains($table, ')')) {
-                return SqlUtil::guardTableIdentifier($table);
+                return SqlUtil::guardSubQuery($table);
             }
             return SqlUtil::wrapTableName($table);
         }
@@ -1323,8 +1324,9 @@ class Model
                     throw new \InvalidArgumentException('不安全的join类型:' . $key);
                 }
                 foreach ($join as list($table, $con1, $op, $con2)) {
-                    $table = $this->prefix . $table;
-                    //表名允许携带子查询，走表名级校验
+                    //子查询表名(含括号)不拼接前缀(与getTable一致，子查询内部自行处理表前缀)
+                    $table = (str_contains($table, '(') || str_contains($table, ')')) ? $table : $this->prefix . $table;
+                    //表名允许携带子查询，走子查询级校验
                     $table = SqlUtil::wrapTable($table);
                     //构建期校验:连接条件与操作符(防setSqlSet等方式注入未校验数据)
                     //兼容拆分括号的复合ON条件:合并后的完整ON片段配平+函数白名单，两侧黑名单校验
