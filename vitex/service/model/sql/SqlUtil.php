@@ -437,9 +437,10 @@ class SqlUtil
         if (!$table) {
             return $table;
         }
-        //子查询 (select ...) as t 等复杂表名
+        //子查询 (select ...) as t 等复杂表名：按子查询级校验
+        //(与whereExists/whereIn字符串子查询同级，拦截注释/堆叠/危险函数/锁函数/逻辑位运算符/盲注与编码外泄函数)
         if (str_contains($table, '(') || str_contains($table, ')')) {
-            return self::guardTableIdentifier($table);
+            return self::guardSubQuery($table);
         }
         return self::wrapSelectColumn($table);
     }
