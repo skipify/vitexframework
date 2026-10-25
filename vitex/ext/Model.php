@@ -347,9 +347,10 @@ class Model
     private function formatColumn($column)
     {
         $column = trim($column);
-        /*调用系统函数时不处理(允许CASE WHEN等表达式，按不含盲注函数族的模式校验)*/
+        /*调用系统函数时不处理(允许CASE WHEN等表达式，按不含盲注函数族的模式校验；
+        放行 avg(`star`) as star 等带反引号列与别名的聚合表达式，与构建期guardExpression一致)*/
         if (strpos($column, '(') !== false) {
-            return $this->guardIdentifier($column, false);
+            return $this->guardSelectExpression($column);
         }
         if (strpos($column, '.') !== false) {
             list($table, $column) = explode('.', $column);
@@ -414,6 +415,25 @@ class Model
         }
         $this->checkExpressionFunctions($identifier, '标识符');
         return $identifier;
+    }
+
+    /**
+     * 校验select字段位置的透传表达式
+     * 与guardIdentifier($id, false)一致，但额外放行 反引号+空白 的组合：
+     * 合法聚合表达式如 avg(`star`) as star / max(`id`) as info 含该形式，
+     * 黑名单(注释/子查询/危险函数)、||&&逻辑运算符、括号配平与函数白名单照常拦截
+     * @param string $column select字段表达式
+     * @return string 校验通过的表达式
+     * @throws \InvalidArgumentException
+     */
+    private function guardSelectExpression($column)
+    {
+        $column = (string)$column;
+        if (preg_match(self::SELECT_DANGER_PATTERN, $column) || preg_match(self::RE_LOGIC_OPS, $column)) {
+            throw new \InvalidArgumentException('不安全的标识符:' . $column);
+        }
+        $this->checkExpressionFunctions($column, '标识符');
+        return $column;
     }
 
     /**
