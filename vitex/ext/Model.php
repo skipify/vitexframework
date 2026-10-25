@@ -407,7 +407,10 @@ class Model
     private function guardIdentifier($identifier, bool $withBlind = true)
     {
         $identifier = (string)$identifier;
-        if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $identifier)
+        //词式危险模式检测前剥离引号字符串与反引号标识符(惰性数据/纯标识符不可执行，
+        //如列名`version`不应命中函数version())，裸词仍全量拦截
+        $inertStripped = $this->stripInert($identifier);
+        if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $inertStripped)
             || (strpos($identifier, "`") !== false && preg_match('/\s/', $identifier))
             || preg_match(self::RE_LOGIC_OPS, $identifier)
         ) {
@@ -429,7 +432,9 @@ class Model
     private function guardSelectExpression($column)
     {
         $column = (string)$column;
-        if (preg_match(self::SELECT_DANGER_PATTERN, $column) || preg_match(self::RE_LOGIC_OPS, $column)) {
+        //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
+        $inertStripped = $this->stripInert($column);
+        if (preg_match(self::SELECT_DANGER_PATTERN, $inertStripped) || preg_match(self::RE_LOGIC_OPS, $column)) {
             throw new \InvalidArgumentException('不安全的标识符:' . $column);
         }
         $this->checkExpressionFunctions($column, '标识符');
@@ -450,8 +455,10 @@ class Model
     private function guardJoinColumn($column)
     {
         $column = trim((string)$column);
+        //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
+        $inertStripped = $this->stripInert($column);
         if (
-            preg_match(self::SELECT_DANGER_PATTERN, $column)
+            preg_match(self::SELECT_DANGER_PATTERN, $inertStripped)
             || (strpos($column, "`") !== false && preg_match('/\s/', $column))
             || preg_match(self::RE_LOGIC_OPS, $column)
         ) {
@@ -517,6 +524,27 @@ class Model
     }
 
     /**
+     * 剥离SQL片段中的引号字符串字面量、反引号标识符、绑定占位符与点号限定名后返回
+     * 字符串字面量是惰性数据、`反引号标识符`是纯列/表名引用、:name占位符是参数引用、
+     * a.name点号限定名是名称引用，四者均不可执行，
+     * 词式危险模式(函数/注释/关键字)检测前剥离可避免误伤
+     * (如列名`version`/占位符:version不应命中函数version()、列名`a--b`不应命中注释符)；
+     * 可执行的函数调用与真实注释必然是裸文本，剥离后仍会被全量检测；
+     * 占位符与限定名使用非[(字符边界断言，回溯无法逃逸(":sleep("不会被剥离)、
+     * 奇数个反引号(未闭合)不会被剥离，剩余裸文本照常检测(fail-closed)
+     * @param string $sql SQL片段
+     * @return string 剥离后的文本
+     */
+    private function stripInert($sql)
+    {
+        $sql = (string)$sql;
+        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        $stripped = preg_replace('/`[^`]*`/', '', $stripped) ?? '';
+        $stripped = preg_replace('/:[A-Za-z0-9_]+(?=[^A-Za-z0-9_(]|$)/', '', $stripped) ?? '';
+        return preg_replace('/\.[A-Za-z0-9_]+(?=[^A-Za-z0-9_(]|$)/', '', $stripped) ?? '';
+    }
+
+    /**
      * 校验构建期的标识符(已经formatColumn/formatStrictColumn处理过的存储形式)
      * 完整反引号包裹的形式(含 点号/别名/星号)是安全的字面标识符直接放行，
      * 其余(函数表达式/透传片段)按guardIdentifier黑名单校验
@@ -554,7 +582,9 @@ class Model
      */
     private function guardExpression($id)
     {
-        if (preg_match(self::IDENT_DANGER_PATTERN, $id) || preg_match(self::RE_LOGIC_OPS, $id)) {
+        //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
+        $inertStripped = $this->stripInert((string)$id);
+        if (preg_match(self::IDENT_DANGER_PATTERN, $inertStripped) || preg_match(self::RE_LOGIC_OPS, (string)$id)) {
             throw new \InvalidArgumentException('不安全的表达式:' . $id);
         }
         $this->checkExpressionFunctions($id, '表达式');
@@ -662,11 +692,13 @@ class Model
     private function guardSqlFragment($sql, bool $allowSelect = true)
     {
         $sql = (string)$sql;
-        if (preg_match(self::RAW_DANGER_PATTERN, $sql)) {
+        //词式危险模式检测前剥离引号字符串字面量与反引号标识符(惰性数据/纯标识符不可执行，
+        //如列名`version`不应命中函数version()、列名`a--b`不应命中注释符)，
+        //可执行的函数调用与真实注释必然是裸文本，剥离后仍全量拦截
+        $stripped = $this->stripInert($sql);
+        if (preg_match(self::RAW_DANGER_PATTERN, $stripped)) {
             throw new \InvalidArgumentException('不安全的SQL片段:' . $sql);
         }
-        //剥离引号字符串字面量后再检测逻辑拼接特征(字符串内容为惰性数据，不参与SQL逻辑)
-        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
         if (
             //||/&&/^(xor)/~/单独!(非!=) 在MySQL中均为逻辑/位运算拼接口，可构造恒真条件
             preg_match('/\|\||&&|[\^~]|!(?!=)/', $stripped)
@@ -678,10 +710,10 @@ class Model
             throw new \InvalidArgumentException('不安全的SQL片段(不允许逻辑位运算符/危险语句):' . $sql);
         }
         //锁类函数(get_lock等)是sleep之外的替代时间盲注原语，应用SQL无合法用途，全场景拦截
-        if (preg_match('/(' . self::RE_LOCK_FUNCS . ')/i', $sql)) {
+        if (preg_match('/(' . self::RE_LOCK_FUNCS . ')/i', $stripped)) {
             throw new \InvalidArgumentException('不安全的SQL片段(不允许锁函数):' . $sql);
         }
-        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $sql)) {
+        if (!$allowSelect && preg_match('/(' . self::RE_SUBQUERY . '|' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $stripped)) {
             //严格模式(whereRaw/whereTuple等条件片段)额外拦截:
             //盲注函数族(if/case/ascii/substr等)、编码外泄函数(hex/conv等)
             throw new \InvalidArgumentException('不安全的SQL片段(不允许子查询/盲注/编码外泄函数):' . $sql);
@@ -702,7 +734,8 @@ class Model
     private function guardSubQuery($sql)
     {
         $sql = $this->guardSqlFragment($sql, true);
-        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', (string)$sql) ?? '';
+        //剥离引号字符串字面量与反引号标识符后检测(两者均为惰性数据/纯标识符)
+        $stripped = $this->stripInert((string)$sql);
         if (preg_match('/(' . self::RE_BLIND_FUNCS . '|' . self::RE_EXFIL_FUNCS . ')/i', $stripped)) {
             throw new \InvalidArgumentException('不安全的SQL片段(子查询中不允许盲注/编码外泄函数):' . $sql);
         }
@@ -734,8 +767,8 @@ class Model
     private function guardRawCondition($sql)
     {
         $sql = (string)$sql;
-        //剥离引号字符串字面量后检测子查询关键字(字符串值中的关键字是惰性数据)
-        $stripped = preg_replace(self::RE_QUOTED_LITERALS, '', $sql) ?? '';
+        //剥离引号字符串字面量与反引号标识符后检测子查询关键字(两者均为惰性数据/纯标识符)
+        $stripped = $this->stripInert($sql);
         if (preg_match('/(' . self::RE_SUBQUERY . ')/i', $stripped)) {
             return $this->guardSubQuery($sql);
         }
@@ -773,7 +806,8 @@ class Model
     private function guardTableIdentifier($table)
     {
         $table = (string)$table;
-        if (preg_match(self::RAW_DANGER_PATTERN, $table)) {
+        //词式危险模式检测前剥离引号字符串与反引号标识符(如表名`version`不应命中函数version())
+        if (preg_match(self::RAW_DANGER_PATTERN, $this->stripInert($table))) {
             throw new \InvalidArgumentException('不安全的表名:' . $table);
         }
         return $table;
