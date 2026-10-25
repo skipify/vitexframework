@@ -909,7 +909,8 @@ class Model
 
     /**
      * 要查询的表名
-     * 仅允许 表名/库.表名 以及可选别名，字符集为字母数字下划线中划线
+     * 普通表名仅允许 表名/库.表名 以及可选别名，字符集为字母数字下划线中划线；
+     * 兼容旧版：含括号的子查询表名(如 (select ...) as t)按表名级校验后透传
      * @param string $table 表名
      * @return self
      * @throws \InvalidArgumentException
@@ -917,8 +918,13 @@ class Model
     final public function from($table)
     {
         $table = (string)$table;
-        //入口级严格白名单校验，表名不支持子查询，需要子查询请使用Model::sub()对象方式
-        SqlUtil::wrapTableName($table);
+        if (str_contains($table, '(') || str_contains($table, ')')) {
+            //子查询表名走表名级校验(放行select子查询，拦截注释/堆叠/危险函数)
+            SqlUtil::guardTableIdentifier($table);
+        } else {
+            //入口级严格白名单校验，普通表名不支持子查询
+            SqlUtil::wrapTableName($table);
+        }
         $this->_sql['from'] = $table;
         return $this;
     }
@@ -932,6 +938,10 @@ class Model
     {
         if ($this->_sql['from']) {
             $table = $this->_sql['from'];
+            //兼容旧版：子查询表名(含括号)构建期复核后原样返回，不拼接表名前缀
+            if (str_contains($table, '(') || str_contains($table, ')')) {
+                return SqlUtil::guardTableIdentifier($table);
+            }
         } else {
             $table = $this->table;
         }
@@ -953,6 +963,10 @@ class Model
     {
         $table = $this->_sql['from'];
         if ($table) {
+            //兼容旧版：子查询表名(含括号)构建期复核后原样返回
+            if (str_contains($table, '(') || str_contains($table, ')')) {
+                return SqlUtil::guardTableIdentifier($table);
+            }
             return SqlUtil::wrapTableName($table);
         }
         return '';
