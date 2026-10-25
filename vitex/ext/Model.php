@@ -410,6 +410,8 @@ class Model
         //词式危险模式检测前剥离引号字符串与反引号标识符(惰性数据/纯标识符不可执行，
         //如列名`version`不应命中函数version())，裸词仍全量拦截
         $inertStripped = $this->stripInert($identifier);
+        //注释符/分隔符恒定按原文拦截(列名a--b等一律拒绝)
+        $this->assertNoTerminators($identifier, '标识符');
         if (preg_match($withBlind ? self::IDENT_DANGER_PATTERN : self::SELECT_DANGER_PATTERN, $inertStripped)
             || (strpos($identifier, "`") !== false && preg_match('/\s/', $identifier))
             || preg_match(self::RE_LOGIC_OPS, $identifier)
@@ -434,6 +436,8 @@ class Model
         $column = (string)$column;
         //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
         $inertStripped = $this->stripInert($column);
+        //注释符/分隔符恒定按原文拦截(列名a--b等一律拒绝)
+        $this->assertNoTerminators($column, '标识符');
         if (preg_match(self::SELECT_DANGER_PATTERN, $inertStripped) || preg_match(self::RE_LOGIC_OPS, $column)) {
             throw new \InvalidArgumentException('不安全的标识符:' . $column);
         }
@@ -457,6 +461,8 @@ class Model
         $column = trim((string)$column);
         //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
         $inertStripped = $this->stripInert($column);
+        //注释符/分隔符恒定按原文拦截(列名a--b等一律拒绝)
+        $this->assertNoTerminators($column, 'join条件列');
         if (
             preg_match(self::SELECT_DANGER_PATTERN, $inertStripped)
             || (strpos($column, "`") !== false && preg_match('/\s/', $column))
@@ -525,11 +531,8 @@ class Model
 
     /**
      * 剥离SQL片段中的引号字符串字面量、反引号标识符、绑定占位符与点号限定名后返回
-     * 字符串字面量是惰性数据、`反引号标识符`是纯列/表名引用、:name占位符是参数引用、
-     * a.name点号限定名是名称引用，四者均不可执行，
-     * 词式危险模式(函数/注释/关键字)检测前剥离可避免误伤
-     * (如列名`version`/占位符:version不应命中函数version()、列名`a--b`不应命中注释符)；
-     * 可执行的函数调用与真实注释必然是裸文本，剥离后仍会被全量检测；
+     * 仅用于词式危险模式(函数名/关键字)检测前的剥离，避免列名`version`/占位符:version
+     * 误命中函数version()等；注释符与分隔符不剥离，由assertNoTerminators按原文恒定拦截；
      * 占位符与限定名使用非[(字符边界断言，回溯无法逃逸(":sleep("不会被剥离)、
      * 奇数个反引号(未闭合)不会被剥离，剩余裸文本照常检测(fail-closed)
      * @param string $sql SQL片段
@@ -542,6 +545,20 @@ class Model
         $stripped = preg_replace('/`[^`]*`/', '', $stripped) ?? '';
         $stripped = preg_replace('/:[A-Za-z0-9_]+(?=[^A-Za-z0-9_(]|$)/', '', $stripped) ?? '';
         return preg_replace('/\.[A-Za-z0-9_]+(?=[^A-Za-z0-9_(]|$)/', '', $stripped) ?? '';
+    }
+
+    /**
+     * 注释符与语句分隔符恒定按原文拦截(不做任何剥离)：
+     * 含 a--b、a#b 等形式的列名/字符串/片段一律拒绝
+     * @param string $sql SQL片段
+     * @param string $label 报错场景描述
+     * @throws \InvalidArgumentException
+     */
+    private function assertNoTerminators($sql, string $label)
+    {
+        if (preg_match('/(' . self::RE_TERMINATORS . ')/', (string)$sql)) {
+            throw new \InvalidArgumentException('不安全的' . $label . ':' . $sql);
+        }
     }
 
     /**
@@ -584,6 +601,8 @@ class Model
     {
         //词式危险模式检测前剥离引号字符串与反引号标识符(如列名`version`不应命中函数version())
         $inertStripped = $this->stripInert((string)$id);
+        //注释符/分隔符恒定按原文拦截(列名a--b等一律拒绝)
+        $this->assertNoTerminators($id, '表达式');
         if (preg_match(self::IDENT_DANGER_PATTERN, $inertStripped) || preg_match(self::RE_LOGIC_OPS, (string)$id)) {
             throw new \InvalidArgumentException('不安全的表达式:' . $id);
         }
@@ -696,6 +715,8 @@ class Model
         //如列名`version`不应命中函数version()、列名`a--b`不应命中注释符)，
         //可执行的函数调用与真实注释必然是裸文本，剥离后仍全量拦截
         $stripped = $this->stripInert($sql);
+        //注释符/分隔符恒定按原文拦截(不做任何剥离，列名a--b、字符串含--等一律拒绝)
+        $this->assertNoTerminators($sql, 'SQL片段');
         if (preg_match(self::RAW_DANGER_PATTERN, $stripped)) {
             throw new \InvalidArgumentException('不安全的SQL片段:' . $sql);
         }
@@ -807,6 +828,8 @@ class Model
     {
         $table = (string)$table;
         //词式危险模式检测前剥离引号字符串与反引号标识符(如表名`version`不应命中函数version())
+        //注释符/分隔符恒定按原文拦截(表名a--b等一律拒绝)
+        $this->assertNoTerminators($table, '表名');
         if (preg_match(self::RAW_DANGER_PATTERN, $this->stripInert($table))) {
             throw new \InvalidArgumentException('不安全的表名:' . $table);
         }
