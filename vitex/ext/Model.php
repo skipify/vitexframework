@@ -1293,8 +1293,9 @@ class Model
     {
         $table = (string)$table;
         if (strpos($table, '(') !== false || strpos($table, ')') !== false) {
-            //子查询表名走表名级校验(放行select子查询，拦截注释/堆叠/危险函数)
-            $this->guardTableIdentifier($table);
+            //子查询表名按子查询级校验(与whereExists/whereIn字符串子查询同级：放行select，
+            //拦截注释/堆叠/危险函数/锁函数/逻辑位运算符/盲注与编码外泄函数)
+            $this->guardSubQuery($table);
         } else {
             //入口级严格白名单校验，普通表名不支持子查询
             $this->wrapTableName($table);
@@ -1312,9 +1313,9 @@ class Model
     {
         if ($this->_sql['from']) {
             $table = $this->_sql['from'];
-            //兼容旧版：子查询表名(含括号)构建期复核后原样返回，不拼接表名前缀
+            //兼容旧版：子查询表名(含括号)构建期按子查询级复核后原样返回，不拼接表名前缀
             if (strpos($table, '(') !== false || strpos($table, ')') !== false) {
-                return $this->guardTableIdentifier($table);
+                return $this->guardSubQuery($table);
             }
         } else {
             $table = $this->table;
@@ -1757,12 +1758,12 @@ class Model
                     throw new \InvalidArgumentException('不安全的join类型:' . $key);
                 }
                 foreach ($join as list($table, $con1, $op, $con2)) {
-                    $table = $this->prefix . $table;
-                    if (strpos($table, '(') !== false && strpos($table, ')') !== false) {
-                        //表名允许携带子查询，走表名级校验
-                        $table = $this->guardTableIdentifier($table);
+                    //子查询表名(含括号)不拼接前缀(与getTable一致)，按子查询级校验；普通表名拼接前缀后包裹
+                    if (strpos($table, '(') !== false || strpos($table, ')') !== false) {
+                        //子查询表名允许携带select，走子查询级校验
+                        $table = $this->guardSubQuery($table);
                     } else {
-                        $table = $this->formatTable($table);
+                        $table = $this->formatTable($this->prefix . $table);
                     }
                     //构建期校验:连接条件与操作符
                     //兼容拆分括号的复合ON条件:合并后的完整ON片段配平+函数白名单，两侧黑名单校验
