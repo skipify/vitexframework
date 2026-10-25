@@ -53,6 +53,24 @@ class SqlUtil
     }
 
     /**
+     * 校验select字段位置的透传表达式
+     * 与guardIdentifier($id, false)一致，但额外放行 反引号+空白 的组合：
+     * 合法聚合表达式如 avg(`star`) as star / max(`id`) as info 含该形式，
+     * 黑名单(注释/子查询/危险函数)、||&&逻辑运算符、括号配平与函数白名单照常拦截
+     * @param string $column select字段表达式
+     * @return string 校验通过的表达式
+     * @throws \InvalidArgumentException
+     */
+    public static function guardSelectExpression(string $column): string
+    {
+        if (preg_match(self::SELECT_DANGER_PATTERN, $column) || preg_match(self::RE_LOGIC_OPS, $column)) {
+            throw new \InvalidArgumentException('不安全的标识符:' . $column);
+        }
+        self::checkExpressionFunctions($column, '标识符');
+        return $column;
+    }
+
+    /**
      * 校验join连接列(兼容旧版复合ON条件写法)
      * 旧版允许把带括号的复合ON条件拆分在join的两个列参数中
      * (如 leftJoin($t, '(a.memberid', '=', 'b.memberid and b.status=1'))，
@@ -429,8 +447,9 @@ class SqlUtil
         }
         //格式化一下column
         if (str_contains($column, '`') || str_contains($column, '(') || str_contains($column, ')') || str_contains($column, '*')) {
-            //select字段允许CASE WHEN等表达式，按不含盲注函数族的模式校验
-            return self::guardIdentifier($column, false);
+            //select字段允许CASE WHEN等表达式，按不含盲注函数族的模式校验；
+            //放行 avg(`star`) as star 等带反引号列与别名的聚合表达式(与构建期guardExpression一致)
+            return self::guardSelectExpression($column);
         }
 
         //包含别名的形式
