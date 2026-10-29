@@ -91,7 +91,7 @@ class Cache implements CacheInterface
         if (!is_string($key)) {
             throw new InvalidArgumentException();
         }
-        return $this->cache->save($key, $value, $ttl);
+        return $this->cache->save($key, $value, self::normalizeTtl($ttl));
     }
 
     public function delete($key)
@@ -133,7 +133,7 @@ class Cache implements CacheInterface
         if (!is_array($values)) {
             throw new InvalidArgumentException();
         }
-        return $this->cache->saveMultiple($values, $ttl);
+        return $this->cache->saveMultiple($values, self::normalizeTtl($ttl));
     }
 
 
@@ -160,5 +160,22 @@ class Cache implements CacheInterface
     public function getStats()
     {
         return $this->cache->getStats();
+    }
+
+    /**
+     * 归一化TTL后传给Doctrine
+     * null转为0：Doctrine的"永不过期"哨兵值是0/false，PhpFile等文件引擎会把null
+     * 生存期当作已过期，导致不带TTL的写入永远读不回来(PSR-16: null为实现默认生存期，
+     * Doctrine的默认语义即永不过期)；
+     * DateInterval转为相对秒数：Doctrine的save仅接受int生存期
+     * @param null|int|\DateInterval $ttl 生存期
+     * @return int 归一化后的秒数(0表示永不过期)
+     */
+    private static function normalizeTtl($ttl): int
+    {
+        if ($ttl instanceof \DateInterval) {
+            $ttl = (new \DateTimeImmutable('@0'))->add($ttl)->getTimestamp();
+        }
+        return max(0, (int)$ttl);
     }
 }
