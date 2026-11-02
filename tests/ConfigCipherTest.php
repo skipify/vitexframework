@@ -60,7 +60,7 @@ if ($native) {
     check(ConfigCipher::decrypt($masterKey, $interopVector) === 'interop-plaintext', "[openssl] signhub 固定向量互操作");
 } else {
     $skipped++;
-    echo "  [SKIP] openssl 驱动用例（本机 PHP openssl 封装不支持 sm4-gcm，生产 Linux 通常可用）\n";
+    echo "  [SKIP] openssl 驱动用例（当前 PHP/OpenSSL 组合不支持 sm4-gcm：需 PHP >= 8.5 + OpenSSL >= 3.5，主流部署暂不存在）\n";
 }
 
 // ---- 纯 PHP 驱动（始终全量执行） ----
