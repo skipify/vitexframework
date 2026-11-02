@@ -2,12 +2,23 @@
 /**
  * Vitex SM4-GCM 国密加密（GB/T 32907-2016 + NIST SP 800-38D）双驱动实现。
  *
- * 优先使用 PHP openssl 扩展内置的 sm4-gcm（C 速度，OpenSSL 1.1.1+ 自带 SM4）；
- * 环境不支持时（如 macOS LibreSSL）自动回退到纯 PHP 实现，零第三方依赖。
+ * 驱动优先级：openssl sm4-gcm（C 速度）> 纯 PHP 实现（零第三方依赖）。
+ * 注意当前部署现实：SM4-GCM 是 OpenSSL 3.5 LTS（2025-04）才引入的算法，且需
+ * PHP >= 8.5（openssl 封装改为 EVP_CIPHER_fetch 动态解析 + 通用 AEAD 分支）才能
+ * 经 PHP openssl 调用；主流环境（PHP <= 8.4 + OpenSSL 3.0/3.2，Ubuntu 22.04/24.04、
+ * Debian 12、RHEL 9/10 等）实测一律不可用——openssl_get_cipher_methods() 会列出
+ * sm4-gcm/sm4-ccm 但调用失败（provider-only，不在 legacy 名字表）。
+ * 因此【纯 PHP 回退是当前的实际主路径】，openssl 路径是为未来技术栈预留的加速器；
+ * 探测以真实加解密自测为准（useNative()/selfTestNative()），不信任方法名列表。
+ *
  * 纯 PHP 实现移植自 signhub-sdk-php（Apache-2.0，Copyright signhub）。
  *
  * 密文格式与 signhub 全家桶（Java/PHP/Go SDK 与服务端）逐字节互通：
  *  - 密钥 16 字节；nonce 12 字节；输出 = cipher‖tag（tag 16 字节追加尾部）。
+ *  契约红线：不得以 sm4-cbc/ctr 等替代（无认证 tag 且破坏三语言逐字节对齐）。
+ *
+ * 性能定位：本类当前仅用于 ENC1 配置值解密（启动期少量短值），纯 PHP 路径
+ * 毫秒级完成，性能无虞；若未来用于高频大流量场景需重新评估。
  *
  * 本类不做任何轮密钥静态缓存：轮密钥现场扩展、用完即释放，不驻留密钥材料。
  */
