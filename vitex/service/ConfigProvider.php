@@ -9,6 +9,7 @@ namespace vitex\service;
 use vitex\core\Exception;
 use vitex\service\amqp\AmqpConfig;
 use vitex\service\config\CookieConfig;
+use vitex\service\crypto\ConfigCipher;
 use vitex\service\session\SessionConfig;
 use vitex\service\model\DatabaseConfig;
 
@@ -135,6 +136,11 @@ class ConfigProvider
             'charset' => 'utf-8',
             'request.trim' => true,
             /**
+             * 配置值加密主密钥（ENC1: 密文用，16 字节 SM4 密钥的 Base64）。
+             * 留空时回退环境变量 SIGNHUB_CONFIG_KEY；两者都缺省且有 ENC1: 配置值时拒绝启动
+             */
+            'config.enc1_key' => '',
+            /**
              * 数据库配置
              */
             'database' => [
@@ -193,7 +199,34 @@ class ConfigProvider
             }
         }
         $this->combineScanDir();
+        $this->resolveEnc1Values();
         return $this;
+    }
+
+    /**
+     * 解析配置中的 ENC1: 加密值（SCF1 格式，SM4-GCM 国密，见 vitex\service\crypto\ConfigCipher）。
+     *
+     * 主密钥来源：配置项 config.enc1_key 优先，其次环境变量 SIGNHUB_CONFIG_KEY。
+     * fail-closed：存在 ENC1: 值而主密钥缺失，或任一值解密失败，抛出异常拒绝启动。
+     * 解密后的明文值不再带 ENC1: 前缀，重复调用天然幂等。
+     */
+    private function resolveEnc1Values()
+    {
+        $key = ConfigCipher::findMasterKey($this->settings['config.enc1_key'] ?? null);
+        array_walk_recursive($this->settings, function (&$v) use ($key): void {
+            if (is_string($v) && ConfigCipher::isEncrypted($v)) {
+                if ($key === null) {
+                    throw new Exception(
+                        '检测到 ENC1: 加密配置值，但缺少主密钥：'
+                        . '请设置配置项 config.enc1_key 或环境变量 SIGNHUB_CONFIG_KEY'
+                        . '（16 字节 SM4 密钥的 Base64，openssl rand -base64 16 生成）。'
+                        . 'fail-closed：拒绝以密文配置启动'
+                    );
+                }
+                $v = ConfigCipher::decrypt($key, $v);
+            }
+        });
+    }
     }
 
     /**
