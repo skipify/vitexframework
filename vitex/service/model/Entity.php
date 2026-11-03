@@ -190,27 +190,6 @@ class Entity
         $model = $this->_getModel(new Model());
         $primaryKey = $model->getPk();
 
-//        $fields = static::_fieldDescribe;
-//
-//        //验证插入数据
-//        $dataType = new DataType();
-//        foreach ($data as $key=>$val){
-//            if($key == $primaryKey){
-//                continue;
-//            }
-//
-//            try {
-//
-//                if(!isset($fields[$key])){
-//                    continue;
-//                }
-//                $validFunc = DataType::TYPE[$fields[$key]['dataType']];
-//                $data[$key] = $dataType->{$validFunc}($val,DataType::TYPE[$fields[$key]['allowNull']]);
-//            } catch (\Exception $e) {
-//                continue;
-//            }
-//        }
-
         if (!empty($this->{$primaryKey})) {
             $model->where($primaryKey, '=', $this->{$primaryKey})->update($data);
         } else {

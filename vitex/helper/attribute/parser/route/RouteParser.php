@@ -86,7 +86,6 @@ class RouteParser extends AttributeParserBase implements AttributeParserInterfac
         $data = "";
         $vitex = Vitex::getInstance();
         foreach ($this->data->getMethod() as $method) {
-            //$method = strtolower($method);
             $data .= '$vitex->' . $method . '("' . $path . '","' . $call . '");' . "\n";
             $vitex->{$method}($path, $call);
         }

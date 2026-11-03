@@ -69,7 +69,6 @@ class RedisSentinel
     public function connect(string $host, int $port = 26379, $password = null, $databaseId = null)
     {
         try {
-            //$this->redis->connect($host, $port, $this->timeout);
             $this->redis->pconnect($host, $port, $this->timeout);
         } catch (\RedisException $e) {
             throw new CacheException("Cant Connect host:{$host} port:{$port}");

@@ -84,14 +84,4 @@ class AttributeTemporaryStore
         return $data == null ? null : (isset($data[$subKey]) ? $data[$subKey] : null);
     }
 
-//    public function __set($key, $val)
-//    {
-//        $this->data[$key] = $val;
-//    }
-//
-//    public function __get($key)
-//    {
-//        return $this->data[$key] ?? null;
-//    }
-
 }

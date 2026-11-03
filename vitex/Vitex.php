@@ -527,7 +527,6 @@ class Vitex extends EventEmitter
     {
         $class = get_class($call);
         if (in_array($class, $this->preMiddlewareArr)) {
-            //throw new Exception($class . ' Pre-Middleware has loaded');
             return $this;
         }
         $this->preMiddlewareArr[] = $class;

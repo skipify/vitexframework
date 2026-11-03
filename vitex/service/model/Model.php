@@ -1000,7 +1000,6 @@ class Model
         if ($offset >= PHP_INT_MAX) {
             throw new \InvalidArgumentException("offset Is Too Max");
         }
-        //$this->_sql['offset'] = $offset;
         return $this;
     }
 

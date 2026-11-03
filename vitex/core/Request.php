@@ -128,10 +128,6 @@ class Request implements \ArrayAccess, \Iterator
      */
     public static function getInstance()
     {
-//        if (!(self::$_instance instanceof self)) {
-//            self::$_instance = new self();
-//        }
-//        return self::$_instance;
         $vitex = Vitex::getInstance();
         return $vitex->req;
     }

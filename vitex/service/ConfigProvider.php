@@ -8,6 +8,7 @@ namespace vitex\service;
 
 use vitex\core\Exception;
 use vitex\service\amqp\AmqpConfig;
+use vitex\service\cache\CacheStore;
 use vitex\service\config\CookieConfig;
 use vitex\service\crypto\ConfigCipher;
 use vitex\service\session\SessionConfig;
@@ -20,15 +21,6 @@ class ConfigProvider
      * @var array
      */
     private $settings;
-
-//    /**
-//     * 框架扫描的注解目录
-//     * @var string[]
-//     */
-//    private $frameScanDir = [
-//        VITEX_BASE_PATH
-//    ];
-
 
     public function __construct()
     {
@@ -44,6 +36,11 @@ class ConfigProvider
              * 运行时缓存目录
              */
             'runtime_dir' => sys_get_temp_dir(),
+            /**
+             * .env 文件路径（字符串或路径数组），每次setConfig时自动加载到环境变量，
+             * 已存在的真实环境变量优先，文件值不覆盖；留空不加载
+             */
+            'env_file' => '',
             // View
             'templates.path' => './templates', //模板的默认路径
             'templates.ext' => '.html',//模板文件的默认扩展名，当省略扩展名时会自动添加
@@ -80,6 +77,7 @@ class ConfigProvider
             'log' => null,
             /**
              * cache 的规则
+             */
             'cache' => [
                 'driver' => CacheStore::REDIS, //可以获得driver
                 CacheStore::REDIS =>
@@ -129,15 +127,12 @@ class ConfigProvider
                 CacheStore::FILE => [
                     'path' => '/path/log'
                 ]
-            ]
-             *
-             */
-            'cache' => null,
+            ],
             'charset' => 'utf-8',
             'request.trim' => true,
             /**
              * 配置值加密主密钥（ENC1: 密文用，16 字节 SM4 密钥的 Base64）。
-             * 留空时回退环境变量 SIGNHUB_CONFIG_KEY；两者都缺省且有 ENC1: 配置值时拒绝启动
+             * 留空时回退环境变量 VITEX_CONFIG_KEY；两者都缺省且有 ENC1: 配置值时拒绝启动
              */
             'config.enc1_key' => '',
             /**
@@ -145,14 +140,9 @@ class ConfigProvider
              */
             'database' => [
                 /**
-                 * 默认数据库
-                 */
-//                'db' => (DatabaseConfig::fromArray(['host'=>'','database'=>'']))->toArray(),
-                /**
                  * 主从数据库的主数据库
                  */
                 'master' => (new DatabaseConfig())->toArray(),
-//                'slaver' => (DatabaseConfig::fromArray(['host'=>'','database'=>'']))->toArray()
             ],
             'amqp' =>(AmqpConfig::fromArray([]))->toArray()
         ];
@@ -198,6 +188,7 @@ class ConfigProvider
                 $this->settings[$name] = $val;
             }
         }
+        $this->loadEnvFiles();
         $this->combineScanDir();
         $this->resolveEnc1Values();
         return $this;
@@ -206,7 +197,7 @@ class ConfigProvider
     /**
      * 解析配置中的 ENC1: 加密值（SCF1 格式，SM4-GCM 国密，见 vitex\service\crypto\ConfigCipher）。
      *
-     * 主密钥来源：配置项 config.enc1_key 优先，其次环境变量 SIGNHUB_CONFIG_KEY。
+     * 主密钥来源：配置项 config.enc1_key 优先，其次环境变量 VITEX_CONFIG_KEY。
      * fail-closed：存在 ENC1: 值而主密钥缺失，或任一值解密失败，抛出异常拒绝启动。
      * 解密后的明文值不再带 ENC1: 前缀，重复调用天然幂等。
      */
@@ -218,7 +209,7 @@ class ConfigProvider
                 if ($key === null) {
                     throw new Exception(
                         '检测到 ENC1: 加密配置值，但缺少主密钥：'
-                        . '请设置配置项 config.enc1_key 或环境变量 SIGNHUB_CONFIG_KEY'
+                        . '请设置配置项 config.enc1_key 或环境变量 VITEX_CONFIG_KEY'
                         . '（16 字节 SM4 密钥的 Base64，openssl rand -base64 16 生成）。'
                         . 'fail-closed：拒绝以密文配置启动'
                     );
@@ -229,13 +220,22 @@ class ConfigProvider
     }
 
     /**
+     * 加载配置项 env_file 指定的 .env 文件到环境变量，
+     * 先于 ENC1: 解密执行，因此主密钥 VITEX_CONFIG_KEY 也可以放在 env 文件中
+     */
+    private function loadEnvFiles(): void
+    {
+        $files = $this->settings['env_file'] ?? '';
+        if ($files === '' || $files === null) {
+            return;
+        }
+        EnvLoader::load($files);
+    }
+
+    /**
      * 合并框架的扫描目录到系统中
      */
     private function combineScanDir(){
-        //暂时不扫描当前框架
-//        if(!in_array(VITEX_BASE_PATH,$this->settings['attribute_scan_dir'])){
-//            $this->settings['attribute_scan_dir'][] = VITEX_BASE_PATH;
-//        }
     }
 
     /**

@@ -537,8 +537,6 @@ class Router
      */
     public function getRouter($method, $url)
     {
-//        $method = strtoupper($this->env->method());
-//        $url = $this->env->getPathinfo();
         //默认首页
         $url = rtrim($url, '/');
         $url = $url ? $url : '/';
@@ -677,7 +675,6 @@ class Router
 
         $this->routeClass = $class;
         $this->routeMethod = $method;
-        //$obj = new $class;
         $obj = $vitex->container->get($class);
         if (!$obj || !method_exists($obj, $method)) {
             Vitex::getInstance()->log->error('Class:' . $class . '->' . $method . ' Not Found!!');

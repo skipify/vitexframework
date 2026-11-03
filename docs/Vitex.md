@@ -8,7 +8,7 @@
 
 ### 配置
 
-[配置文件详情点击查看](condfig.md)
+[配置文件详情点击查看](config.md)
 
 setConfig/getConfig  
 

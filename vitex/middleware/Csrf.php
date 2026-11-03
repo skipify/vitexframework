@@ -58,16 +58,15 @@ class Csrf extends Middleware
             if(is_string($sessionToken) && $sessionToken !== ''){
                 /*
                  * 会话token跨请求持久化：以服务端会话为唯一真值源
-                 * 提交的token必须为非空字符串且与会话token严格一致(hash_equals防时序攻击)
-                 * 修复：双空(null==null)绕过、宽松!=比较、以及仅比对客户端cookie
-                 * 导致的子域cookie注入(cookie tossing)绕过
+                 * 提交的token必须为非空字符串且与会话token严格一致(hash_equals防时序攻击)，
+                 * 均非空才比较，避免双空(null==null)绕过；不比对客户端cookie，防子域cookie注入(cookie tossing)绕过
                  */
                 $valid = is_string($token) && $token !== '' && hash_equals($sessionToken, $token);
             } else {
                 /*
                  * 无持久会话时退化为double-submit校验：
                  * token与cookie必须均为非空字符串且严格相等(hash_equals防时序攻击)，
-                 * 修复：双方均缺失时(null==null)被判定相等而放行的绕过
+                 * 双方均缺失(null==null)时不放行
                  */
                 $valid = is_string($token) && $token !== ''
                     && is_string($cookieToken) && $cookieToken !== ''

@@ -4,15 +4,14 @@
  * 语义对齐 Jasypt 的 ENC(...)，算法为 SM4-GCM（国密），底层走 vitex\service\crypto\Sm4Gcm。
  *
  * 值格式：ENC1:<Base64( magic("SCF1") || nonce(12B) || SM4-GCM(cipher‖tag) )>
- * 与 signhub 全家桶（Java/PHP/Go SDK 与服务端）格式逐字节互通。
  *
  * 主密钥为 16 字节 SM4 密钥的 Base64 文本（openssl rand -base64 16 生成），
- * 经环境变量 SIGNHUB_CONFIG_KEY 注入（框架内也可经配置项 config.enc1_key 设置），
+ * 经环境变量 VITEX_CONFIG_KEY 注入（框架内也可经配置项 config.enc1_key 设置），
  * 不写配置文件、不入仓库。主密钥为机器生成的高熵密钥，无需 KDF 派生；
  * 主密钥丢失 = 密文永久无法解密，务必托管备份。
  *
  * 典型用法：在 Vitex 配置数组（或 .env / 入口设置）里把敏感值写成 ENC1: 密文，
- * 框架启动时由 ConfigProvider 自动解密（config.enc1_key / SIGNHUB_CONFIG_KEY）；
+ * 框架启动时由 ConfigProvider 自动解密（config.enc1_key / VITEX_CONFIG_KEY）；
  * 非 Vitex 环境可手动调用 resolve() 解析整个配置数组。
  */
 
@@ -24,9 +23,9 @@ class ConfigCipher
     const PREFIX = 'ENC1:';
 
     /** 主密钥默认环境变量名。 */
-    const ENV_KEY = 'SIGNHUB_CONFIG_KEY';
+    const ENV_KEY = 'VITEX_CONFIG_KEY';
 
-    /** 二进制魔数（ASCII "SCF1"，signhub/vitex config value v1）。 */
+    /** 二进制魔数（ASCII "SCF1"，配置值密文格式 v1）。 */
     const MAGIC = 'SCF1';
 
     /**
@@ -99,7 +98,7 @@ class ConfigCipher
     }
 
     /**
-     * 主密钥解析：显式传入值优先，其次环境变量 SIGNHUB_CONFIG_KEY。
+     * 主密钥解析：显式传入值优先，其次环境变量 VITEX_CONFIG_KEY。
      *
      * @return string|null 主密钥原文；缺失返回 null（是否报错由调用方决定）
      */

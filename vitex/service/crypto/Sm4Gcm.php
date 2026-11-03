@@ -11,11 +11,11 @@
  * 因此【纯 PHP 回退是当前的实际主路径】，openssl 路径是为未来技术栈预留的加速器；
  * 探测以真实加解密自测为准（useNative()/selfTestNative()），不信任方法名列表。
  *
- * 纯 PHP 实现移植自 signhub-sdk-php（Apache-2.0，Copyright signhub）。
+ * 纯 PHP 实现为零第三方依赖的自包含实现。
  *
- * 密文格式与 signhub 全家桶（Java/PHP/Go SDK 与服务端）逐字节互通：
+ * 密文格式约定：
  *  - 密钥 16 字节；nonce 12 字节；输出 = cipher‖tag（tag 16 字节追加尾部）。
- *  契约红线：不得以 sm4-cbc/ctr 等替代（无认证 tag 且破坏三语言逐字节对齐）。
+ *  - 契约红线：不得以 sm4-cbc/ctr 等模式替代（无认证 tag 且破坏 cipher‖tag 格式约定）。
  *
  * 性能定位：本类当前仅用于 ENC1 配置值解密（启动期少量短值），纯 PHP 路径
  * 毫秒级完成，性能无虞；若未来用于高频大流量场景需重新评估。
@@ -171,7 +171,7 @@ class Sm4Gcm
         }
     }
 
-    // ---------------------------------------------------------------- 纯 PHP 回退实现（移植自 signhub-sdk-php，Apache-2.0）
+    // ---------------------------------------------------------------- 纯 PHP 回退实现
 
     private static function pureEncrypt(string $key, string $nonce, string $plaintext): string
     {

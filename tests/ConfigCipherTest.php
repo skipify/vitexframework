@@ -3,8 +3,8 @@
  * 配置值加密（ENC1/SCF1 + SM4-GCM）独立测试。
  * 运行：php tests/ConfigCipherTest.php   （PHP >= 7.3，无第三方依赖）
  *
- * 含与 signhub 服务端（com.signhub.crypto.ConfigValueCipher）互操作的固定向量：
- * 后端 KeyFileTool encval 以主密钥 MDEyMzQ1Njc4OWFiY2RlZg== 加密 'interop-plaintext' 生成。
+ * 含 SCF1 格式固定回归向量：主密钥 MDEyMzQ1Njc4OWFiY2RlZg==（Base64("0123456789abcdef")）
+ * 加密 'interop-plaintext' 的标准结果，用于保证格式不被无意改动。
  * 本机 openssl sm4-gcm 不可用时自动跳过 openssl 用例，纯 PHP 路径始终全量执行。
  */
 
@@ -57,7 +57,7 @@ if ($native) {
     $encNative = ConfigCipher::encrypt($masterKey, 'cross-driver');
     check(strpos($encNative, 'ENC1:') === 0, "[openssl] 密文带 ENC1: 前缀");
     check(ConfigCipher::decrypt($masterKey, $encNative) === 'cross-driver', "[openssl] 往返解密");
-    check(ConfigCipher::decrypt($masterKey, $interopVector) === 'interop-plaintext', "[openssl] signhub 固定向量互操作");
+    check(ConfigCipher::decrypt($masterKey, $interopVector) === 'interop-plaintext', "[openssl] 固定向量解密");
 } else {
     $skipped++;
     echo "  [SKIP] openssl 驱动用例（当前 PHP/OpenSSL 组合不支持 sm4-gcm：需 PHP >= 8.5 + OpenSSL >= 3.5，主流部署暂不存在）\n";
@@ -68,7 +68,7 @@ Sm4Gcm::$forcePurePhp = true;
 $encPure = ConfigCipher::encrypt($masterKey, 'cross-driver');
 check(strpos($encPure, 'ENC1:') === 0, "[纯PHP] 密文带 ENC1: 前缀");
 check(ConfigCipher::decrypt($masterKey, $encPure) === 'cross-driver', "[纯PHP] 往返解密");
-check(ConfigCipher::decrypt($masterKey, $interopVector) === 'interop-plaintext', "[纯PHP] signhub 固定向量互操作");
+check(ConfigCipher::decrypt($masterKey, $interopVector) === 'interop-plaintext', "[纯PHP] 固定向量解密");
 check(ConfigCipher::encrypt($masterKey, 'same') !== ConfigCipher::encrypt($masterKey, 'same'), "[纯PHP] 随机 nonce 密文不同");
 Sm4Gcm::$forcePurePhp = null;
 
