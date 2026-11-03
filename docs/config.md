@@ -57,3 +57,37 @@ $vitex->setConfig("xxx.php")
 ```
 $vitex->getConfig("key")
 ```
+## .env 文件加载
+
+框架没有强依赖 `.env` 文件。当配置需要从其他目录的 `.env` 加载时（例如部署共享目录），在配置项 `env_file` 里指定路径即可（支持字符串或路径数组）：
+
+```php
+// Vitex 是单例，配置数组仅在首次 getInstance() 时生效，之后请用 setConfig() 修改
+$vitex = \vitex\Vitex::getInstance([
+    'env_file' => '/data/deploy/shared/.env',
+]);
+
+// 或者写在配置文件里（由 setConfig 加载）
+return [
+    'env_file' => ['/data/deploy/shared/.env', __DIR__ . '/.env'],
+];
+```
+
+也可以不经过配置项，直接手动加载：
+
+```php
+use vitex\service\EnvLoader;
+
+EnvLoader::load('/data/deploy/shared/.env'); // 返回实际注入的 key=>value
+```
+
+加载规则：
+
+- 文件不存在或不可读时静默跳过，不报错
+- **已存在的真实环境变量优先**，文件值不会覆盖它们（部署系统注入的变量不受影响）
+- 忽略空行与 `#` / `;` 注释行，支持可选的 `export ` 前缀与成对的单双引号
+- 行内 `#` 视为值的一部分，密码等含 `#` 的值建议用引号包裹
+- 值注入真实环境变量（`putenv` + `$_ENV`/`$_SERVER`），`getenv()` 均可读取
+- 在每次 `setConfig()` 时自动执行，且先于 ENC1: 配置解密，因此配置加密的主密钥环境变量（`ConfigCipher::ENV_KEY`）也可以放在 env 文件里
+
+> 注意：不要把配置加密主密钥与 `ENC1:` 密文放在同一个 env 文件里（密钥与密文同库会削弱加密意义）。

@@ -8,6 +8,7 @@ namespace vitex\service;
 
 use vitex\core\Exception;
 use vitex\service\amqp\AmqpConfig;
+use vitex\service\cache\CacheStore;
 use vitex\service\config\CookieConfig;
 use vitex\service\crypto\ConfigCipher;
 use vitex\service\session\SessionConfig;
@@ -44,6 +45,11 @@ class ConfigProvider
              * 运行时缓存目录
              */
             'runtime_dir' => sys_get_temp_dir(),
+            /**
+             * .env 文件路径（字符串或路径数组），每次setConfig时自动加载到环境变量，
+             * 已存在的真实环境变量优先，文件值不覆盖；留空不加载
+             */
+            'env_file' => '',
             // View
             'templates.path' => './templates', //模板的默认路径
             'templates.ext' => '.html',//模板文件的默认扩展名，当省略扩展名时会自动添加
@@ -198,6 +204,7 @@ class ConfigProvider
                 $this->settings[$name] = $val;
             }
         }
+        $this->loadEnvFiles();
         $this->combineScanDir();
         $this->resolveEnc1Values();
         return $this;
@@ -227,6 +234,18 @@ class ConfigProvider
             }
         });
     }
+
+    /**
+     * 加载配置项 env_file 指定的 .env 文件到环境变量，
+     * 先于 ENC1: 解密执行，因此主密钥环境变量也可以放在 env 文件中
+     */
+    private function loadEnvFiles(): void
+    {
+        $files = $this->settings['env_file'] ?? '';
+        if ($files === '' || $files === null) {
+            return;
+        }
+        EnvLoader::load($files);
     }
 
     /**
